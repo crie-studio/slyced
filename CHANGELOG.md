@@ -17,6 +17,10 @@ numeração em [versionamento semântico](https://semver.org/lang/pt-BR/).
   versão não são assinados.
 - README com a política de assinatura de código e a declaração de privacidade.
 - Os pacotes trazem o texto das licenças do Slyced (`LICENSE-MIT` e `LICENSE-APACHE`).
+- Código aberto em <https://github.com/crie-studio/slyced>, com telas, guia de contribuição,
+  política de segurança e modelos para relatar problemas e sugerir ideias.
+- O `LEIA-ME.md` dos pacotes passa a ser o manual do usuário (`docs/MANUAL.md`): recursos,
+  atalhos, PACS, portabilidade, solução de problemas, antivírus e privacidade.
 
 ### Alterado
 - `build-release.ps1`: `-NoZip` só compila e confere os executáveis, `-ZipOnly` só empacota os que já

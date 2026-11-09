@@ -1,168 +1,121 @@
-# Slyced — visualizador DICOM portátil
+<div align="center">
 
-Visualizador de imagens médicas (TC, RM, RX, US…) para Windows, escrito em Rust.
-É um único `Slyced.exe`, sem instalação e sem dependências externas.
+<img src="docs/img/logo.png" width="104" alt="Logo do Slyced">
 
-Desenvolvido por **Luiz Felipe Pitzer** · <https://lfp.app.br> · versão 1.5.4
-([histórico de versões](CHANGELOG.md)). Até a versão 0.6 o programa se chamava Lumen; ao abrir o
-Slyced pela primeira vez, as configurações, os servidores PACS e os achados do Lumen são trazidos
-automaticamente.
+# Slyced
 
-> **Aviso:** software sem certificação como dispositivo médico (ANVISA/FDA/CE).
-> Não utilize como única base para diagnóstico.
+**Visualizador DICOM portátil para Windows**<br>
+TC, RM, RX e US em 2D, MPR e 3D, com comparação de exames e PACS integrado.<br>
+Um único `Slyced.exe`, sem instalação, do Windows 7 ao 11.
+
+[![Versão](https://img.shields.io/github/v/release/crie-studio/slyced?label=vers%C3%A3o&color=5b6cff)](https://github.com/crie-studio/slyced/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/crie-studio/slyced/total?label=downloads&color=5b6cff)](https://github.com/crie-studio/slyced/releases)
+[![Windows 7 a 11](https://img.shields.io/badge/Windows-7%20%C2%B7%208%20%C2%B7%2010%20%C2%B7%2011-0078D4?logo=windows&logoColor=white)](#requisitos)
+[![Licença MIT ou Apache 2.0](https://img.shields.io/badge/licen%C3%A7a-MIT%20ou%20Apache%202.0-2ea44f)](#licença)
+[![Feito em Rust](https://img.shields.io/badge/feito%20em-Rust-b7410e?logo=rust&logoColor=white)](https://www.rust-lang.org)
+
+[**Baixar a versão mais recente**](https://github.com/crie-studio/slyced/releases/latest) ·
+[Manual](docs/MANUAL.md) ·
+[Novidades](CHANGELOG.md) ·
+[Relatar um problema](https://github.com/crie-studio/slyced/issues/new/choose)
+
+<img src="docs/img/mpr.png" alt="Slyced com a reconstrução MPR (axial, coronal e sagital) e o 3D lado a lado" width="100%">
+
+</div>
+
+> [!WARNING]
+> Software sem certificação como dispositivo médico (ANVISA/FDA/CE). Não utilize como única
+> base para diagnóstico.
+
+## Por que o Slyced
+
+- **Portátil de verdade.** Um executável de cerca de 20 MB que roda direto do download ou de
+  um pendrive: sem instalador, sem administrador, sem Visual C++ Redistributable.
+- **Feito para quem lê exames.** Comparação com o exame anterior, realces de leitura (gás
+  livre, gordura mesentérica, cálculos), protocolos de MPR em um clique, rastreador tubular
+  (CPR), fases com e sem contraste e calculadora de hérnia incisional.
+- **Conectado ao hospital.** Pesquisa e download no PACS por DICOM (C-FIND, C-GET, C-MOVE) ou
+  DICOMweb, com fila de downloads e linha do tempo do paciente com todos os exames dele.
+- **Leve e rápido.** Escrito em Rust; o 3D roda na placa de vídeo (DirectX 12, Vulkan ou
+  OpenGL), e há versões para Windows 7, inclusive de 32 bits.
+- **Privado.** Nada sai do computador sem o usuário pedir: sem telemetria, sem contas, sem
+  verificação de atualizações.
+- **Código aberto**, sob as licenças MIT ou Apache 2.0.
+
+## Telas
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/img/comparacao.png" alt="Comparação de exames em cortina"></td>
+    <td width="50%"><img src="docs/img/pacs.png" alt="Pesquisa e download de exames no PACS"></td>
+  </tr>
+  <tr>
+    <td><b>Comparação de exames</b><br>Atual e anterior lado a lado, sobrepostos, em cortina ou em xadrez, alinhados automaticamente.</td>
+    <td><b>PACS</b><br>Pesquisa por nome, ID, acesso, período e modalidade; baixa o estudo inteiro ou só as séries marcadas.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/img/3d.png" alt="Renderização 3D com iluminação cinemática"></td>
+    <td><img src="docs/img/claro.png" alt="Tema claro com sobreposição colorida"></td>
+  </tr>
+  <tr>
+    <td><b>3D na placa de vídeo</b><br>VR com predefinições (osso, angio, pele, pulmão…), MIP, MinIP e superfície, com iluminação realista ou cinemática.</td>
+    <td><b>Temas</b><br>Escuro, claro ou de alto contraste, e tamanho da interface de 80% a 150%.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/img/leitura.png" alt="Tela cheia de leitura"></td>
+    <td><img src="docs/img/abertura.png" alt="Tela de abertura"></td>
+  </tr>
+  <tr>
+    <td><b>Tela cheia de leitura</b> (F11)<br>Só a imagem; os controles aparecem quando o mouse se mexe.</td>
+    <td><b>Abertura</b><br>Pasta, arquivos soltos, ZIP, CD/DVD com DICOMDIR ou PACS.</td>
+  </tr>
+</table>
+
+<sub>As telas usam um exame sintético gerado pelo próprio projeto (<code>examples/phantom.rs</code>), sem dados de pacientes.</sub>
+
+## Download
+
+Baixe o pacote do seu Windows na [página da versão mais recente](https://github.com/crie-studio/slyced/releases/latest),
+descompacte e execute o `Slyced.exe`.
+
+| Pacote | Para |
+|---|---|
+| `Slyced-<versão>-x64.zip` | **Windows 10 e 11** em PCs Intel ou AMD (quase todos) |
+| `Slyced-<versão>-arm64.zip` | Windows 10 e 11 com processador Snapdragon (ARM) |
+| `Slyced-<versão>-win7-x64.zip` | Windows 7 SP1, 8 e 8.1 de 64 bits |
+| `Slyced-<versão>-win7-x86.zip` | Windows 7 SP1, 8 e 8.1 de 32 bits |
+
+Se o Windows mostrar "O Windows protegeu o computador", clique em **Mais informações → Executar
+assim mesmo** (versões sem assinatura digital; veja a [política de assinatura](#política-de-assinatura-de-código-code-signing-policy)).
+Para conferir o arquivo, compare `Get-FileHash .\Slyced.exe` com o `SHA256SUMS.txt` do release.
 
 ## Recursos
 
-- **Lista de exames** compacta: paciente e exame num cartão de duas linhas (ID, data relativa, número de séries e imagens e hospital ao parar o mouse), exames anteriores do mesmo paciente numa linha marcada "anterior", uma **linha do tempo do paciente** no cartão (todos os exames dele, neste computador e no PACS, por data; os da mesma região ou modalidade ficam destacados e um clique compara com o exame aberto, baixando do PACS se preciso) e uma linha por série com miniatura, onde está aberta e número de imagens. A grade de miniaturas grandes continua no botão da barra. Feche um exame pelo X do cartão ou uma janela pelo X do canto (Ctrl+W).
-- **Abertura rápida**: pastas, arquivos, CDs/DVDs com DICOMDIR (varredura recursiva em paralelo, arquivos com ou sem extensão, com ou sem preâmbulo).
-- **ZIP direto**: abra (ou arraste) um `.zip` de exames sem descompactar; pastas com `.zip` dentro também são lidas. Nada é extraído para o disco e o ZIP não fica travado. ZIPs protegidos por senha ainda não são suportados (o Slyced avisa).
-- **Sintaxes de transferência**: implícita/explícita, JPEG baseline, estendido de 12 bits, aritmético e sem perdas, JPEG-LS, JPEG 2000, RLE, deflate; multiframe e imagens coloridas.
-- **2D**: janela/nível com predefinições de TC (teclas 1–9), zoom, mover, rotação, espelhamento, inversão, mapas de cor, cine e layouts 1×1 a 3×2. Arraste séries do painel para qualquer janela.
-- **Navegação ligada**: janelas do mesmo estudo sincronizadas por posição anatômica (inclusive entre planos diferentes), linhas de referência do corte ativo (ex.: localizador) e **cursor 3D** (Ctrl+clique) que leva todas as séries e planos ao mesmo ponto.
-- **Ferramentas na barra**: as de navegação (janela/nível, mover, zoom, cortes, mira, cursor 3D) ficam à mostra; **Medir** e **Leitura** agrupam as demais, e o botão usa a última ferramenta do grupo enquanto a seta mostra todas. A barra de status explica como usar a ferramenta ativa, e o ícone dela acompanha o cursor.
-- **Medições e anotações**: distância, ângulo, ROI elíptica (média, DP, mín., máx., área), densidade pontual (HU, com o tecido mais provável e uma legenda dos valores típicos de cada tecido) e seta com texto.
-- **Volume por 3 diâmetros** (menu Medir): desenhe largura, profundidade e altura (pedidas uma depois da outra, em qualquer plano) e veja o volume do elipsoide em mL e a densidade média dentro dele.
-- **Navegação rápida**: ← / → (ou os botões laterais do mouse) trocam de série e uma tira de miniaturas embaixo das imagens mostra todas as séries do exame; a barra de cortes tem marcas de achados, medidas, focos de cálculo e do cursor 3D e, ao passar o mouse, mostra a imagem daquele corte antes de clicar; **Ctrl+G** vai a um corte pelo número ou pela posição em mm; um **localizador** (vista frontal do volume, processada como radiografia, com ossos e contornos realçados) no canto das imagens axiais leva a qualquer nível; **Alt+← / Alt+→** voltam e avançam para onde você estava; cada série reabre onde você parou.
-- **Menu no botão direito** (clique sem arrastar): cursor 3D, achado ou densidade naquele ponto, medir, abrir em MPR/3D, copiar (Ctrl+C) ou salvar a imagem, restaurar e maximizar.
-- **Tela cheia de leitura** (F11): só as imagens, com texto mínimo (plano, corte e janela; Ctrl+I troca entre completo, mínimo e nenhum). Ao mexer o mouse aparece uma barra pequena com as ferramentas principais, a janela, o layout e o espaço de trabalho, que some quando o mouse para; encostar o mouse à esquerda (ou Tab) abre a lista de exames. **Modo foco** (Tab) esconde só os painéis laterais.
-- **Desfazer e refazer** (`Ctrl+Z` / `Ctrl+Y`): medidas, realces, filtros, janela, rotação, cursor 3D, trajeto do rastreador e planos oblíquos.
-- **Achados**: marque pontos com nome (tecla B); a lista fica no painel, é guardada entre sessões e reabre a série no mesmo ponto, janela e zoom.
-- **Restaurar**: o que as ferramentas mudaram aparece em etiquetas no canto da imagem (ex.: "3 medidas", "Gás livre", "Slab 6 mm", "Cursor 3D"); o X de cada uma desfaz só aquilo e **Restaurar tudo** volta tudo ao padrão (Shift+R). O botão Restaurar da barra mostra quantas alterações há e tem as mesmas opções em menu: visualização da janela (R), medidas e setas (Shift+Del), realces e filtros, cursor e marcadores. Os achados salvos são mantidos.
-- **Leitura**: espessura (slab) também no 2D, filtro de ruído que preserva bordas (só na exibição) e lupa.
-- **Realces de leitura (TC)**, com prévia de cada um no corte atual: **Gordura mesentérica** (janela 250/−50 com a gordura densificada em laranja, para borramento inflamatório), **Gás livre** (janela 1000/−600 em negativo com todo gás dentro do corpo, abaixo de −800 HU, em ciano: pneumoperitônio e retropneumoperitônio) e **Cálculos** (tudo acima do limiar em magenta; a busca no volume lista os focos densos pequenos, descartando osso e vasos, e leva até cada um).
-- **Fases sem × com contraste** (menu Protocolos): abre as duas fases lado a lado e alinhadas; a densidade pontual (H) lê o mesmo ponto nas duas (média em 2,5 mm) e mostra o ΔHU com a leitura (sem realce, duvidoso, realce presente). Há também **mapa de realce** (ganho ≥ 15 HU colorido sobre a fase sem contraste) e **imagem de subtração**.
-- **Calculadora de hérnia incisional** (menu Protocolos): volumes do saco e da cavidade pelo elipsoide, índice de Tanaka, razão de Sabbagh e largura do defeito (EHS), com medidas desenhadas na imagem ou digitadas e resumo para o laudo.
-- **Protocolos de leitura**: Abdome agudo, Tórax — nódulos, Angio/TEP, Osso/coluna e Crânio/AVC montam o MPR com a série, a janela e o slab adequados em um clique.
-- **MPR**: axial, coronal e sagital reconstruídos do volume, linhas de referência sincronizadas, espessura (slab) com MIP, MinIP ou média, **planos oblíquos** (arraste as alças da mira) e **rastreador tubular (CPR)**: 3 ou 4 cliques ao longo do apêndice, ureter, colédoco ou vaso, no 2D ou no MPR, geram a estrutura inteira esticada em uma imagem (a roda do mouse a gira).
-- **Comparação de exames** (A|B): exame atual e anterior lado a lado, sobrepostos (transparência), em cortina ou em xadrez, com navegação, cursor, zoom e janela sincronizados. O alinhamento é exato quando os exames compartilham o referencial; entre exames diferentes é feito pelo centro do corpo, por pontos de referência ou automaticamente (informação mútua, funciona entre fases e modalidades). Medidas pareadas mostram a variação em %. Radiografias alinham por 2 pontos (escala e rotação).
-- **3D na GPU**: ray casting (DirectX 12, Vulkan ou OpenGL 3.3) com VR por função de transferência (osso, angio, músculo, pele, pulmão, partes moles, RM — cada predefinição com uma prévia do próprio volume), MIP, MinIP e superfície; recorte por eixo, orientações rápidas e qualidade reduzida automaticamente durante a interação.
-- **Iluminação 3D em três níveis** (painel do 3D ou Configurações → Imagens): **Simples** (luz da câmera, a mais leve), **Realista** (luz lateral com sombras suaves, oclusão nas reentrâncias, contorno e curva de tons de cinema, em tempo real) e **Cinemático** (com o volume parado, a imagem é refinada por alguns segundos, somando dezenas de amostras de luz, sombra e anti-serrilhado; girando, usa a luz realista).
-- **PACS** (o mesmo tipo de servidor que o RadiAnt acessa): C-ECHO, C-FIND (estudo/série), recuperação por **C-GET** (sem porta de entrada) ou **C-MOVE** (com receptor Storage SCP embutido). Também **DICOMweb** (HTTP/HTTPS): pesquisa por QIDO-RS e download por WADO-RS, com usuário/senha ou token. Os downloads formam uma fila (dois por vez), com "Tentar de novo" e "Abrir", acessível também pela barra de status.
-- **Tags DICOM** com filtro, exportação PNG da janela ativa, overlays com dados do paciente, orientação anatômica e régua.
-- **Tela de abertura** em duas colunas: o programa à esquerda; à direita, Pasta, Arquivos e PACS com o mesmo destaque, cada um com uma linha dizendo o que abre e o atalho, e os exames recentes. A barra de título mostra só "Slyced - por Luiz Felipe Pitzer", nunca o nome do paciente.
-- **Aparência** (Configurações): tema escuro, claro ou de alto contraste e tamanho da interface (80–150%). Um tour de boas-vindas mostra os controles principais na primeira vez (e pode ser refeito pela ajuda, F1).
-- **Fechar com segurança**: "Fechar todos os exames" pede confirmação, e o aviso de exame fechado tem **Desfazer**.
-
-## Uso
-
-| Ação | Como |
+| | |
 |---|---|
-| Abrir | botão **Abrir** da barra (clique: pasta; seta: arquivos, ZIP e recentes) — em janelas estreitas, ícones de pasta e de arquivo; `Ctrl+O` (pasta), `Ctrl+Shift+O` (arquivos) ou arrastar para a janela. Os recentes também ficam no menu ⋯ da lista de exames |
-| Navegar cortes | roda do mouse, barra à direita da imagem (com marcas e prévia do corte), localizador no canto, ↑ ↓, PgUp/PgDn, Home/End, `Ctrl+G` (corte ou mm) |
-| Trocar de série | ← / →, botões laterais do mouse ou a tira de séries embaixo das imagens |
-| Voltar / avançar | `Alt+←` / `Alt+→`: para onde você estava antes de um salto |
-| Menu da imagem | clique com o botão direito (arrastar com ele ajusta a janela) |
-| Foco / tela cheia de leitura | `Tab` / `F11` · `Ctrl+I` texto sobre a imagem · `Ctrl+C` copia a imagem |
-| Janela/nível | botão direito arrastando (ou ferramenta W) |
-| Zoom | `Ctrl`+roda, `Ctrl`+arrastar (esquerdo), teclas `+`/`−` ou botões no painel |
-| Mover | botão do meio ou `Shift`+esquerdo |
-| Maximizar janela | duplo clique |
-| Ferramentas | botões de navegação e grupos Medir e Leitura da barra, ou as teclas W, P, Z, S, C (mira MPR), D, A, E, H, T (seta) — `Del` remove a última medição, `Shift+Del` apaga todas |
-| Desfazer / refazer | `Ctrl+Z` / `Ctrl+Y` (ou os botões da barra) |
-| Restaurar | X nas etiquetas do canto da imagem desfaz cada alteração; `R` restaura a visualização da janela; `Shift+R` (ou **Restaurar tudo**) limpa medidas, realces, filtros, cursor e planos oblíquos |
-| Cursor 3D | `Ctrl`+clique (ou ferramenta L); `Esc` apaga |
-| Achado / lupa | B / M |
-| MPR oblíquo | com a mira (C), arraste as alças coloridas das linhas |
-| Rastreador tubular (CPR) | V no 2D ou MPR: clique ao longo da estrutura (role os cortes entre cliques); botão direito ou `Enter` conclui; roda gira a imagem esticada |
-| Realces | menu **Leitura** da barra, com prévias: gordura mesentérica, gás livre, cálculos (tecla 0 = janela de gordura) |
-| Comparar | botão **A\|B**; o exame anterior do mesmo paciente é escolhido sozinho (ou arraste uma série para a janela B); G marca pontos de referência |
-| 3D | esquerdo gira, direito ajusta a função de transferência, meio (ou `Shift`+esquerdo) move, roda ou `Ctrl`+arrastar aproxima |
+| **Abrir** | Pastas, arquivos, CDs/DVDs com DICOMDIR e ZIP sem descompactar; JPEG (inclusive 12 bits, sem perdas e aritmético), JPEG-LS, JPEG 2000, RLE, multiframe e cor |
+| **2D** | Janela/nível com predefinições, zoom, rotação, mapas de cor, cine, layouts até 3×2, séries sincronizadas por posição e cursor 3D |
+| **Navegação** | Prévia do corte na barra, Ctrl+G, localizador, voltar/avançar (Alt+←/→), tira de séries e tela cheia de leitura (F11) |
+| **Medidas** | Distância, ângulo, ROI elíptica, densidade (HU) com o tecido provável, setas, achados com nome e volume por 3 diâmetros |
+| **MPR e CPR** | Axial, coronal e sagital, slab com MIP/MinIP/média, planos oblíquos e rastreador tubular (apêndice, ureter, colédoco, vasos) |
+| **3D** | Ray casting na GPU com VR, MIP, MinIP e superfície; recorte; iluminação simples, realista ou cinemática |
+| **Comparação** | Lado a lado, sobreposição, cortina e xadrez; alinhamento por referencial, pontos ou automático; variação das medidas em % |
+| **Leitura de TC** | Gás livre, gordura mesentérica, cálculos, fases com e sem contraste (ΔHU, mapa de realce, subtração) e hérnia incisional |
+| **PACS** | C-ECHO, C-FIND, C-GET, C-MOVE com receptor embutido e DICOMweb (QIDO-RS/WADO-RS); fila de downloads e limpeza automática |
+| **Conforto** | Desfazer/refazer, etiquetas do que mudou na imagem, temas, tour de boas-vindas e atalhos (F1) |
 
-Tudo funciona também com mouse sem roda ou sem botão do meio.
+A lista completa, os atalhos e a configuração do PACS estão no [manual](docs/MANUAL.md).
 
-`F1` mostra todos os atalhos.
+## Requisitos
 
-### Configurando um PACS
+| | Mínimo |
+|---|---|
+| **Sistema** | Windows 7 SP1, 8, 8.1, 10 ou 11 (32 ou 64 bits, Intel/AMD ou ARM64) |
+| **Vídeo** | Placa com DirectX 12, Vulkan ou OpenGL 3.3 para o 3D; sem ela, o Slyced usa a renderização por software do Windows ou abre no modo de compatibilidade (2D e MPR) |
+| **Memória** | Usa no máximo metade da memória do computador (ajustável); séries antigas saem da memória e voltam do disco |
+| **Instalação** | Nenhuma: dados em `%LOCALAPPDATA%\Slyced` ou, no modo portátil, ao lado do executável |
 
-1. Clique em **PACS → Adicionar servidor** e informe nome, AE Title, IP e porta.
-   Na pesquisa, filtre por nome, ID, acesso, descrição, período e modalidade; ordene os
-   resultados clicando nos títulos das colunas, veja as séries do estudo selecionado e baixe o
-   estudo inteiro ou só as séries marcadas. Estudos que já estão no computador mostram **Abrir**.
-2. Escolha **C-GET** (recomendado: não abre porta no Windows) ou **C-MOVE**.
-3. Para C-MOVE, cadastre no PACS o AE local (padrão `SLYCED`) com o IP deste
-   computador e a porta do receptor (padrão `11112`, em ⚙ Configurações). O Windows
-   pode pedir liberação do firewall na primeira vez.
-4. Use o ícone de tomada para testar (C-ECHO), pesquise e clique em ⬇ para baixar e abrir.
-
-Se o PACS recusar a busca ("falha no processamento (0xC000)"), o Slyced tenta de novo sozinho
-com uma consulta mais simples (só os campos que todo PACS precisa aceitar). Se ainda assim falhar,
-a mensagem traz a explicação do servidor; filtre por nome, ID ou data e, se continuar, envie o
-`slyced.log` (em `%LOCALAPPDATA%\Slyced`) a quem cuida do PACS. Se o download der erro de C-GET,
-troque para C-MOVE na edição do servidor.
-
-Para **DICOMweb**, escolha o protocolo DICOMweb e informe a URL base (no Orthanc,
-`http://servidor:8042/dicom-web`). Não é preciso abrir porta neste computador. HTTPS
-usa os certificados confiáveis do Windows (inclusive a CA interna do hospital, se
-instalada). Senha ou token ficam gravados em texto no `config.json`.
-
-## Portabilidade
-
-O Slyced não precisa de instalação: basta executar o `Slyced.exe`. O runtime C é
-ligado estaticamente, então não é necessário o Visual C++ Redistributable.
-
-Configurações, servidores PACS, log e exames baixados ficam na pasta do usuário
-do Windows, `%LOCALAPPDATA%\Slyced` (ex.: `C:\Users\maria\AppData\Local\Slyced`):
-cada pessoa que usa o computador tem os seus. Nada é gravado ao lado do executável.
-
-Os exames baixados do PACS ficam em `%LOCALAPPDATA%\Slyced\PACS\` (uma pasta por estudo) e são
-apagados sozinhos depois de 30 dias. Em ⚙ Configurações → Exames baixados dá para escolher 7, 30 ou
-90 dias ou "Nunca", apagar todos ao fechar o Slyced (computadores compartilhados) ou apagar agora.
-Exames abertos de pastas, CDs ou pendrives nunca são apagados.
-
-**Modo portátil** (pendrive): em ⚙ Configurações → Armazenamento, marque "Salvar
-dados junto ao executável" (ou crie um arquivo vazio `Slyced.portable` ao lado do
-`.exe`). A partir da próxima abertura, os dados ficam em `SlycedData\` ao lado do
-executável. Configurações de versões anteriores que ficavam em `SlycedData\` são
-importadas automaticamente para a pasta do usuário.
-
-## Requisitos e solução de problemas
-
-- **Windows 10 ou 11.** Use o pacote **x64** em PCs Intel/AMD (quase todos) e o
-  **ARM64** só em PCs com processador Snapdragon.
-- **Windows 7 SP1** (e 8/8.1): use o pacote **win7-x64** no Windows de 64 bits ou o
-  **win7-x86** no de 32 bits (Painel de Controle → Sistema mostra qual é). Tudo funciona
-  como nas outras versões; o 3D usa OpenGL 3.3 ou Vulkan, porque o DirectX 12 não existe
-  no Windows 7, e com placas antigas sem esses recursos o Slyced abre no modo de
-  compatibilidade (2D e MPR). A versão de 32 bits usa no máximo cerca de 1,4 GB para as
-  séries abertas; exames muito grandes saem e voltam da memória mais vezes. PACS por
-  DICOMweb com HTTPS precisa do TLS 1.2, que chega ao Windows 7 pelas atualizações do
-  Windows Update.
-- **Vídeo:** com DirectX 12, Vulkan ou OpenGL 3.3 tudo funciona, inclusive o 3D. Sem placa de
-  vídeo adequada (máquinas virtuais, acesso remoto), o Slyced usa a renderização por
-  software do Windows (WARP), mais lenta. Se nem isso funcionar, abre em
-  **modo de compatibilidade OpenGL**, com 2D e MPR e sem 3D.
-- **Não abriu?** Execute `Slyced - diagnostico.cmd` (junto do `Slyced.exe`): ele mostra
-  um relatório do Windows e das placas de vídeo e salva `diagnostico.txt` na pasta de
-  dados. O log fica em `%LOCALAPPDATA%\Slyced\slyced.log`. Para forçar o modo OpenGL:
-  `Slyced.exe --opengl`.
-- Se o Slyced fecha sem nenhuma mensagem, provavelmente foi bloqueado pelo antivírus
-  ou pela política de TI do hospital: veja a seção abaixo.
-- **Memória:** as séries abertas usam no máximo o valor de Configurações → Imagens e,
-  em qualquer caso, metade da memória do computador; as usadas há mais tempo saem da
-  memória e voltam do disco quando precisam.
-
-## Antivírus e SmartScreen
-
-O executável foi preparado para não parecer suspeito para heurísticas de antivírus:
-
-- sem compactadores (UPX etc.), sem ofuscação e sem downloads ou execução de código externo;
-- recursos de versão, ícone e manifesto completos (`asInvoker`: nunca pede administrador);
-- nenhuma porta é aberta a menos que o receptor DICOM seja ligado pelo usuário;
-- compilado com o toolchain oficial MSVC.
-
-Os releases assinados usam o certificado da **SignPath Foundation** (veja a política
-abaixo): em Propriedades → Assinaturas Digitais do `Slyced.exe`, o editor aparece como
-"SignPath Foundation". Se a aba Assinaturas Digitais não existir, o executável não está
-assinado (como os compilados por conta própria): executáveis não assinados mostram o aviso
-do SmartScreen ("O Windows protegeu o computador") até ganharem reputação, e alguns
-antivírus corporativos bloqueiam programas desconhecidos por política.
-
-1. Para conferir a assinatura no PowerShell: `Get-AuthenticodeSignature .\Slyced.exe`
-   deve mostrar `Valid` e `CN=SignPath Foundation`.
-2. Em caso de falso positivo, envie o arquivo para análise em
-   <https://www.microsoft.com/wdsi/filesubmission> (e ao fabricante do antivírus usado).
-3. Em ambientes gerenciados, peça ao TI para liberar o editor "SignPath Foundation" ou o
-   hash SHA-256 (`SHA256SUMS.txt` do release).
+Problemas para abrir? Veja [requisitos e solução de problemas](docs/MANUAL.md#requisitos-e-solução-de-problemas).
 
 ## Política de assinatura de código (Code signing policy)
 
@@ -170,9 +123,10 @@ Free code signing provided by [SignPath.io](https://about.signpath.io/), certifi
 [SignPath Foundation](https://signpath.org/).
 
 Os executáveis dos releases são compilados a partir deste repositório pelo GitHub Actions
-(`.github/workflows/release.yml`), em servidores do GitHub, e só são assinados depois que
-um aprovador confere e aprova cada pedido de assinatura no SignPath. Pacotes compilados em
-outros lugares não recebem essa assinatura.
+([`release.yml`](.github/workflows/release.yml)), em servidores do GitHub, e só são assinados
+depois que um aprovador confere e aprova cada pedido de assinatura no SignPath. Pacotes
+compilados em outros lugares não recebem essa assinatura. Enquanto a assinatura não estiver
+ativa, os pacotes saem sem assinatura digital, com o SHA-256 publicado no release.
 
 *Release executables are built from this repository by GitHub Actions on GitHub-hosted
 runners and are signed only after an approver reviews each signing request on SignPath.*
@@ -212,18 +166,18 @@ próprio se `SLYCED_SIGN_CERT`/`SLYCED_SIGN_PASS` ou `SLYCED_SIGN_THUMBPRINT` es
 definidos). Os releases assinados pela SignPath Foundation saem do GitHub Actions ao
 publicar uma tag `vX.Y.Z`: veja [docs/ASSINATURA.md](docs/ASSINATURA.md).
 
-Ferramentas de desenvolvimento:
+<details>
+<summary><b>Ferramentas de desenvolvimento e arquitetura</b></summary>
 
 ```powershell
 cargo run --release --example phantom -- C:\temp\fantoma          # TC sintética de crânio
 cargo run --release --example phantom -- C:\temp\anterior --anterior   # "exame anterior" (comparação)
+cargo run --release --example phantom -- C:\temp\sem --sem-contraste   # fase sem contraste do mesmo exame
 cargo run --release --example test_pacs -- C:\temp\fantoma        # mini-PACS local (AE TESTPACS, porta 4242)
 cargo run --release --example pacs_selftest -- 127.0.0.1 4242 TESTPACS C:\temp\saida
 cargo run --release --example dicomweb_selftest -- http://127.0.0.1:8042/dicom-web C:\temp\saida
-cargo run --release --example phantom -- C:\temp\sem --sem-contraste   # fase sem contraste do mesmo exame
+cargo run --release --example logo -- docs\img\logo.png 256       # logo em PNG
 ```
-
-## Arquitetura
 
 ```
 src/
@@ -242,8 +196,32 @@ Bibliotecas principais: [dicom-rs](https://github.com/Enet4/dicom-rs), [egui/efr
 [wgpu](https://github.com/gfx-rs/wgpu), rayon, glam. Ícones: [Phosphor](https://phosphoricons.com) (MIT).
 Inspiração de interface e fluxos: RadiAnt, Horos, Weasis, OHIF e 3D Slicer (predefinições de VR).
 
+</details>
+
+## Contribuindo
+
+Sugestões e relatos de problemas são bem-vindos nos [issues](https://github.com/crie-studio/slyced/issues/new/choose);
+leia o [guia de contribuição](CONTRIBUTING.md) antes de enviar código. **Nunca publique exames,
+capturas de tela ou logs com dados de pacientes.** Falhas de segurança devem ser relatadas em
+particular, como explica a [política de segurança](SECURITY.md).
+
 ## Licença
 
 O Slyced é distribuído sob a licença **MIT** ou a **Apache 2.0**, à escolha de quem o usa
-(`LICENSE-MIT` e `LICENSE-APACHE`). Os ícones Phosphor têm licença própria (MIT,
-`assets/fonts/LICENSE-Phosphor.txt`), e as bibliotecas usadas mantêm as licenças delas.
+([`LICENSE-MIT`](LICENSE-MIT) e [`LICENSE-APACHE`](LICENSE-APACHE)). Os ícones Phosphor têm
+licença própria (MIT, [`assets/fonts/LICENSE-Phosphor.txt`](assets/fonts/LICENSE-Phosphor.txt)),
+e as bibliotecas usadas mantêm as licenças delas.
+
+Desenvolvido por **Luiz Felipe Pitzer** · <https://lfp.app.br>
+
+---
+
+### English
+
+**Slyced** is a portable DICOM viewer for Windows 7 to 11 (x64, ARM64 and 32-bit): a single
+executable with no installer that opens CT, MR, X-ray and ultrasound studies from folders,
+CDs/DVDs (DICOMDIR), ZIP files and PACS servers (DIMSE C-FIND/C-GET/C-MOVE and DICOMweb). It
+offers 2D reading tools, MPR with oblique planes and curved reformation, GPU volume rendering
+(DirectX 12, Vulkan or OpenGL), side-by-side comparison with prior exams and CT reading aids.
+The interface is in Brazilian Portuguese. Written in Rust and licensed under MIT or Apache 2.0.
+Downloads are on the [releases page](https://github.com/crie-studio/slyced/releases/latest).

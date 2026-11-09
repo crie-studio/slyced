@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Falha de segurança
+    url: https://github.com/crie-studio/slyced/security/advisories/new
+    about: Relate em particular, sem abrir um issue público.
+  - name: Manual do Slyced
+    url: https://github.com/crie-studio/slyced/blob/main/docs/MANUAL.md
+    about: Atalhos, configuração do PACS e solução de problemas.

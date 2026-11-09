@@ -80,7 +80,7 @@ function Build-Target($t, $out) {
             if ($bad) { throw "Slyced.exe ($($t.Name)) importa algo que o Windows 7 não tem: $($bad -join '; ')" }
         }
     }
-    Copy-Item README.md "$out\LEIA-ME.md"
+    Copy-Item docs\MANUAL.md "$out\LEIA-ME.md"
     Copy-Item LICENSE-MIT, LICENSE-APACHE "$out\"
     Copy-Item assets\fonts\LICENSE-Phosphor.txt "$out\"
     Copy-Item "assets\Slyced - diagnostico.cmd" "$out\"

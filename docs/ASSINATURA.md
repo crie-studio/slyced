@@ -84,7 +84,7 @@ No repositório, **Settings → Secrets and variables → Actions**:
 
 ### 5. Lançar uma versão
 
-1. Atualize a versão (`Cargo.toml`, `assets/slyced.manifest`, README e CHANGELOG) e faça o
+1. Atualize a versão (`Cargo.toml`, `assets/slyced.manifest` e CHANGELOG) e faça o
    commit.
 2. Publique a tag com a mesma versão do `Cargo.toml`:
 

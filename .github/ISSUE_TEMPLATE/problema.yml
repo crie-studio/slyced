@@ -1,0 +1,85 @@
+name: Problema
+description: Algo não funciona como deveria (abrir exames, imagens, PACS, 3D…)
+labels: ["problema"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por avisar! **Nunca anexe exames, capturas de tela ou logs com dados de
+        pacientes** (nome, ID, data de nascimento, número de acesso): esta página é pública.
+        Falhas de segurança devem ser relatadas em particular (veja SECURITY.md).
+  - type: input
+    id: versao
+    attributes:
+      label: Versão do Slyced
+      description: "Aparece na tela de abertura e na barra de status (ex.: 1.5.4)."
+      placeholder: "1.5.4"
+    validations:
+      required: true
+  - type: dropdown
+    id: pacote
+    attributes:
+      label: Pacote
+      options:
+        - x64 (Windows 10/11, Intel/AMD)
+        - arm64 (Windows 10/11, Snapdragon)
+        - win7-x64 (Windows 7/8 de 64 bits)
+        - win7-x86 (Windows 7/8 de 32 bits)
+        - Compilado por conta própria
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows e placa de vídeo
+      description: A placa de vídeo aparece na barra de status do Slyced.
+      placeholder: "Windows 11 23H2 · Intel UHD 620 (Dx12)"
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - Abrir exames (pasta, CD, ZIP)
+        - Imagens 2D
+        - MPR / CPR
+        - 3D
+        - Comparação de exames
+        - PACS (DICOM ou DICOMweb)
+        - Instalação, antivírus ou o programa não abre
+        - Outra
+  - type: textarea
+    id: descricao
+    attributes:
+      label: O que aconteceu
+      description: O que você esperava e o que aconteceu. Mensagens de erro ajudam muito.
+    validations:
+      required: true
+  - type: textarea
+    id: passos
+    attributes:
+      label: Como reproduzir
+      placeholder: |
+        1. Abri uma pasta com uma TC de abdome (CD do hospital)
+        2. Cliquei em MPR
+        3. ...
+  - type: input
+    id: pacs
+    attributes:
+      label: Servidor PACS (se for o caso)
+      description: Produto e versão, se souber, e a forma de recuperação.
+      placeholder: "Orthanc 1.12 · C-GET"
+  - type: textarea
+    id: log
+    attributes:
+      label: Trecho do log
+      description: |
+        `%LOCALAPPDATA%\Slyced\slyced.log` (ou o `diagnostico.txt` se o programa não abrir).
+        **Apague nomes, IDs e outros dados de pacientes antes de colar.**
+      render: text
+  - type: checkboxes
+    id: dados
+    attributes:
+      label: Dados de pacientes
+      options:
+        - label: Conferi que nada do que enviei tem dados de pacientes.
+          required: true

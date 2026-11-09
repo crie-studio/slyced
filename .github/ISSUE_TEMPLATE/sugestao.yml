@@ -1,0 +1,25 @@
+name: Sugestão
+description: Uma ferramenta, protocolo ou melhoria que ajudaria na leitura de exames
+labels: ["sugestão"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Conte o problema do dia a dia que a sugestão resolve: isso ajuda mais do que a solução
+        pronta. Não anexe imagens com dados de pacientes.
+  - type: textarea
+    id: problema
+    attributes:
+      label: O que você quer fazer e hoje não consegue (ou é difícil)?
+      placeholder: "Ex.: na TC de tórax, comparar nódulos com o exame anterior leva muitos cliques…"
+    validations:
+      required: true
+  - type: textarea
+    id: ideia
+    attributes:
+      label: Como imagina que funcionaria
+  - type: textarea
+    id: referencia
+    attributes:
+      label: Outros programas que fazem isso
+      description: RadiAnt, Horos, Weasis, OHIF, estações do tomógrafo…
