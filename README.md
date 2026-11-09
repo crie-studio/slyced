@@ -91,7 +91,7 @@ Para conferir o arquivo, compare `Get-FileHash .\Slyced.exe` com o `SHA256SUMS.t
 
 ## Recursos
 
-| | |
+| Área | O que faz |
 |---|---|
 | **Abrir** | Pastas, arquivos, CDs/DVDs com DICOMDIR e ZIP sem descompactar; JPEG (inclusive 12 bits, sem perdas e aritmético), JPEG-LS, JPEG 2000, RLE, multiframe e cor |
 | **2D** | Janela/nível com predefinições, zoom, rotação, mapas de cor, cine, layouts até 3×2, séries sincronizadas por posição e cursor 3D |
@@ -108,7 +108,7 @@ A lista completa, os atalhos e a configuração do PACS estão no [manual](docs/
 
 ## Requisitos
 
-| | Mínimo |
+| Item | Mínimo |
 |---|---|
 | **Sistema** | Windows 7 SP1, 8, 8.1, 10 ou 11 (32 ou 64 bits, Intel/AMD ou ARM64) |
 | **Vídeo** | Placa com DirectX 12, Vulkan ou OpenGL 3.3 para o 3D; sem ela, o Slyced usa a renderização por software do Windows ou abre no modo de compatibilidade (2D e MPR) |
