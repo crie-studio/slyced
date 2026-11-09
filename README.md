@@ -241,3 +241,9 @@ src/
 Bibliotecas principais: [dicom-rs](https://github.com/Enet4/dicom-rs), [egui/eframe](https://github.com/emilk/egui),
 [wgpu](https://github.com/gfx-rs/wgpu), rayon, glam. Ícones: [Phosphor](https://phosphoricons.com) (MIT).
 Inspiração de interface e fluxos: RadiAnt, Horos, Weasis, OHIF e 3D Slicer (predefinições de VR).
+
+## Licença
+
+O Slyced é distribuído sob a licença **MIT** ou a **Apache 2.0**, à escolha de quem o usa
+(`LICENSE-MIT` e `LICENSE-APACHE`). Os ícones Phosphor têm licença própria (MIT,
+`assets/fonts/LICENSE-Phosphor.txt`), e as bibliotecas usadas mantêm as licenças delas.
