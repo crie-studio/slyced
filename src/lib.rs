@@ -1,0 +1,274 @@
+//! Slyced: portable DICOM viewer (library crate; the executable lives in `main.rs`).
+
+pub mod app;
+pub mod bookmarks;
+pub mod config;
+pub mod dicom;
+pub mod gpu_check;
+pub mod imaging;
+pub mod jobs;
+pub mod logo_raster;
+pub mod pacs;
+pub mod phases;
+pub mod platform;
+pub mod protocols;
+pub mod render3d;
+pub mod store;
+pub mod ui;
+
+use app::{Automation, Layout, SlycedApp, Workspace};
+use config::Paths;
+use std::io::Write;
+use std::path::PathBuf;
+use std::sync::{Mutex, OnceLock};
+
+/// Minimal file logger: `slyced.log` in the data folder, rotated at 2 MB.
+struct FileLogger(Mutex<std::fs::File>);
+
+impl log::Log for FileLogger {
+    fn enabled(&self, m: &log::Metadata) -> bool {
+        if m.target().starts_with("slyced") || m.target().starts_with("Slyced") {
+            m.level() <= log::Level::Info
+        } else {
+            m.level() <= log::Level::Warn
+        }
+    }
+
+    fn log(&self, r: &log::Record) {
+        if !self.enabled(r.metadata()) {
+            return;
+        }
+        let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        if let Ok(mut f) = self.0.lock() {
+            let _ = writeln!(f, "{secs} {:5} [{}] {}", r.level(), r.target(), r.args());
+        }
+    }
+
+    fn flush(&self) {
+        if let Ok(mut f) = self.0.lock() {
+            let _ = f.flush();
+        }
+    }
+}
+
+/// How the window is drawn.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Graphics {
+    /// DirectX 12 / Vulkan (or WARP software rendering): everything, including 3D.
+    Gpu,
+    /// OpenGL compatibility mode: 2D and MPR only.
+    OpenGl,
+}
+
+static LOG_PATH: OnceLock<PathBuf> = OnceLock::new();
+
+fn log_path_text() -> String {
+    LOG_PATH.get().map(|p| p.display().to_string()).unwrap_or_else(|| "%LOCALAPPDATA%\\Slyced\\slyced.log".into())
+}
+
+/// eframe's adapter choice, using the same ranking as the startup probe.
+/// `WGPU_BACKEND` still overrides it.
+fn pick_adapter(
+    adapters: &[eframe::wgpu::Adapter],
+    surface: Option<&eframe::wgpu::Surface<'_>>,
+) -> Result<eframe::wgpu::Adapter, String> {
+    adapters
+        .iter()
+        .filter(|a| surface.is_none_or(|s| a.is_surface_supported(s)))
+        .max_by_key(|a| gpu_check::score(&a.get_info()))
+        .cloned()
+        .ok_or_else(|| "nenhuma GPU compatível encontrada".to_string())
+}
+
+fn init_logging(path: &std::path::Path) {
+    if std::fs::metadata(path).map(|m| m.len() > 2 * 1024 * 1024).unwrap_or(false) {
+        let _ = std::fs::rename(path, path.with_extension("old.log"));
+    }
+    if let Ok(f) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+        let logger = Box::leak(Box::new(FileLogger(Mutex::new(f))));
+        let _ = log::set_logger(logger);
+        log::set_max_level(log::LevelFilter::Info);
+    }
+    let _ = LOG_PATH.set(path.to_path_buf());
+    std::panic::set_hook(Box::new(|info| {
+        log::error!("panic: {info}");
+        log::logger().flush();
+        // Worker threads catch their panics (e.g. a corrupt file); only the UI thread is fatal.
+        if std::thread::current().name() == Some("main") {
+            platform::message_box(
+                "Slyced",
+                &format!("O Slyced encontrou um erro e precisa fechar.\n\n{info}\n\nDetalhes no log:\n{}", log_path_text()),
+                true,
+            );
+        }
+    }));
+}
+
+/// `--diagnostico`: system and graphics report, without opening the UI.
+fn diagnostics(paths: &Paths) {
+    let reports = gpu_check::probe(true);
+    let mut lines = vec![
+        format!("Slyced {}", config::APP_VERSION),
+        format!("Sistema: {}", platform::os_description()),
+        format!("Sessão remota (RDP/Citrix): {}", if platform::is_remote_session() { "sim" } else { "não" }),
+        format!("Pasta de dados: {}", paths.root.display()),
+        String::new(),
+        "Placas de vídeo (melhor primeiro):".to_string(),
+    ];
+    if reports.is_empty() {
+        lines.push("  nenhuma encontrada".into());
+    }
+    lines.extend(reports.iter().map(|r| format!("  • {}", r.line())));
+    lines.push(String::new());
+    lines.push(match gpu_check::usable(&reports) {
+        Some(r) => format!("Resultado: o Slyced vai usar {} ({:?}) com 2D, MPR e 3D.", r.info.name, r.info.backend),
+        None => "Resultado: sem DirectX 12/Vulkan utilizável; o Slyced abre em modo OpenGL (2D e MPR, sem 3D).".into(),
+    });
+    let report = lines.join("\n");
+    log::info!("diagnóstico:\n{report}");
+    let file = paths.root.join("diagnostico.txt");
+    let saved = match std::fs::write(&file, &report) {
+        Ok(()) => format!("Relatório salvo em:\n{}", file.display()),
+        Err(e) => format!("Não foi possível salvar o relatório ({e}): a pasta de dados não aceita gravação."),
+    };
+    platform::message_box("Slyced — diagnóstico", &format!("{report}\n\n{saved}\n\n(Ctrl+C copia o texto desta janela.)"), false);
+}
+
+/// Restarts the program in OpenGL mode after the GPU path failed to open a window.
+fn relaunch_with_opengl() -> bool {
+    let Ok(exe) = std::env::current_exe() else { return false };
+    std::process::Command::new(exe).args(std::env::args().skip(1)).arg("--opengl").spawn().is_ok()
+}
+
+/// Runs the viewer; returns when the window is closed.
+pub fn run() {
+    let paths = Paths::resolve();
+    init_logging(&paths.log);
+    log::info!("Slyced {} iniciado · {} · dados em {}", config::APP_VERSION, platform::os_description(), paths.root.display());
+    if platform::is_remote_session() {
+        log::info!("sessão remota (RDP/Citrix) detectada");
+    }
+
+    let mut open = Vec::new();
+    let mut automation =
+        Automation {
+            screenshot: None,
+            workspace: None,
+            layout: None,
+            pacs_query: false,
+            about: false,
+            zoom: None,
+            actions: Vec::new(),
+            requested: false,
+            settle_since: 0.0,
+        };
+    let mut size = [1440.0f32, 900.0];
+    let mut force_opengl = std::env::var_os("SLYCED_OPENGL").is_some();
+    let mut args = std::env::args().skip(1);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--diagnostico" => {
+                diagnostics(&paths);
+                return;
+            }
+            "--opengl" => force_opengl = true,
+            "--screenshot" => automation.screenshot = args.next().map(PathBuf::from),
+            "--pacs" => automation.pacs_query = true,
+            "--about" => automation.about = true,
+            "--zoom" => automation.zoom = args.next().and_then(|z| z.parse().ok()),
+            "--do" => automation.actions.extend(args.next()),
+            "--workspace" => {
+                automation.workspace = match args.next().as_deref() {
+                    Some("mpr") => Some(Workspace::Mpr),
+                    Some("3d") => Some(Workspace::Volume),
+                    Some("compare") | Some("comparar") => Some(Workspace::Compare),
+                    _ => Some(Workspace::Viewer),
+                }
+            }
+            "--layout" => {
+                automation.layout = match args.next().as_deref() {
+                    Some("2") => Some(Layout::Cols2),
+                    Some("4") => Some(Layout::Grid4),
+                    _ => Some(Layout::One),
+                }
+            }
+            "--size" => {
+                if let Some((w, h)) = args.next().and_then(|s| s.split_once('x').map(|(w, h)| (w.parse().ok(), h.parse().ok())))
+                    && let (Some(w), Some(h)) = (w, h) {
+                        size = [w, h];
+                    }
+            }
+            other => open.push(PathBuf::from(other)),
+        }
+    }
+
+    // Decide before any window exists: a broken driver must lead to a fallback, not a crash.
+    let graphics = if force_opengl {
+        log::info!("modo OpenGL solicitado");
+        Graphics::OpenGl
+    } else {
+        let reports = gpu_check::probe(false);
+        for r in &reports {
+            log::info!("GPU: {}", r.line());
+        }
+        match gpu_check::usable(&reports) {
+            Some(r) => {
+                log::info!("renderização: {} ({:?})", r.info.name, r.info.backend);
+                Graphics::Gpu
+            }
+            None => {
+                log::warn!("nenhuma GPU DirectX 12/Vulkan utilizável: modo OpenGL (sem 3D)");
+                Graphics::OpenGl
+            }
+        }
+    };
+
+    let icon = egui::IconData { rgba: logo_raster::render_logo(64), width: 64, height: 64 };
+    let mut wgpu_options = eframe::egui_wgpu::WgpuConfiguration::default();
+    if let eframe::egui_wgpu::WgpuSetup::CreateNew(setup) = &mut wgpu_options.wgpu_setup {
+        if std::env::var_os("WGPU_BACKEND").is_none() {
+            setup.native_adapter_selector = Some(std::sync::Arc::new(pick_adapter));
+        }
+        setup.device_descriptor = std::sync::Arc::new(gpu_check::device_descriptor);
+    }
+    let options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_title(config::WINDOW_TITLE)
+            .with_app_id("slyced-dicom")
+            .with_inner_size(size)
+            .with_min_inner_size([960.0, 600.0])
+            .with_icon(icon)
+            .with_drag_and_drop(true)
+            .with_maximized(automation.screenshot.is_none()),
+        renderer: match graphics {
+            Graphics::Gpu => eframe::Renderer::Wgpu,
+            Graphics::OpenGl => eframe::Renderer::Glow,
+        },
+        wgpu_options,
+        centered: true,
+        ..Default::default()
+    };
+    let result = eframe::run_native(
+        "Slyced",
+        options,
+        Box::new(move |cc| Ok(Box::new(SlycedApp::new(cc, paths, open, automation, graphics)))),
+    );
+    if let Err(e) = result {
+        log::error!("falha ao abrir a janela ({graphics:?}): {e}");
+        log::logger().flush();
+        if graphics == Graphics::Gpu && relaunch_with_opengl() {
+            log::info!("reiniciando em modo OpenGL");
+            return;
+        }
+        platform::message_box(
+            "Slyced",
+            &format!(
+                "Não foi possível abrir a janela do Slyced.\n\nDetalhes: {e}\n\n\
+                 Atualize o driver de vídeo. Para um relatório do sistema, execute \"Slyced - diagnostico.cmd\".\n\n\
+                 Log: {}",
+                log_path_text()
+            ),
+            true,
+        );
+    }
+}

@@ -1,0 +1,76 @@
+[package]
+name = "slyced"
+version = "1.5.4"
+edition = "2024"
+description = "Slyced - visualizador DICOM portátil"
+authors = ["Luiz Felipe Pitzer"]
+homepage = "https://lfp.app.br"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+name = "slyced"
+path = "src/lib.rs"
+
+[[bin]]
+name = "Slyced"
+path = "src/main.rs"
+
+# DirectX 12 (Windows 10/11). The Windows 7 build is made without it (--no-default-features):
+# it links combase.dll, which Windows 7 does not have; there wgpu uses Vulkan or OpenGL.
+[features]
+default = ["dx12"]
+dx12 = ["wgpu/dx12"]
+
+[dependencies]
+anyhow = "1.0.104"
+bytemuck = { version = "1.25.2", features = ["derive"] }
+dicom-core = "0.10.1"
+dicom-dictionary-std = "0.10.1"
+dicom-encoding = "0.10.1"
+dicom-object = "0.10.1"
+dicom-pixeldata = { version = "0.10.1", features = ["image", "openjpeg-sys", "charls"] }
+dicom-transfer-syntax-registry = "0.10.1"
+dicom-ul = "0.10.1"
+libjpeg-turbo-rs = "0.9.0"
+eframe = { version = "0.37.0", default-features = false, features = ["default_fonts", "wgpu_no_default_features", "glow", "clipboard", "links"] }
+egui = "0.37.0"
+egui-wgpu = { version = "0.37.0", default-features = false }
+egui_extras = "0.37.0"
+wgpu = { version = "30.0", default-features = false, features = ["std", "parking_lot", "wgsl", "vulkan", "gles"] }
+glam = "0.34.1"
+half = { version = "2.7.1", features = ["bytemuck"] }
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+log = "0.4.35"
+memchr = "2.8.3"
+pollster = "1.0.1"
+raw-window-handle = "0.6"
+rayon = "1.12.0"
+rfd = "0.17.2"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+ureq = { version = "3.5.0", default-features = false, features = ["native-tls-no-default"] }
+walkdir = "2.5.0"
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Graphics_Dwm", "Win32_System_Registry", "Win32_System_SystemInformation", "Win32_UI_WindowsAndMessaging"] }
+zip = { version = "9.2.0", default-features = false, features = ["deflate-flate2-zlib-rs", "deflate64"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+debug = false
+strip = "symbols"
+
+# Keep debug builds usable for real image sizes.
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 2
+
+[build-dependencies]
+winresource = "0.1.34"
+
+# windows-link with one change for the Windows 7 build only (see vendor/windows-link/src/lib.rs).
+[patch.crates-io]
+windows-link = { path = "vendor/windows-link" }

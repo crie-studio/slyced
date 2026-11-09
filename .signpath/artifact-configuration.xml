@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SignPath artifact configuration for the Slyced release workflow
+  (.github/workflows/release.yml). The workflow uploads a zip with one folder
+  per package, each holding Slyced.exe; SignPath signs the four executables
+  (Authenticode) and the workflow packages the signed ones.
+
+  Paste this into the SignPath project as the artifact configuration "slyced".
+  The version parameter comes from Cargo.toml, so a signed file always carries
+  the product name and version of the release it belongs to.
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <zip-file>
+    <pe-file-set product-name="Slyced DICOM Viewer" product-version="${version}">
+      <include path="x64/Slyced.exe" />
+      <include path="arm64/Slyced.exe" />
+      <include path="win7-x64/Slyced.exe" />
+      <include path="win7-x86/Slyced.exe" />
+      <for-each>
+        <authenticode-sign />
+      </for-each>
+    </pe-file-set>
+  </zip-file>
+</artifact-configuration>

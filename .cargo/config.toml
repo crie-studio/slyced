@@ -1,0 +1,18 @@
+# Statically link the C runtime so Slyced.exe runs on a clean Windows install
+# without the Visual C++ redistributable (true "portable" executable).
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.aarch64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+# C++ dependencies built with CMake must use the static runtime too.
+[env]
+CMAKE_TOOLCHAIN_FILE = { value = "assets/msvc-static-crt.cmake", relative = true }
+
+# Windows 7 builds (tier 3, nightly with -Z build-std; see scripts\build-release.ps1).
+[target.x86_64-win7-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.i686-win7-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

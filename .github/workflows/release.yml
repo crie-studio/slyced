@@ -1,0 +1,138 @@
+# Release builds signed by SignPath Foundation.
+#
+# Pushing a tag "vX.Y.Z" (the version in Cargo.toml) builds the four executables
+# on a GitHub-hosted runner, sends them to SignPath, waits for the signing request
+# to be approved there, packages the signed executables and creates a draft
+# release with the zips. Setup (once): docs/ASSINATURA.md. Until SignPath is set
+# up, it only builds and keeps the unsigned packages as a workflow artifact.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-2022
+    timeout-minutes: 300
+    env:
+      SLYCED_NIGHTLY: ${{ vars.SLYCED_NIGHTLY || 'nightly' }}
+      # Signing starts once the SignPath variables exist (docs/ASSINATURA.md); until
+      # then the workflow only builds and packages, and the packages are not signed.
+      SIGNING: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aviso (SignPath ainda não configurado)
+        if: env.SIGNING != 'true'
+        shell: pwsh
+        run: |
+          Write-Host "::warning::SignPath ainda não configurado (variável SIGNPATH_ORGANIZATION_ID): os pacotes saem sem assinatura e nenhum release é criado."
+
+      - name: Versão
+        id: version
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$v") {
+            throw "A tag $env:GITHUB_REF_NAME não corresponde à versão $v do Cargo.toml"
+          }
+          "value=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Rust (stable e nightly)
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
+          rustup toolchain install $env:SLYCED_NIGHTLY --profile minimal --component rust-src
+
+      - name: Compilar e conferir (x64, ARM64, Windows 7 64 e 32 bits)
+        shell: pwsh
+        run: scripts\build-release.ps1 -NoZip
+
+      - name: Separar os executáveis para assinar
+        if: env.SIGNING == 'true'
+        shell: pwsh
+        run: |
+          foreach ($n in 'x64', 'arm64', 'win7-x64', 'win7-x86') {
+            New-Item -ItemType Directory -Force "unsigned\$n" | Out-Null
+            Copy-Item "dist\Slyced-${{ steps.version.outputs.value }}-$n\Slyced.exe" "unsigned\$n\"
+          }
+
+      - name: Enviar os executáveis sem assinatura
+        if: env.SIGNING == 'true'
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: slyced-${{ steps.version.outputs.value }}-unsigned
+          path: unsigned/
+          if-no-files-found: error
+
+      - name: Assinar no SignPath (aguarda a aprovação)
+        if: env.SIGNING == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'slyced' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG || 'slyced' }}
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 14400
+          output-artifact-directory: signed
+          parameters: |
+            version: "${{ steps.version.outputs.value }}"
+
+      - name: Conferir as assinaturas
+        if: env.SIGNING == 'true'
+        shell: pwsh
+        run: |
+          foreach ($n in 'x64', 'arm64', 'win7-x64', 'win7-x86') {
+            $s = Get-AuthenticodeSignature "signed\$n\Slyced.exe"
+            if ($s.Status -ne 'Valid') { throw "${n}: assinatura $($s.Status) - $($s.StatusMessage)" }
+            Write-Host "${n}: $($s.SignerCertificate.Subject)"
+            Copy-Item "signed\$n\Slyced.exe" "dist\Slyced-${{ steps.version.outputs.value }}-$n\Slyced.exe" -Force
+          }
+
+      - name: Empacotar
+        shell: pwsh
+        run: scripts\build-release.ps1 -ZipOnly
+
+      - name: Pacotes como artefato (sem release)
+        if: github.ref_type != 'tag' || env.SIGNING != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: slyced-${{ steps.version.outputs.value }}-${{ env.SIGNING == 'true' && 'assinado' || 'sem-assinatura' }}
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - name: Rascunho do release
+        if: github.ref_type == 'tag' && env.SIGNING == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = '${{ steps.version.outputs.value }}'
+          $repo = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY"
+          $notes = @"
+          Slyced $v - visualizador DICOM portátil. Veja o que mudou no [CHANGELOG]($($repo)/blob/$($env:GITHUB_REF_NAME)/CHANGELOG.md).
+
+          | Pacote | Para |
+          |---|---|
+          | Slyced-$v-x64.zip | Windows 10/11 (Intel/AMD) |
+          | Slyced-$v-arm64.zip | Windows 10/11 com processador Snapdragon |
+          | Slyced-$v-win7-x64.zip | Windows 7/8/8.1 de 64 bits |
+          | Slyced-$v-win7-x86.zip | Windows 7/8/8.1 de 32 bits |
+
+          Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org). Veja a [política de assinatura de código]($($repo)#política-de-assinatura-de-código-code-signing-policy).
+          "@
+          $notes | Set-Content notes.md -Encoding utf8
+          gh release create $env:GITHUB_REF_NAME dist\*.zip dist\SHA256SUMS.txt --draft --title "Slyced $v" --notes-file notes.md
