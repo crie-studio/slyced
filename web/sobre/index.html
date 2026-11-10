@@ -9,13 +9,9 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Slyced · visualizador DICOM portátil">
 <meta property="og:description" content="TC, RM, RX e US em 2D, MPR e 3D. Sem instalar nada: um único executável para Windows, ou direto no navegador.">
-<meta property="og:image" content="https://crie-studio.github.io/slyced/img/social-preview.png">
+<meta property="og:image" content="https://crie-studio.github.io/slyced/sobre/img/social-preview.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/png" href="favicon.png">
-<script>
-  // Old links to the viewer (…/slyced/?exemplo) now point here: send them on to the app.
-  if (new URLSearchParams(location.search).has('exemplo')) location.replace('app/' + location.search + location.hash);
-</script>
+<link rel="icon" type="image/png" href="../favicon.png">
 <style>
 :root {
   color-scheme: dark;
@@ -357,7 +353,7 @@ dialog.lb figcaption { color: var(--muted); text-align: center; margin-top: 12px
 
 <header class="nav" id="nav">
   <div class="nav-in">
-    <a class="brand" href="#inicio"><img src="favicon.png" alt="" width="30" height="30">Slyced</a>
+    <a class="brand" href="#inicio"><img src="../favicon.png" alt="" width="30" height="30">Slyced</a>
     <ul class="nav-links">
       <li><a href="#volume">Como funciona</a></li>
       <li><a href="#mpr">MPR</a></li>
@@ -386,11 +382,11 @@ dialog.lb figcaption { color: var(--muted); text-align: center; margin-top: 12px
         <a class="btn primary magnetic" href="https://github.com/crie-studio/slyced/releases/latest">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg>
           Baixar para Windows</a>
-        <a class="btn magnetic" href="app/">
+        <a class="btn magnetic" href="../">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg>
           Abrir no navegador</a>
       </div>
-      <p class="cta-sub">Sem exame à mão? <a href="app/?exemplo">Veja com um exame sintético →</a></p>
+      <p class="cta-sub">Sem exame à mão? <a href="../?exemplo">Veja com um exame sintético →</a></p>
       <div class="chips"><span class="chip">Windows 7 · 8 · 10 · 11</span><span class="chip">x64 · ARM64 · 32 bits</span><span class="chip">WebGPU · WebGL2</span><span class="chip">MIT ou Apache 2.0</span></div>
     </div>
     <div class="hero-visual" id="heroVisual">
@@ -616,7 +612,7 @@ dialog.lb figcaption { color: var(--muted); text-align: center; margin-top: 12px
       <a class="pkg reveal" style="--i:1" href="https://github.com/crie-studio/slyced/releases/latest"><span class="arch">ARM64</span><span class="for">Windows 10 e 11 com processador Snapdragon</span><span class="file">Slyced-‹versão›-arm64.zip</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
       <a class="pkg reveal" style="--i:2" href="https://github.com/crie-studio/slyced/releases/latest"><span class="arch">Win 7 · 64</span><span class="for">Windows 7 SP1, 8 e 8.1 de 64 bits</span><span class="file">Slyced-‹versão›-win7-x64.zip</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
       <a class="pkg reveal" style="--i:3" href="https://github.com/crie-studio/slyced/releases/latest"><span class="arch">Win 7 · 32</span><span class="for">Windows 7 SP1, 8 e 8.1 de 32 bits</span><span class="file">Slyced-‹versão›-win7-x86.zip</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
-      <a class="pkg web reveal" style="--i:4" href="app/"><span class="arch">Navegador</span><span class="for">Versão web experimental: sem PACS por enquanto</span><span class="file">crie-studio.github.io/slyced/app</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+      <a class="pkg web reveal" style="--i:4" href="../"><span class="arch">Navegador</span><span class="for">Versão web experimental: sem PACS por enquanto</span><span class="file">crie-studio.github.io/slyced</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
     </div>
     <p class="note reveal">Os pacotes ainda não têm assinatura digital: se o Windows mostrar “O Windows protegeu o computador”, clique em <b>Mais informações → Executar assim mesmo</b>. Confira o arquivo com o <code>SHA256SUMS.txt</code> do release. Detalhes no <a href="https://github.com/crie-studio/slyced/blob/main/docs/MANUAL.md">manual</a>.</p>
   </div>

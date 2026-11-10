@@ -1,6 +1,6 @@
-# Project page and web version (experimental) on GitHub Pages:
-#   https://crie-studio.github.io/slyced/      project page (site/index.html)
-#   https://crie-studio.github.io/slyced/app/  the viewer, ?exemplo opens the synthetic sample exam
+# Web version (experimental) and project page on GitHub Pages:
+#   https://crie-studio.github.io/slyced/        the viewer, ?exemplo opens the synthetic sample exam
+#   https://crie-studio.github.io/slyced/sobre/  project page (web/sobre/index.html)
 #
 # Every push to main that changes either one rebuilds the WebAssembly module
 # (scripts/build-web.ps1) and publishes web/dist. Both pages are static: exams are
@@ -13,7 +13,6 @@ on:
     paths:
       - 'src/**'
       - 'web/**'
-      - 'site/**'
       - 'assets/**'
       - 'docs/img/**'
       - 'examples/phantom.rs'
@@ -79,9 +78,9 @@ jobs:
           rayon = "1.12.0"
           EOF
           cargo run --release --quiet --manifest-path "$p/Cargo.toml" -- "$p/saida"
-          mkdir -p web/dist/app/exemplo
-          (cd "$p/saida" && zip -q -r "$GITHUB_WORKSPACE/web/dist/app/exemplo/fantoma.zip" .)
-          ls -la web/dist web/dist/img web/dist/app web/dist/app/pkg web/dist/app/exemplo
+          mkdir -p web/dist/exemplo
+          (cd "$p/saida" && zip -q -r "$GITHUB_WORKSPACE/web/dist/exemplo/fantoma.zip" .)
+          ls -la web/dist web/dist/pkg web/dist/exemplo web/dist/sobre web/dist/sobre/img web/dist/app
 
       - uses: actions/upload-pages-artifact@v3
         with:

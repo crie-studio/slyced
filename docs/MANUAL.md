@@ -184,8 +184,8 @@ Este programa não transfere nenhuma informação para outros sistemas em rede, 
 quando solicitado pelo usuário ou por quem o instala ou opera. Na prática: o Slyced só se
 conecta aos servidores PACS (DICOM ou DICOMweb) que o próprio usuário cadastra, e só
 quando ele busca ou baixa exames; a porta do receptor DICOM só é aberta se o
-usuário ligar o receptor; o site do autor só é aberto no navegador quando o usuário clica
-no link. Não há telemetria, estatísticas de uso nem verificação automática de atualizações.
+usuário ligar o receptor; o site do autor e a página do projeto só são abertos no navegador
+quando o usuário clica nos links. Não há telemetria, estatísticas de uso nem verificação automática de atualizações.
 
 ## Licença
 

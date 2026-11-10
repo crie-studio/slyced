@@ -491,6 +491,12 @@ impl SlycedApp {
                 super::credit::author_card(ui);
                 ui.add_space(12.0);
                 ui.vertical_centered(|ui| {
+                    let page = crate::config::PROJECT_PAGE;
+                    let text = format!("{}  Conheça o Slyced: página do projeto  {}", icons::GLOBE, icons::ARROW_UP_RIGHT);
+                    if ui.link(RichText::new(text).size(12.5)).on_hover_text(page).clicked() {
+                        ui.ctx().open_url(egui::OpenUrl::new_tab(page));
+                    }
+                    ui.add_space(8.0);
                     ui.label(
                         RichText::new("Feito com dicom-rs, egui, wgpu e Phosphor Icons (licenças MIT/Apache-2.0).")
                             .size(11.5)
