@@ -78,11 +78,13 @@ debug = false
 strip = "symbols"
 
 # Keep debug builds usable for real image sizes.
-# Web version: thin LTO keeps rebuilds quick.
+# Web version: thin LTO keeps rebuilds quick. Only debug info is stripped:
+# wasm-bindgen reads the target-features section and removes the names itself.
 [profile.web]
 inherits = "release"
 lto = "thin"
 codegen-units = 16
+strip = "debuginfo"
 
 [profile.dev]
 opt-level = 1

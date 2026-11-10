@@ -1,0 +1,96 @@
+# Web version (experimental) on GitHub Pages: https://crie-studio.github.io/slyced/
+#
+# Every push to main that changes the viewer rebuilds the WebAssembly module
+# (scripts/build-web.ps1) and publishes web/dist with the synthetic sample exam
+# (?exemplo). The page is static: exams are opened in the visitor's browser and
+# never uploaded anywhere.
+name: Versão web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'web/**'
+      - 'assets/**'
+      - 'docs/img/logo.png'
+      - 'examples/phantom.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.cargo/**'
+      - 'scripts/build-web.ps1'
+      - '.github/workflows/web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust (WebAssembly)
+        run: |
+          rustup update stable --no-self-update
+          rustup default stable
+          rustup target add wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: wasm-bindgen (versão do Cargo.lock)
+        run: |
+          v=$(grep -A1 '^name = "wasm-bindgen"$' Cargo.lock | sed -n 's/^version = "\(.*\)"$/\1/p')
+          if [ "$(wasm-bindgen --version 2>/dev/null)" != "wasm-bindgen $v" ]; then
+            cargo install wasm-bindgen-cli --version "$v" --locked --force
+          fi
+
+      - name: Compilar
+        shell: pwsh
+        run: ./scripts/build-web.ps1
+
+      # The phantom only needs dicom-rs and rayon: a throwaway package builds it
+      # here without the viewer's desktop dependencies.
+      - name: Exame de exemplo (fantoma sintético)
+        run: |
+          p="$RUNNER_TEMP/fantoma"
+          mkdir -p "$p/src"
+          cp examples/phantom.rs "$p/src/main.rs"
+          cat > "$p/Cargo.toml" <<'EOF'
+          [package]
+          name = "fantoma"
+          version = "0.0.0"
+          edition = "2024"
+
+          [dependencies]
+          dicom-core = "0.10.1"
+          dicom-dictionary-std = "0.10.1"
+          dicom-object = "0.10.1"
+          rayon = "1.12.0"
+          EOF
+          cargo run --release --quiet --manifest-path "$p/Cargo.toml" -- "$p/saida"
+          mkdir -p web/dist/exemplo
+          (cd "$p/saida" && zip -q -r "$GITHUB_WORKSPACE/web/dist/exemplo/fantoma.zip" .)
+          ls -la web/dist web/dist/pkg web/dist/exemplo
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

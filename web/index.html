@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Slyced</title>
+<meta name="description" content="Slyced: visualizador DICOM (TC, RM, RX) no navegador, com 2D, MPR e 3D. Os exames são abertos no próprio computador e não são enviados a nenhum servidor.">
+<link rel="icon" type="image/png" href="favicon.png">
+<title>Slyced · visualizador DICOM</title>
 <style>
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #101216; color: #d8dde6;
     font: 15px "Segoe UI", system-ui, sans-serif; }
@@ -18,7 +20,12 @@
 </head>
 <body>
 <canvas id="slyced"></canvas>
-<div id="status"><div>Carregando o Slyced…</div><small>Os exames abertos aqui não saem deste computador.</small></div>
+<div id="status">
+  <div>Carregando o Slyced…</div>
+  <small>Os exames abertos aqui não saem deste computador.</small>
+  <small>Versão experimental. Sem certificação como dispositivo médico: não utilize como única base para diagnóstico.</small>
+  <noscript><div>O Slyced precisa de JavaScript e WebAssembly.</div></noscript>
+</div>
 <div id="leitura"></div>
 <script type="module">
 import init, * as wasm from './pkg/slyced.js';
@@ -77,11 +84,11 @@ addEventListener('drop', async e => {
   await entregar(itens);
 }, true);
 
-// ?exemplo=exemplo/fantoma.zip opens a sample exam from this same site.
+// ?exemplo opens the synthetic sample exam (or ?exemplo=<file> from this same site).
 async function abrirExemplo() {
-  const nome = new URLSearchParams(location.search).get('exemplo');
-  if (!nome) return;
-  const url = new URL(nome, location.href);
+  const parametros = new URLSearchParams(location.search);
+  if (!parametros.has('exemplo')) return;
+  const url = new URL(parametros.get('exemplo') || 'exemplo/fantoma.zip', location.href);
   if (url.origin !== location.origin) return;
   aviso('Baixando o exame de exemplo…');
   const resposta = await fetch(url);
