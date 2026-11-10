@@ -3,6 +3,15 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 numeração em [versionamento semântico](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+### Adicionado
+- **Versão web (experimental)** em <https://crie-studio.github.io/slyced/>: o mesmo
+  visualizador no navegador, com 2D, MPR e 3D. Abre pastas, arquivos e ZIP escolhidos ou
+  arrastados para a página, sem enviá-los a nenhum servidor; `?exemplo` abre um exame
+  sintético. Ainda sem PACS e sem JPEG-LS, com a carga em um único núcleo e sem guardar as
+  configurações. Publicada pelo GitHub Pages a cada atualização da `main`.
+
 ## [1.5.4] - 2026-11-09
 
 ### Removido
