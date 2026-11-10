@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slyced</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #101216; color: #d8dde6;
+    font: 15px "Segoe UI", system-ui, sans-serif; }
+  canvas#slyced { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+  #status { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; padding: 16px; text-align: center; pointer-events: none; }
+  #status.erro div { color: #ff8a80; }
+  #status small { color: #8a93a3; }
+  #leitura { position: absolute; left: 50%; bottom: 32px; transform: translateX(-50%); display: none; padding: 10px 16px;
+    background: rgba(16, 18, 22, .94); border: 1px solid #2a2f38; border-radius: 8px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="slyced"></canvas>
+<div id="status"><div>Carregando o Slyced…</div><small>Os exames abertos aqui não saem deste computador.</small></div>
+<div id="leitura"></div>
+<script type="module">
+import init, * as wasm from './pkg/slyced.js';
+
+const status = document.getElementById('status');
+const leitura = document.getElementById('leitura');
+const aviso = texto => { leitura.textContent = texto; leitura.style.display = texto ? 'block' : 'none'; };
+
+// Hands a batch of { path, file } to the viewer, which scans and opens it.
+async function entregar(itens) {
+  if (!itens.length) return aviso('');
+  const pasta = wasm.slyced_begin();
+  let n = 0;
+  for (const { path, file } of itens) {
+    aviso(`Lendo arquivos: ${++n} de ${itens.length}`);
+    wasm.slyced_add_file(pasta, path, new Uint8Array(await file.arrayBuffer()));
+  }
+  aviso('');
+  wasm.slyced_open(pasta);
+}
+
+function escolher(pasta) {
+  const input = Object.assign(document.createElement('input'), { type: 'file', multiple: true, webkitdirectory: pasta });
+  input.onchange = () => entregar([...input.files].map(file => ({ path: file.webkitRelativePath || file.name, file })));
+  input.click();
+}
+
+function baixar(nome, dados) {
+  const url = URL.createObjectURL(new Blob([dados.slice()], { type: 'image/png' }));
+  Object.assign(document.createElement('a'), { href: url, download: nome }).click();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+// Dropped folders are walked here: the canvas alone would only see loose files.
+async function lerEntrada(entrada, itens) {
+  if (entrada.isFile) {
+    const file = await new Promise((ok, erro) => entrada.file(ok, erro));
+    itens.push({ path: entrada.fullPath.replace(/^\//, ''), file });
+  } else if (entrada.isDirectory) {
+    const leitor = entrada.createReader();
+    for (;;) {
+      const lote = await new Promise((ok, erro) => leitor.readEntries(ok, erro));
+      if (!lote.length) break;
+      for (const e of lote) await lerEntrada(e, itens);
+    }
+  }
+}
+addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); }, true);
+addEventListener('drop', async e => {
+  e.preventDefault();
+  e.stopPropagation();
+  const entradas = [...e.dataTransfer.items].map(i => i.webkitGetAsEntry?.()).filter(Boolean);
+  const itens = [];
+  aviso('Procurando arquivos…');
+  for (const entrada of entradas) await lerEntrada(entrada, itens);
+  await entregar(itens);
+}, true);
+
+// ?exemplo=exemplo/fantoma.zip opens a sample exam from this same site.
+async function abrirExemplo() {
+  const nome = new URLSearchParams(location.search).get('exemplo');
+  if (!nome) return;
+  const url = new URL(nome, location.href);
+  if (url.origin !== location.origin) return;
+  aviso('Baixando o exame de exemplo…');
+  const resposta = await fetch(url);
+  if (!resposta.ok) return aviso('');
+  await entregar([{ path: url.pathname.split('/').pop(), file: await resposta.blob() }]);
+}
+
+window.slyced = {
+  pick: escolher,
+  download: baixar,
+  failed: mensagem => { status.classList.add('erro'); status.firstElementChild.textContent = mensagem; },
+  started: () => { status.remove(); abrirExemplo(); },
+};
+try {
+  await init();
+} catch (e) {
+  slyced.failed('Este navegador não conseguiu carregar o Slyced: ' + e);
+}
+</script>
+</body>
+</html>

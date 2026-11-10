@@ -3,15 +3,17 @@
 //! A ZIP entry is addressed by a virtual path such as
 //! `C:\exames\estudo.zip|DICOM/0001/IM1`: `|` cannot appear in Windows file
 //! names, so the first one always separates the archive from the entry name.
-//! Nothing is ever extracted to disk.
+//! Nothing is ever extracted to disk. Files opened in the web version live in
+//! memory under virtual paths (see [`super::memfs`]) and are read the same way.
 
+use super::memfs;
 use anyhow::{bail, Context as _, Result};
 use dicom_dictionary_std::tags;
 use dicom_object::file::ReadPreamble;
 use dicom_object::{DefaultDicomObject, OpenFileOptions};
 use std::ffi::OsString;
 use std::fs::File;
-use std::io::{BufReader, Cursor, Read};
+use std::io::{BufReader, Cursor, Read, Seek};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
@@ -49,15 +51,24 @@ struct CachedIndex {
 static INDEXES: Mutex<Vec<CachedIndex>> = Mutex::new(Vec::new());
 
 fn stamp(path: &Path) -> Result<(u64, Option<SystemTime>)> {
+    if let Some(bytes) = memfs::get(path) {
+        return Ok((bytes.len() as u64, None));
+    }
     let m = std::fs::metadata(path).with_context(|| format!("abrindo {}", path.display()))?;
     Ok((m.len(), m.modified().ok()))
 }
 
+trait ReadSeek: Read + Seek + Send {}
+impl<T: Read + Seek + Send> ReadSeek for T {}
+
 /// Opens the archive with a fresh file handle (closed when the result is dropped,
 /// so the ZIP is never kept locked), reusing the cached central directory.
-fn open_archive(path: &Path) -> Result<ZipArchive<BufReader<File>>> {
+fn open_archive(path: &Path) -> Result<ZipArchive<Box<dyn ReadSeek>>> {
     let st = stamp(path)?;
-    let file = BufReader::new(File::open(path).with_context(|| format!("abrindo {}", path.display()))?);
+    let file: Box<dyn ReadSeek> = match memfs::get(path) {
+        Some(bytes) => Box::new(Cursor::new(bytes)),
+        None => Box::new(BufReader::new(File::open(path).with_context(|| format!("abrindo {}", path.display()))?)),
+    };
     let cached = INDEXES
         .lock()
         .ok()
@@ -117,6 +128,19 @@ pub fn open_dicom(path: &Path, header_only: bool) -> Result<DefaultDicomObject> 
         opts = opts.read_until(tags::PIXEL_DATA);
     }
     let Some((zip_path, name)) = split_entry(path) else {
+        if let Some(bytes) = memfs::get(path) {
+            let start = if bytes.len() >= 132 && &bytes[128..132] == b"DICM" {
+                128
+            } else if plausible_raw_dataset(&bytes) {
+                0
+            } else {
+                bail!("{} não é um arquivo DICOM", path.display());
+            };
+            return opts
+                .read_preamble(ReadPreamble::Never)
+                .from_reader(&bytes[start..])
+                .with_context(|| format!("lendo {}", path.display()));
+        }
         return opts.open_file(path).with_context(|| format!("abrindo {}", path.display()));
     };
     let mut archive = open_archive(&zip_path)?;

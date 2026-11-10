@@ -16,3 +16,10 @@ rustflags = ["-C", "target-feature=+crt-static"]
 
 [target.i686-win7-windows-msvc]
 rustflags = ["-C", "target-feature=+crt-static"]
+
+# Web version (scripts\build-web.ps1). openjp2 (JPEG 2000) calls malloc, calloc,
+# realloc and free, which the browser target does not have; Slyced provides them
+# (src/web.rs). openjp2 also builds its own .wasm, unused, which would not link
+# without this.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "link-arg=--allow-undefined"]

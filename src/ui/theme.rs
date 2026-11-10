@@ -199,6 +199,11 @@ pub fn install(ctx: &egui::Context) {
         fonts.families.entry(FontFamily::Monospace).or_default().insert(0, "consolas".into());
     }
     let defaults = fonts.families.get(&FontFamily::Proportional).cloned().unwrap_or_default();
+    if prop.is_empty() {
+        // No Segoe UI (web version): egui's own text font must still come before
+        // the icons, whose font has blank glyphs for the lowercase letters.
+        prop.extend(defaults.first().cloned());
+    }
     prop.push("phosphor".into());
     prop.extend(defaults.iter().cloned());
     if bold.is_empty() {

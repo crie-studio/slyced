@@ -160,7 +160,7 @@ impl PacsUi {
 
 /// Civil date `days` before today as `AAAAMMDD` (UTC based, adequate for date filters).
 fn date_days_ago(days: i64) -> String {
-    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0);
+    let secs = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0);
     let z = secs / 86_400 - days + 719_468;
     let era = z.div_euclid(146_097);
     let doe = z.rem_euclid(146_097);

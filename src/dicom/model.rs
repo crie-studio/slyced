@@ -248,7 +248,7 @@ fn days_between(raw: &str, today: i64) -> Option<i64> {
 
 /// "hoje", "ontem", "há 3 dias", "há 2 meses", "há 1 ano"…
 pub fn relative_date(raw: &str) -> String {
-    let today = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs() as i64 / 86_400).unwrap_or(0);
+    let today = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map(|d| d.as_secs() as i64 / 86_400).unwrap_or(0);
     relative_to(raw, today)
 }
 

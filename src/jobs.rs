@@ -64,7 +64,18 @@ impl Jobs {
     fn spawn(&self, name: &str, f: impl FnOnce(Sender<Msg>) + Send + 'static) {
         let tx = self.tx.clone();
         let ctx = self.ctx.clone();
+        // The browser has no threads here: the job runs once the current frame is on screen.
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = name;
+            crate::web::defer(move || {
+                f(tx);
+                ctx.request_repaint();
+            });
+        }
+        #[cfg(not(target_arch = "wasm32"))]
         let name = name.to_string();
+        #[cfg(not(target_arch = "wasm32"))]
         let _ = std::thread::Builder::new().name(name.clone()).spawn(move || {
             if std::panic::catch_unwind(AssertUnwindSafe(|| f(tx))).is_err() {
                 log::error!("tarefa '{name}' falhou (panic)");
@@ -75,6 +86,9 @@ impl Jobs {
 
     /// Removes downloaded exams older than `days` (all when `None`), except `keep`, and measures what is left.
     pub fn clean_store(&self, root: PathBuf, days: Option<u32>, keep: std::collections::HashSet<String>) {
+        if cfg!(target_arch = "wasm32") {
+            return; // no downloaded exams in the web version
+        }
         self.spawn("store", move |tx| {
             let removed = crate::store::clean(&root, days.map(|d| Duration::from_secs(d as u64 * 86_400)), &keep);
             let left = crate::store::usage(&root);
@@ -84,6 +98,9 @@ impl Jobs {
 
     /// Measures the downloaded exams without removing any.
     pub fn measure_store(&self, root: PathBuf) {
+        if cfg!(target_arch = "wasm32") {
+            return;
+        }
         self.spawn("store", move |tx| {
             let left = crate::store::usage(&root);
             let _ = tx.send(Msg::StoreCleaned { removed: Default::default(), left, days: None });
@@ -94,7 +111,7 @@ impl Jobs {
     pub fn find_calculi(&self, series: Arc<LoadedSeries>, threshold: f32) {
         self.spawn("calculi", move |tx| {
             let Some(vol) = series.volume.clone() else { return };
-            let t = std::time::Instant::now();
+            let t = web_time::Instant::now();
             let items = crate::imaging::calculi::find(&vol, threshold, 6000.0);
             log::info!("busca de cálculos: {} foco(s) em {:.1} s", items.len(), t.elapsed().as_secs_f32());
             let _ = tx.send(Msg::Calculi { series, threshold, items });
@@ -104,7 +121,7 @@ impl Jobs {
     /// Automatic alignment of exam B to exam A (comparison).
     pub fn register(&self, fixed: Arc<Volume>, moving: Arc<Volume>, init: crate::imaging::register::Rigid, version: u64, cancel: Arc<AtomicBool>) {
         self.spawn("register", move |tx| {
-            let t = std::time::Instant::now();
+            let t = web_time::Instant::now();
             let result = crate::imaging::register::auto_register(&fixed, &moving, init, &cancel);
             if cancel.load(Ordering::Relaxed) {
                 return;

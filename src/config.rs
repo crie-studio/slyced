@@ -33,6 +33,13 @@ pub struct Paths {
 }
 
 impl Paths {
+    /// The web version has no disk: nothing is written, settings last for the session.
+    #[cfg(target_arch = "wasm32")]
+    pub fn resolve() -> Self {
+        Self::resolve_in(Path::new("/"), PathBuf::from("/slyced"))
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn resolve() -> Self {
         let exe_dir = std::env::current_exe()
             .ok()
@@ -108,6 +115,7 @@ impl Paths {
 
 /// Brings the data of the program's former name (Lumen) to Slyced: the user
 /// folder and, in portable mode, the marker and data folder beside the executable.
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 fn adopt_old_data(exe_dir: &Path, old_user: &Path, new_user: &Path) -> Option<String> {
     let mut adopted = false;
     let (old_marker, new_marker) = (exe_dir.join(format!("{OLD_NAME}.portable")), exe_dir.join(PORTABLE_MARKER));
@@ -134,6 +142,7 @@ fn adopt_old_data(exe_dir: &Path, old_user: &Path, new_user: &Path) -> Option<St
 
 /// `%LOCALAPPDATA%\Slyced`: per user and not roaming, so large PACS downloads
 /// stay on this computer.
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 fn user_data_dir() -> PathBuf {
     std::env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)

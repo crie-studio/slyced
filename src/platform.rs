@@ -13,7 +13,10 @@ pub fn message_box(title: &str, text: &str, error: bool) {
         }
     }
     #[cfg(not(windows))]
-    eprintln!("{title}: {text}");
+    {
+        let _ = error;
+        eprintln!("{title}: {text}");
+    }
 }
 
 /// e.g. "Windows 11 Pro 24H2 (build 26200) · x64".
@@ -70,7 +73,7 @@ pub fn local_date() -> (u16, u16, u16) {
     #[cfg(not(windows))]
     {
         // Days since 1970 in UTC, to civil date (Howard Hinnant).
-        let days = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs() as i64 / 86_400).unwrap_or(0);
+        let days = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map(|d| d.as_secs() as i64 / 86_400).unwrap_or(0);
         let z = days + 719_468;
         let era = z.div_euclid(146_097);
         let doe = z - era * 146_097;

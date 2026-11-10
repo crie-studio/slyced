@@ -98,6 +98,7 @@ pub enum ToastKind {
 }
 
 /// Automation for documentation/testing: `--screenshot out.png`.
+#[derive(Default)]
 pub struct Automation {
     pub screenshot: Option<PathBuf>,
     pub workspace: Option<Workspace>,
@@ -273,7 +274,15 @@ impl SlycedApp {
             }));
             let scope = rs.device.push_error_scope(wgpu::ErrorFilter::Validation);
             let renderer = VolumeRenderer::new(&rs.device, rs.target_format);
-            match pollster::block_on(scope.pop()) {
+            #[cfg(not(target_arch = "wasm32"))]
+            let refused = pollster::block_on(scope.pop());
+            // The browser cannot block: WebGL answers at once; WebGPU errors still reach the handler above.
+            #[cfg(target_arch = "wasm32")]
+            let refused = match std::pin::pin!(scope.pop()).poll(&mut std::task::Context::from_waker(std::task::Waker::noop())) {
+                std::task::Poll::Ready(r) => r,
+                std::task::Poll::Pending => None,
+            };
+            match refused {
                 None => {
                     rs.renderer.write().callback_resources.insert(renderer);
                 }
@@ -423,7 +432,8 @@ impl SlycedApp {
         if let Some(notice) = renamed {
             app.toast(ToastKind::Info, notice);
         }
-        if app.settings.scp_autostart {
+        // A web page cannot listen for incoming connections.
+        if app.settings.scp_autostart && !cfg!(target_arch = "wasm32") {
             app.start_scp();
         }
         if !open.is_empty() {
@@ -469,12 +479,18 @@ impl SlycedApp {
     }
 
     pub fn open_folder_dialog(&mut self) {
+        #[cfg(target_arch = "wasm32")]
+        crate::web::pick(true);
+        #[cfg(not(target_arch = "wasm32"))]
         if let Some(dir) = rfd::FileDialog::new().set_title("Abrir pasta DICOM").pick_folder() {
             self.open_paths(vec![dir], true);
         }
     }
 
     pub fn open_files_dialog(&mut self) {
+        #[cfg(target_arch = "wasm32")]
+        crate::web::pick(false);
+        #[cfg(not(target_arch = "wasm32"))]
         if let Some(files) = rfd::FileDialog::new().set_title("Abrir arquivos DICOM").pick_files() {
             self.open_paths(files, true);
         }
@@ -817,6 +833,15 @@ impl SlycedApp {
             return;
         }
         let default = format!("slyced-{}.png", chrono_like_stamp());
+        #[cfg(target_arch = "wasm32")]
+        {
+            let mut png = std::io::Cursor::new(Vec::new());
+            match buf.write_to(&mut png, image::ImageFormat::Png) {
+                Ok(()) => crate::web::download(&default, png.get_ref()),
+                Err(e) => self.toast(ToastKind::Error, format!("Falha ao salvar: {e}")),
+            }
+        }
+        #[cfg(not(target_arch = "wasm32"))]
         if let Some(path) = rfd::FileDialog::new().set_title("Salvar imagem").set_file_name(&default).add_filter("PNG", &["png"]).save_file() {
             match buf.save(&path) {
                 Ok(()) => self.toast(ToastKind::Success, format!("Imagem salva em {}", path.display())),
@@ -1982,7 +2007,7 @@ impl SlycedApp {
 static EXPORT_SLOT: std::sync::Mutex<Option<Arc<egui::ColorImage>>> = std::sync::Mutex::new(None);
 
 fn chrono_like_stamp() -> String {
-    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    let secs = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
     secs.to_string()
 }
 
@@ -2018,6 +2043,8 @@ impl eframe::App for SlycedApp {
             ctx.set_zoom_factor(look.1);
             #[cfg(windows)]
             theme::style_title_bar(frame);
+            #[cfg(not(windows))]
+            let _ = frame;
             self.applied_look = Some(look);
         }
         self.drain_messages(&ctx);
@@ -2025,6 +2052,10 @@ impl eframe::App for SlycedApp {
         self.request_priors();
         self.finish_export(&ctx);
 
+        // In the browser the page reads dropped or chosen files (folders included) and hands them over.
+        #[cfg(target_arch = "wasm32")]
+        let dropped: Vec<PathBuf> = crate::web::take_opened();
+        #[cfg(not(target_arch = "wasm32"))]
         let dropped: Vec<PathBuf> = ctx.input(|i| i.raw.dropped_files.iter().map(|f| f.path().to_path_buf()).collect());
         if !dropped.is_empty() {
             self.open_paths(dropped, true);

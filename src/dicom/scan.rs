@@ -57,6 +57,18 @@ fn expand_zip(path: &Path, out: &mut Vec<PathBuf>, progress: &ScanProgress) {
 pub fn collect_files(inputs: &[PathBuf], progress: &ScanProgress) -> Vec<PathBuf> {
     let mut out = Vec::new();
     for input in inputs {
+        // Files opened in the browser (web version).
+        if let Some(files) = super::memfs::files_under(input) {
+            for p in files {
+                if source::is_zip(&p) {
+                    expand_zip(&p, &mut out, progress);
+                } else if !skip_name(&p.to_string_lossy()) {
+                    out.push(p);
+                    progress.found.fetch_add(1, Ordering::Relaxed);
+                }
+            }
+            continue;
+        }
         if input.is_file() {
             if source::is_zip(input) {
                 expand_zip(input, &mut out, progress);
@@ -105,8 +117,14 @@ pub fn scan_files(files: &[PathBuf], progress: &ScanProgress) -> Vec<ScannedFile
 fn looks_like_dicom(path: &Path) -> bool {
     use std::io::Read;
     let mut buf = [0u8; 132];
-    let Ok(mut f) = std::fs::File::open(path) else { return false };
-    match f.read(&mut buf) {
+    let read = match super::memfs::get(path) {
+        Some(bytes) => (&bytes[..]).read(&mut buf),
+        None => {
+            let Ok(mut f) = std::fs::File::open(path) else { return false };
+            f.read(&mut buf)
+        }
+    };
+    match read {
         Ok(n) if n >= 132 => &buf[128..132] == b"DICM" || source::plausible_raw_dataset(&buf),
         Ok(n) if n >= 8 => source::plausible_raw_dataset(&buf[..n]),
         _ => false,
