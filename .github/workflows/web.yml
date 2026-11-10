@@ -1,9 +1,10 @@
-# Web version (experimental) on GitHub Pages: https://crie-studio.github.io/slyced/
+# Project page and web version (experimental) on GitHub Pages:
+#   https://crie-studio.github.io/slyced/      project page (site/index.html)
+#   https://crie-studio.github.io/slyced/app/  the viewer, ?exemplo opens the synthetic sample exam
 #
-# Every push to main that changes the viewer rebuilds the WebAssembly module
-# (scripts/build-web.ps1) and publishes web/dist with the synthetic sample exam
-# (?exemplo). The page is static: exams are opened in the visitor's browser and
-# never uploaded anywhere.
+# Every push to main that changes either one rebuilds the WebAssembly module
+# (scripts/build-web.ps1) and publishes web/dist. Both pages are static: exams are
+# opened in the visitor's browser and never uploaded anywhere.
 name: Versão web
 
 on:
@@ -12,8 +13,9 @@ on:
     paths:
       - 'src/**'
       - 'web/**'
+      - 'site/**'
       - 'assets/**'
-      - 'docs/img/logo.png'
+      - 'docs/img/**'
       - 'examples/phantom.rs'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -77,9 +79,9 @@ jobs:
           rayon = "1.12.0"
           EOF
           cargo run --release --quiet --manifest-path "$p/Cargo.toml" -- "$p/saida"
-          mkdir -p web/dist/exemplo
-          (cd "$p/saida" && zip -q -r "$GITHUB_WORKSPACE/web/dist/exemplo/fantoma.zip" .)
-          ls -la web/dist web/dist/pkg web/dist/exemplo
+          mkdir -p web/dist/app/exemplo
+          (cd "$p/saida" && zip -q -r "$GITHUB_WORKSPACE/web/dist/app/exemplo/fantoma.zip" .)
+          ls -la web/dist web/dist/img web/dist/app web/dist/app/pkg web/dist/app/exemplo
 
       - uses: actions/upload-pages-artifact@v3
         with:

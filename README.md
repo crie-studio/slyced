@@ -15,7 +15,8 @@ Um único `Slyced.exe`, sem instalação, do Windows 7 ao 11.
 [![Feito em Rust](https://img.shields.io/badge/feito%20em-Rust-b7410e?logo=rust&logoColor=white)](https://www.rust-lang.org)
 
 [**Baixar a versão mais recente**](https://github.com/crie-studio/slyced/releases/latest) ·
-[Experimentar no navegador](https://crie-studio.github.io/slyced/?exemplo) ·
+[Experimentar no navegador](https://crie-studio.github.io/slyced/app/?exemplo) ·
+[Página do projeto](https://crie-studio.github.io/slyced/) ·
 [Manual](docs/MANUAL.md) ·
 [Novidades](CHANGELOG.md) ·
 [Relatar um problema](https://github.com/crie-studio/slyced/issues/new/choose)
@@ -93,8 +94,8 @@ Para conferir o arquivo, compare `Get-FileHash .\Slyced.exe` com o `SHA256SUMS.t
 ## Versão web (experimental)
 
 O mesmo visualizador roda no navegador, sem instalar nada:
-**<https://crie-studio.github.io/slyced/>**. Para ver como funciona sem ter um exame à mão, abra
-[com o exame de exemplo](https://crie-studio.github.io/slyced/?exemplo) (sintético, sem dados de pacientes).
+**<https://crie-studio.github.io/slyced/app/>**. Para ver como funciona sem ter um exame à mão, abra
+[com o exame de exemplo](https://crie-studio.github.io/slyced/app/?exemplo) (sintético, sem dados de pacientes).
 
 Clique no ícone de pasta ou arraste uma pasta, arquivos DICOM ou um ZIP para a página. **Os
 exames são abertos no próprio navegador e não são enviados a nenhum servidor.** 2D, MPR e 3D
@@ -191,8 +192,9 @@ definidos). Os releases assinados pela SignPath Foundation saem do GitHub Action
 publicar uma tag `vX.Y.Z`: veja [docs/ASSINATURA.md](docs/ASSINATURA.md).
 
 A versão web é compilada por `scripts\build-web.ps1` (alvo `wasm32-unknown-unknown` e
-`wasm-bindgen-cli` na versão do `Cargo.lock`; instruções no início do script) e publicada no
-GitHub Pages pelo workflow `.github/workflows/web.yml` a cada push na `main`.
+`wasm-bindgen-cli` na versão do `Cargo.lock`; instruções no início do script), que monta o site
+com a página do projeto (`site/index.html`) na raiz e o visualizador em `app/`. O workflow
+`.github/workflows/web.yml` publica tudo no GitHub Pages a cada push na `main`.
 
 <details>
 <summary><b>Ferramentas de desenvolvimento e arquitetura</b></summary>
@@ -255,6 +257,6 @@ offers 2D reading tools, MPR with oblique planes and curved reformation, GPU vol
 (DirectX 12, Vulkan or OpenGL), side-by-side comparison with prior exams and CT reading aids.
 The interface is in Brazilian Portuguese. Written in Rust and licensed under MIT or Apache 2.0.
 Downloads are on the [releases page](https://github.com/crie-studio/slyced/releases/latest).
-An experimental web version runs in the browser at <https://crie-studio.github.io/slyced/>
-([with a synthetic sample exam](https://crie-studio.github.io/slyced/?exemplo)); files opened
+An experimental web version runs in the browser at <https://crie-studio.github.io/slyced/app/>
+([with a synthetic sample exam](https://crie-studio.github.io/slyced/app/?exemplo)); files opened
 there stay on the user's computer.

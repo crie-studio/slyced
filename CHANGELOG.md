@@ -6,11 +6,15 @@ numeração em [versionamento semântico](https://semver.org/lang/pt-BR/).
 ## [Não lançado]
 
 ### Adicionado
-- **Versão web (experimental)** em <https://crie-studio.github.io/slyced/>: o mesmo
+- **Versão web (experimental)** em <https://crie-studio.github.io/slyced/app/>: o mesmo
   visualizador no navegador, com 2D, MPR e 3D. Abre pastas, arquivos e ZIP escolhidos ou
   arrastados para a página, sem enviá-los a nenhum servidor; `?exemplo` abre um exame
   sintético. Ainda sem PACS e sem JPEG-LS, com a carga em um único núcleo e sem guardar as
   configurações. Publicada pelo GitHub Pages a cada atualização da `main`.
+- **Página do projeto** em <https://crie-studio.github.io/slyced/>: apresentação com 3D ao vivo
+  (fantoma sintético com corte anatômico), história "do corte ao volume", MPR interativo,
+  recursos, privacidade, downloads e créditos. Os links antigos com `?exemplo` levam ao
+  visualizador.
 
 ## [1.5.4] - 2026-11-09
 
