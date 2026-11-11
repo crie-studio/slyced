@@ -259,6 +259,6 @@ offers 2D reading tools, MPR with oblique planes and curved reformation, GPU vol
 The interface is in Brazilian Portuguese. Written in Rust and licensed under MIT or Apache 2.0.
 Downloads are on the [releases page](https://github.com/crie-studio/slyced/releases/latest).
 An experimental web version runs in the browser at <https://crie-studio.github.io/slyced/>
-([with a synthetic sample exam](https://crie-studio.github.io/slyced/?exemplo); project page at
-[/sobre/](https://crie-studio.github.io/slyced/sobre/)); files opened
+([with a synthetic sample exam](https://crie-studio.github.io/slyced/?exemplo); project page in
+[English](https://crie-studio.github.io/slyced/sobre/en/)); files opened
 there stay on the user's computer.

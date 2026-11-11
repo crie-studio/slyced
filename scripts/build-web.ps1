@@ -35,10 +35,25 @@ if (Select-String -Path "$dist/pkg/slyced.js" -SimpleMatch "from 'env'" -Quiet) 
 Copy-Item web/index.html $dist -Force
 Copy-Item docs/img/logo.png "$dist/favicon.png" -Force
 
-# Project page.
-New-Item -ItemType Directory -Force "$dist/sobre/img" | Out-Null
-Copy-Item web/sobre/index.html "$dist/sobre" -Force
-Copy-Item docs/img/*.png "$dist/sobre/img" -Force
+# Project page in Portuguese and English: shared site.css/site.js, screenshots in WebP,
+# the sharing image, and the current version in the structured data.
+$version = (Select-String -Path Cargo.toml -Pattern '^version = "(.*)"').Matches[0].Groups[1].Value
+$date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
+New-Item -ItemType Directory -Force "$dist/sobre/img", "$dist/sobre/en" | Out-Null
+$root = (Resolve-Path $dist).Path
+function Fill([string]$from, [string]$to) {
+    $text = (Get-Content -Raw -Encoding utf8 $from).Replace('{{VERSION}}', $version).Replace('{{DATE}}', $date)
+    [IO.File]::WriteAllText([IO.Path]::Combine($root, $to), $text)   # UTF-8 without BOM
+}
+Fill web/sobre/index.html 'sobre/index.html'
+Fill web/sobre/en/index.html 'sobre/en/index.html'
+Copy-Item web/sobre/site.css, web/sobre/site.js "$dist/sobre" -Force
+Copy-Item web/sobre/img/*.webp "$dist/sobre/img" -Force
+Copy-Item docs/img/social-preview.png "$dist/sobre/img" -Force
+
+# For search engines and AI crawlers: sitemap, llms.txt and the public IndexNow key.
+Fill web/sitemap.xml 'sitemap.xml'
+Copy-Item web/*.txt $dist -Force
 
 # Links to …/slyced/app/ (the viewer's address for a few hours) go to the main address.
 New-Item -ItemType Directory -Force "$dist/app" | Out-Null

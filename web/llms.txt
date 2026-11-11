@@ -1,0 +1,35 @@
+# Slyced
+
+> Slyced is a free, open-source DICOM viewer for Windows 7, 8, 10 and 11 (x64, ARM64 and 32-bit) and for the web browser. It opens CT, MR, X-ray and ultrasound studies from folders, CDs/DVDs with DICOMDIR, ZIP files and PACS servers, with 2D reading tools, MPR, curved reformation and GPU volume rendering. Studies are opened on the user's own computer and never uploaded. The interface is in Brazilian Portuguese.
+
+Key facts:
+
+- Free and open source (MIT or Apache 2.0), by Luiz Felipe Pitzer (https://lfp.app.br).
+- Windows: a single portable executable of about 20 MB, no installer, no administrator rights, no Visual C++ Redistributable. Packages for Windows 10/11 x64 and ARM64, and Windows 7 SP1/8/8.1 in 64 and 32 bits.
+- Web version (experimental): the same Rust code compiled to WebAssembly; WebGPU or WebGL2; files are read by the browser and never sent to a server; no PACS and no JPEG-LS there yet.
+- Opens: folders, CDs/DVDs with DICOMDIR, ZIP files without extracting; JPEG (12-bit, lossless, arithmetic), JPEG-LS, JPEG 2000, RLE, multiframe and color.
+- Tools: window/level presets, measurements (distance, angle, elliptical ROI, HU density, volume), MPR with oblique planes and MIP/MinIP/average slab, curved planar reformation (tube tracker), GPU volume rendering (VR, MIP, MinIP, surface), comparison with prior studies (side by side, overlay, curtain, checkerboard, automatic registration), CT reading aids.
+- PACS (Windows version): C-ECHO, C-FIND, C-GET, C-MOVE with a built-in storage receiver, and DICOMweb (QIDO-RS, WADO-RS).
+- Privacy: no telemetry, no accounts, no automatic update checks.
+- Not certified as a medical device (ANVISA/FDA/CE); not to be used as the sole basis for diagnosis.
+- Written in Rust with dicom-rs, egui/eframe and wgpu.
+
+Em português: o Slyced é um visualizador DICOM gratuito e de código aberto para Windows 7 a 11 e para o navegador. Abre TC, RM, RX e US de pastas, CDs com DICOMDIR, ZIP e PACS, com 2D, MPR e 3D, sem instalar nada e sem enviar os exames a nenhum servidor.
+
+## Pages
+
+- [Project page (Portuguese)](https://crie-studio.github.io/slyced/sobre/): features, screenshots, FAQ, downloads, credits
+- [Project page (English)](https://crie-studio.github.io/slyced/sobre/en/): the same in English
+- [Web viewer](https://crie-studio.github.io/slyced/): opens DICOM files in the browser; add ?exemplo to open a synthetic sample study
+- [Download for Windows](https://github.com/crie-studio/slyced/releases/latest): latest release with the four packages and SHA256SUMS.txt
+
+## Source and documentation
+
+- [Source code on GitHub](https://github.com/crie-studio/slyced): README in Portuguese with an English summary
+- [User manual (Portuguese)](https://github.com/crie-studio/slyced/blob/main/docs/MANUAL.md): features, shortcuts, PACS setup, troubleshooting
+- [Changelog](https://github.com/crie-studio/slyced/blob/main/CHANGELOG.md)
+
+## Optional
+
+- [Security policy](https://github.com/crie-studio/slyced/blob/main/SECURITY.md)
+- [Contributing](https://github.com/crie-studio/slyced/blob/main/CONTRIBUTING.md)

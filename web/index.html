@@ -3,18 +3,51 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Slyced: visualizador DICOM (TC, RM, RX) no navegador, com 2D, MPR e 3D. Os exames são abertos no próprio computador e não são enviados a nenhum servidor.">
+<meta name="description" content="Abra exames DICOM (TC, RM, RX e US) no navegador, de graça e sem instalar: pasta, CD ou ZIP, com 2D, MPR e 3D. Os arquivos ficam no seu computador e não são enviados a nenhum servidor.">
 <meta name="google-site-verification" content="vCfGX7jwPR4wUmKlrYb2No6tIw1hCrN-dbhec_Lliws">
+<link rel="canonical" href="https://crie-studio.github.io/slyced/">
 <link rel="icon" type="image/png" href="favicon.png">
-<title>Slyced · visualizador DICOM</title>
+<title>Slyced · visualizador DICOM online, grátis e sem instalar</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Slyced">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="https://crie-studio.github.io/slyced/">
+<meta property="og:title" content="Slyced · visualizador DICOM no navegador">
+<meta property="og:description" content="TC, RM, RX e US em 2D, MPR e 3D, direto no navegador. Os arquivos não saem do seu computador.">
+<meta property="og:image" content="https://crie-studio.github.io/slyced/sobre/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://crie-studio.github.io/slyced/sobre/img/social-preview.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "@id": "https://crie-studio.github.io/slyced/#webapp",
+  "name": "Slyced (versão web)",
+  "url": "https://crie-studio.github.io/slyced/",
+  "description": "Visualizador DICOM no navegador: TC, RM, RX e US em 2D, MPR e 3D. Os arquivos são lidos pelo próprio navegador e não são enviados a nenhum servidor.",
+  "applicationCategory": "MedicalApplication",
+  "operatingSystem": "Qualquer navegador atual com WebGPU ou WebGL2",
+  "browserRequirements": "WebAssembly e WebGPU ou WebGL2",
+  "inLanguage": "pt-BR",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
+  "isPartOf": { "@id": "https://crie-studio.github.io/slyced/#software" },
+  "author": { "@type": "Person", "name": "Luiz Felipe Pitzer", "url": "https://lfp.app.br" }
+}
+</script>
 <style>
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #101216; color: #d8dde6;
     font: 15px "Segoe UI", system-ui, sans-serif; }
   canvas#slyced { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
   #status { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 8px; padding: 16px; text-align: center; pointer-events: none; }
-  #status.erro div { color: #ff8a80; }
+  #status.erro #msg { color: #ff8a80; }
+  #status h1 { margin: 0 0 4px; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+  #status p { margin: 0 0 10px; max-width: 520px; color: #a1a9bc; line-height: 1.5; }
   #status small { color: #8a93a3; }
+  #status a { color: #c9cfff; pointer-events: auto; }
   #leitura { position: absolute; left: 50%; bottom: 32px; transform: translateX(-50%); display: none; padding: 10px 16px;
     background: rgba(16, 18, 22, .94); border: 1px solid #2a2f38; border-radius: 8px; white-space: nowrap; }
 </style>
@@ -22,10 +55,13 @@
 <body>
 <canvas id="slyced"></canvas>
 <div id="status">
-  <div>Carregando o Slyced…</div>
+  <h1>Slyced · visualizador DICOM no navegador</h1>
+  <p>Abra exames de TC, RM, RX e US de uma pasta, de um CD ou de um ZIP, com 2D, MPR e 3D, sem instalar nada.</p>
+  <div id="msg">Carregando o Slyced…</div>
   <small>Os exames abertos aqui não saem deste computador.</small>
   <small>Versão experimental. Sem certificação como dispositivo médico: não utilize como única base para diagnóstico.</small>
-  <noscript><div>O Slyced precisa de JavaScript e WebAssembly.</div></noscript>
+  <small><a href="sobre/">Conheça o Slyced</a> · <a href="https://github.com/crie-studio/slyced/releases/latest">versão para Windows</a></small>
+  <noscript><p>O Slyced precisa de JavaScript e WebAssembly. Veja a <a href="sobre/">página do projeto</a>.</p></noscript>
 </div>
 <div id="leitura"></div>
 <script type="module">
@@ -100,7 +136,7 @@ async function abrirExemplo() {
 window.slyced = {
   pick: escolher,
   download: baixar,
-  failed: mensagem => { status.classList.add('erro'); status.firstElementChild.textContent = mensagem; },
+  failed: mensagem => { status.classList.add('erro'); document.getElementById('msg').textContent = mensagem; },
   started: () => { status.remove(); abrirExemplo(); },
 };
 try {
