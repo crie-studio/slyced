@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
+PackageIdentifier: LuizFelipePitzer.Slyced
+PackageVersion: 1.5.4
+PackageLocale: en-US
+Publisher: Luiz Felipe Pitzer
+PublisherUrl: https://lfp.app.br
+PublisherSupportUrl: https://github.com/crie-studio/slyced/issues
+PackageName: Slyced
+PackageUrl: https://crie-studio.github.io/slyced/en/
+License: MIT OR Apache-2.0
+LicenseUrl: https://github.com/crie-studio/slyced/blob/main/LICENSE-MIT
+Copyright: Copyright (c) 2026 Luiz Felipe Pitzer
+ShortDescription: Free, portable DICOM viewer for CT, MR, X-ray and ultrasound in 2D, MPR and 3D.
+Description: Slyced opens DICOM studies from folders, CDs/DVDs with DICOMDIR, ZIP files and PACS servers (C-FIND, C-GET, C-MOVE and DICOMweb), with MPR, curved reformation, GPU volume rendering and comparison with prior studies. No telemetry and no accounts; studies stay on the computer. Not certified as a medical device. Interface in Portuguese.
+Moniker: slyced
+Tags:
+  - dicom
+  - dicom-viewer
+  - medical-imaging
+  - pacs
+  - radiology
+  - mpr
+ReleaseNotesUrl: https://github.com/crie-studio/slyced/releases/tag/v1.5.4
+ManifestType: defaultLocale
+ManifestVersion: 1.9.0

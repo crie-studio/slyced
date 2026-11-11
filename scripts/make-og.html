@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Slyced · imagens de compartilhamento</title>
+<style>
+  body { margin: 0; padding: 16px; background: #111; color: #ccc; font: 14px system-ui, sans-serif; display: grid; gap: 12px; }
+  canvas { width: 600px; height: 315px; }
+</style>
+</head>
+<body>
+<!--
+  Generates the sharing images (1200×630) used when a link to the site is pasted in WhatsApp,
+  LinkedIn, X…: web/landing/og.png (Portuguese) and web/landing/og-en.png (English).
+  Usage: python scripts/serve-save.py 8767 web/landing, open
+  http://127.0.0.1:8767/scripts/make-og.html and click "Salvar".
+-->
+<b>Slyced · imagens de compartilhamento (1200×630)</b>
+<canvas id="pt" width="1200" height="630"></canvas>
+<canvas id="en" width="1200" height="630"></canvas>
+<div><button id="save">Salvar og.png e og-en.png</button> <span id="status"></span></div>
+<script type="module">
+const TEXTS = {
+  pt: { file: 'og.png', l1: 'Seus exames em', l2: '2D, MPR e 3D.', l3: 'Sem instalar nada.', tags: 'Grátis · Windows 7 a 11 e navegador · código aberto' },
+  en: { file: 'og-en.png', l1: 'Your scans in', l2: '2D, MPR and 3D.', l3: 'Nothing to install.', tags: 'Free · Windows 7 to 11 and web · open source' },
+};
+const SANS = '"Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif';
+const MONO = '"Cascadia Code", Consolas, ui-monospace, monospace';
+const logo = await new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = '/docs/img/logo.png'; });
+await document.fonts.load(`700 70px ${SANS}`);
+
+// the synthetic phantom and the volume renderer of the project page
+const src = await (await fetch('/web/landing/site.js')).text();
+const grab = n => src.match(new RegExp('const ' + n + ' = `([\\s\\S]*?)`;'))[1];
+const PHANTOM = grab('PHANTOM'), VS = grab('VS'), VR_FS = grab('VR_FS').replace('${PHANTOM}', PHANTOM);
+const glc = document.createElement('canvas'); glc.width = 560; glc.height = 600;
+const gl = glc.getContext('webgl2', { premultipliedAlpha: true, preserveDrawingBuffer: true });
+const sh = (t, s) => { const x = gl.createShader(t); gl.shaderSource(x, s); gl.compileShader(x); if (!gl.getShaderParameter(x, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(x)); return x; };
+const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, VR_FS)); gl.linkProgram(p); gl.useProgram(p);
+const u = n => gl.getUniformLocation(p, n);
+const norm = a => { const l = Math.hypot(...a); return a.map(x => x / l); };
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+function volume() {
+  const yaw = 0.62, pitch = 0.2, dist = 3.0, target = [0, -0.12, 0];
+  const eye = [dist * Math.cos(pitch) * Math.sin(yaw), target[1] + dist * Math.sin(pitch), dist * Math.cos(pitch) * Math.cos(yaw)];
+  const f = norm(eye.map((e, i) => target[i] - e)), r = norm(cross(f, [0, 1, 0])), up = cross(r, f);
+  gl.viewport(0, 0, 560, 600); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform2f(u('uRes'), 560, 600); gl.uniform3fv(u('uEye'), eye); gl.uniformMatrix3fv(u('uCam'), false, [...r, ...up, ...f.map(x => -x)]);
+  gl.uniform1f(u('uFov'), 0.4); gl.uniform1i(u('uPreset'), 0); gl.uniform1f(u('uClip'), 1); gl.uniform3fv(u('uCut'), [0.03, 0.16, 0.04]);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  return glc;
+}
+
+function draw(canvas, t) {
+  const g = canvas.getContext('2d'), W = 1200, H = 630;
+  g.fillStyle = '#07080c'; g.fillRect(0, 0, W, H);
+  const glow = (x, y, r, c) => { const q = g.createRadialGradient(x, y, 0, x, y, r); q.addColorStop(0, c); q.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = q; g.fillRect(0, 0, W, H); };
+  glow(220, 120, 620, 'rgba(109,124,255,.30)'); glow(930, 330, 420, 'rgba(176,140,255,.24)'); glow(900, 640, 380, 'rgba(63,224,255,.10)');
+  g.save(); g.globalAlpha = .06; g.strokeStyle = '#fff';
+  for (let x = 0; x <= W; x += 60) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = 0; y <= H; y += 60) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  g.restore();
+  // brand
+  g.drawImage(logo, 72, 64, 76, 76);
+  g.fillStyle = '#eceff6'; g.font = `700 44px ${SANS}`; g.textBaseline = 'middle'; g.fillText('Slyced', 166, 104);
+  // headline
+  g.textBaseline = 'alphabetic'; g.font = `750 74px ${SANS}`; g.letterSpacing = '-2px';
+  g.fillStyle = '#ffffff'; g.fillText(t.l1, 72, 268); g.fillText(t.l2, 72, 348);
+  const q = g.createLinearGradient(72, 0, 640, 0); q.addColorStop(0, '#c9cfff'); q.addColorStop(.5, '#b08cff'); q.addColorStop(1, '#3fe0ff');
+  g.fillStyle = q; g.fillText(t.l3, 72, 428); g.letterSpacing = '0px';
+  g.fillStyle = '#a1a9bc'; g.font = `500 22px ${MONO}`; g.fillText(t.tags, 74, 548);
+  // the volume, with a soft ring behind it
+  g.save(); g.strokeStyle = 'rgba(255,255,255,.08)'; g.setLineDash([6, 8]); g.lineWidth = 2; g.beginPath(); g.arc(925, 330, 255, 0, 7); g.stroke(); g.restore();
+  g.drawImage(volume(), 645, 25);
+}
+draw(document.getElementById('pt'), TEXTS.pt);
+draw(document.getElementById('en'), TEXTS.en);
+
+async function save() {
+  for (const k of ['pt', 'en']) {
+    const blob = await new Promise(r => document.getElementById(k).toBlob(r, 'image/png'));
+    await fetch('/salvar/' + TEXTS[k].file, { method: 'POST', body: blob });
+  }
+  document.getElementById('status').textContent = 'salvo'; return 'salvo';
+}
+document.getElementById('save').onclick = save;
+window.saveOg = save;
+</script>
+</body>
+</html>

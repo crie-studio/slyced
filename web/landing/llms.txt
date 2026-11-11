@@ -18,9 +18,9 @@ Em português: o Slyced é um visualizador DICOM gratuito e de código aberto pa
 
 ## Pages
 
-- [Project page (Portuguese)](https://crie-studio.github.io/slyced/sobre/): features, screenshots, FAQ, downloads, credits
-- [Project page (English)](https://crie-studio.github.io/slyced/sobre/en/): the same in English
-- [Web viewer](https://crie-studio.github.io/slyced/): opens DICOM files in the browser; add ?exemplo to open a synthetic sample study
+- [Project page (Portuguese)](__SITE__): features, screenshots, FAQ, downloads, credits
+- [Project page (English)](__SITE__en/): the same in English
+- [Web viewer](__SITE__app/): opens DICOM files in the browser; add ?exemplo to open a synthetic sample study
 - [Download for Windows](https://github.com/crie-studio/slyced/releases/latest): latest release with the four packages and SHA256SUMS.txt
 
 ## Source and documentation

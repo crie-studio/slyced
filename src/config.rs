@@ -11,8 +11,8 @@ pub const APP_NAME: &str = "Slyced";
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const AUTHOR: &str = "Luiz Felipe Pitzer";
 pub const WEBSITE: &str = env!("CARGO_PKG_HOMEPAGE");
-/// Project page (features, screens, downloads); the web version lives one level up.
-pub const PROJECT_PAGE: &str = "https://crie-studio.github.io/slyced/sobre/";
+/// Project page (features, screens, downloads); the web version is at app/ below it.
+pub const PROJECT_PAGE: &str = "https://crie-studio.github.io/slyced/";
 /// Window title: always the same, never the patient's name.
 pub const WINDOW_TITLE: &str = "Slyced - por Luiz Felipe Pitzer";
 /// Marker file that enables portable mode.

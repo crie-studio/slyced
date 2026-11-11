@@ -6,15 +6,18 @@ numeração em [versionamento semântico](https://semver.org/lang/pt-BR/).
 ## [Não lançado]
 
 ### Adicionado
-- **Versão web (experimental)** em <https://crie-studio.github.io/slyced/>: o mesmo
+- **Versão web (experimental)** em <https://crie-studio.github.io/slyced/app/>: o mesmo
   visualizador no navegador, com 2D, MPR e 3D. Abre pastas, arquivos e ZIP escolhidos ou
   arrastados para a página, sem enviá-los a nenhum servidor; `?exemplo` abre um exame
   sintético. Ainda sem PACS e sem JPEG-LS, com a carga em um único núcleo e sem guardar as
   configurações. Publicada pelo GitHub Pages a cada atualização da `main`.
-- **Página do projeto** em <https://crie-studio.github.io/slyced/sobre/>: apresentação com 3D ao
+- **Página do projeto** em <https://crie-studio.github.io/slyced/> (e em inglês, em `/en/`): apresentação com 3D ao
   vivo (fantoma sintético com corte anatômico), história "do corte ao volume", MPR interativo,
   recursos, privacidade, downloads e créditos. A janela **Sobre o Slyced** ganhou o link
   "Conheça o Slyced" para ela.
+- **Site pronto para buscadores e IAs:** perguntas frequentes, dados estruturados, imagens de
+  compartilhamento em português e inglês, `sitemap.xml`, `llms.txt`, página 404 e aviso ao Bing a
+  cada publicação. Textos de divulgação e manifesto do winget em `docs/`.
 
 ## [1.5.4] - 2026-11-09
 

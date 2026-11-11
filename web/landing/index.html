@@ -6,53 +6,58 @@
 <title>Slyced · visualizador DICOM gratuito para Windows e navegador</title>
 <meta name="description" content="Slyced é um visualizador DICOM gratuito e de código aberto: abre TC, RM, RX e US do CD, da pasta, do ZIP ou do PACS, com 2D, MPR e 3D. Um único executável do Windows 7 ao 11, sem instalar, ou direto no navegador.">
 <meta name="author" content="Luiz Felipe Pitzer">
+<meta name="google-site-verification" content="vCfGX7jwPR4wUmKlrYb2No6tIw1hCrN-dbhec_Lliws">
 <meta name="theme-color" content="#07080c">
-<link rel="canonical" href="https://crie-studio.github.io/slyced/sobre/">
-<link rel="alternate" hreflang="pt-BR" href="https://crie-studio.github.io/slyced/sobre/">
-<link rel="alternate" hreflang="en" href="https://crie-studio.github.io/slyced/sobre/en/">
-<link rel="alternate" hreflang="x-default" href="https://crie-studio.github.io/slyced/sobre/en/">
+<link rel="canonical" href="__SITE__">
+<link rel="alternate" hreflang="pt-BR" href="__SITE__">
+<link rel="alternate" hreflang="en" href="__SITE__en/">
+<link rel="alternate" hreflang="x-default" href="__SITE__">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Slyced">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:locale:alternate" content="en_US">
-<meta property="og:url" content="https://crie-studio.github.io/slyced/sobre/">
+<meta property="og:url" content="__SITE__">
 <meta property="og:title" content="Slyced · visualizador DICOM gratuito">
 <meta property="og:description" content="TC, RM, RX e US em 2D, MPR e 3D. Sem instalar nada: um único executável para Windows, ou direto no navegador.">
-<meta property="og:image" content="https://crie-studio.github.io/slyced/sobre/img/social-preview.png">
-<meta property="og:image:width" content="1280">
-<meta property="og:image:height" content="640">
+<meta property="og:image" content="__SITE__og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Slyced, visualizador DICOM, com MPR e 3D">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Slyced · visualizador DICOM gratuito">
 <meta name="twitter:description" content="TC, RM, RX e US em 2D, MPR e 3D. Sem instalar nada, do Windows 7 ao 11 ou no navegador.">
-<meta name="twitter:image" content="https://crie-studio.github.io/slyced/sobre/img/social-preview.png">
-<link rel="icon" type="image/png" href="../favicon.png">
+<meta name="twitter:image" content="__SITE__og.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<script>
+  // Old links to the viewer (…/slyced/?exemplo) now land here: send them on to the app.
+  if (new URLSearchParams(location.search).has('exemplo')) location.replace('app/' + location.search + location.hash);
+</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "@id": "https://crie-studio.github.io/slyced/#software",
+      "@id": "__SITE__#software",
       "name": "Slyced",
       "alternateName": "Slyced DICOM Viewer",
       "description": "Visualizador DICOM gratuito e de código aberto para Windows 7 a 11 e para o navegador: TC, RM, RX e US em 2D, MPR e 3D, com comparação de exames e PACS. Os exames são abertos no próprio computador.",
       "applicationCategory": "MedicalApplication",
       "applicationSubCategory": "Visualizador DICOM",
       "operatingSystem": "Windows 7, Windows 8, Windows 10, Windows 11, navegador (WebAssembly)",
-      "softwareVersion": "{{VERSION}}",
+      "softwareVersion": "__VERSION__",
       "inLanguage": "pt-BR",
       "isAccessibleForFree": true,
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
-      "url": "https://crie-studio.github.io/slyced/sobre/",
+      "url": "__SITE__",
       "downloadUrl": "https://github.com/crie-studio/slyced/releases/latest",
       "license": "https://github.com/crie-studio/slyced/blob/main/LICENSE-MIT",
-      "sameAs": ["https://github.com/crie-studio/slyced", "https://crie-studio.github.io/slyced/"],
+      "sameAs": ["https://github.com/crie-studio/slyced", "__SITE__app/"],
       "screenshot": [
-        "https://crie-studio.github.io/slyced/sobre/img/mpr.webp",
-        "https://crie-studio.github.io/slyced/sobre/img/3d.webp",
-        "https://crie-studio.github.io/slyced/sobre/img/comparacao.webp",
-        "https://crie-studio.github.io/slyced/sobre/img/pacs.webp"
+        "__SITE__img/mpr.webp",
+        "__SITE__img/3d.webp",
+        "__SITE__img/comparacao.webp",
+        "__SITE__img/pacs.webp"
       ],
       "featureList": [
         "Abre pastas, CD/DVD com DICOMDIR e ZIP sem descompactar",
@@ -71,7 +76,7 @@
       "mainEntity": [
         { "@type": "Question", "name": "Como abrir um CD de tomografia ou ressonância no computador?", "acceptedAnswer": { "@type": "Answer", "text": "Baixe o Slyced, descompacte e abra o Slyced.exe. Clique em Abrir pasta e escolha a unidade do CD, ou arraste a pasta do CD para a janela: ele encontra o DICOMDIR e lista os exames, sem instalar nada. Sem leitor de CD, copie o conteúdo para um pendrive ou ZIP, que o Slyced abre sem descompactar." } },
         { "@type": "Question", "name": "Existe um visualizador DICOM gratuito que rode no Windows 7?", "acceptedAnswer": { "@type": "Answer", "text": "Sim. O Slyced tem pacotes para Windows 7 SP1, 8 e 8.1, de 64 e de 32 bits, além de Windows 10 e 11 (x64 e ARM64). É gratuito e de código aberto." } },
-        { "@type": "Question", "name": "Dá para ver exames DICOM no navegador, sem instalar nada?", "acceptedAnswer": { "@type": "Answer", "text": "Sim, na versão web experimental do Slyced, em crie-studio.github.io/slyced. Os arquivos são lidos pelo próprio navegador e não são enviados a nenhum servidor. Por enquanto ela não tem PACS nem JPEG-LS." } },
+        { "@type": "Question", "name": "Dá para ver exames DICOM no navegador, sem instalar nada?", "acceptedAnswer": { "@type": "Answer", "text": "Sim, na versão web experimental do Slyced, em __SITE__app/. Os arquivos são lidos pelo próprio navegador e não são enviados a nenhum servidor. Por enquanto ela não tem PACS nem JPEG-LS." } },
         { "@type": "Question", "name": "O Slyced envia meus exames para algum lugar?", "acceptedAnswer": { "@type": "Answer", "text": "Não. Não há telemetria, contas nem verificação automática de atualizações. O programa só se conecta aos servidores PACS que você cadastrar, e só quando você busca ou baixa um exame." } },
         { "@type": "Question", "name": "Quais exames e formatos o Slyced abre?", "acceptedAnswer": { "@type": "Answer", "text": "TC, RM, RX e US em DICOM, de pastas, CD/DVD com DICOMDIR e ZIP. Lê imagens sem compressão e comprimidas em JPEG (inclusive 12 bits e sem perdas), JPEG-LS, JPEG 2000 e RLE, multiframe e coloridas." } },
         { "@type": "Question", "name": "O Slyced faz reconstrução MPR e 3D?", "acceptedAnswer": { "@type": "Answer", "text": "Sim: MPR axial, coronal e sagital com planos oblíquos e slab (MIP, MinIP ou média), reconstrução curva (CPR) e 3D na placa de vídeo, com VR, MIP, MinIP e superfície." } },
@@ -92,7 +97,7 @@
 
 <header class="nav" id="nav">
   <div class="nav-in">
-    <a class="brand" href="#inicio"><img src="../favicon.png" alt="" width="30" height="30">Slyced</a>
+    <a class="brand" href="#inicio"><img src="favicon.png" alt="" width="30" height="30">Slyced</a>
     <ul class="nav-links">
       <li><a href="#volume">Como funciona</a></li>
       <li><a href="#mpr">MPR</a></li>
@@ -123,11 +128,11 @@
         <a class="btn primary magnetic" href="https://github.com/crie-studio/slyced/releases/latest">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg>
           Baixar para Windows</a>
-        <a class="btn magnetic" href="../">
+        <a class="btn magnetic" href="app/">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg>
           Abrir no navegador</a>
       </div>
-      <p class="cta-sub">Sem exame à mão? <a href="../?exemplo">Veja com um exame sintético →</a></p>
+      <p class="cta-sub">Sem exame à mão? <a href="app/?exemplo">Veja com um exame sintético →</a></p>
       <div class="chips"><span class="chip">Windows 7 · 8 · 10 · 11</span><span class="chip">x64 · ARM64 · 32 bits</span><span class="chip">WebGPU · WebGL2</span><span class="chip">MIT ou Apache 2.0</span></div>
     </div>
     <div class="hero-visual" id="heroVisual">
@@ -353,7 +358,7 @@
       <a class="pkg reveal" style="--i:1" href="https://github.com/crie-studio/slyced/releases/latest"><span class="arch">ARM64</span><span class="for">Windows 10 e 11 com processador Snapdragon</span><span class="file">Slyced-‹versão›-arm64.zip</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
       <a class="pkg reveal" style="--i:2" href="https://github.com/crie-studio/slyced/releases/latest"><span class="arch">Win 7 · 64</span><span class="for">Windows 7 SP1, 8 e 8.1 de 64 bits</span><span class="file">Slyced-‹versão›-win7-x64.zip</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
       <a class="pkg reveal" style="--i:3" href="https://github.com/crie-studio/slyced/releases/latest"><span class="arch">Win 7 · 32</span><span class="for">Windows 7 SP1, 8 e 8.1 de 32 bits</span><span class="file">Slyced-‹versão›-win7-x86.zip</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
-      <a class="pkg web reveal" style="--i:4" href="../"><span class="arch">Navegador</span><span class="for">Versão web experimental: sem PACS por enquanto</span><span class="file">crie-studio.github.io/slyced</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+      <a class="pkg web reveal" style="--i:4" href="app/"><span class="arch">Navegador</span><span class="for">Versão web experimental: sem PACS por enquanto</span><span class="file">crie-studio.github.io/slyced/app</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
     </div>
     <p class="note reveal">Os pacotes ainda não têm assinatura digital: se o Windows mostrar “O Windows protegeu o computador”, clique em <b>Mais informações → Executar assim mesmo</b>. Confira o arquivo com o <code>SHA256SUMS.txt</code> do release. Detalhes no <a href="https://github.com/crie-studio/slyced/blob/main/docs/MANUAL.md">manual</a>.</p>
   </div>
@@ -369,7 +374,7 @@
     <div class="faq">
       <details class="reveal"><summary>Como abrir um CD de tomografia ou ressonância no computador?</summary><p>Baixe o Slyced, descompacte e abra o <code>Slyced.exe</code>. Clique em <b>Abrir pasta</b> e escolha a unidade do CD, ou arraste a pasta do CD para a janela: ele encontra o DICOMDIR e lista os exames, sem instalar nada. Sem leitor de CD, copie o conteúdo para um pendrive ou ZIP, que o Slyced abre sem descompactar.</p></details>
       <details class="reveal"><summary>Existe um visualizador DICOM gratuito que rode no Windows 7?</summary><p>Sim. O Slyced tem pacotes para Windows 7 SP1, 8 e 8.1, de 64 e de 32 bits, além de Windows 10 e 11 (x64 e ARM64). É gratuito e de código aberto.</p></details>
-      <details class="reveal"><summary>Dá para ver exames DICOM no navegador, sem instalar nada?</summary><p>Sim, na <a href="../">versão web experimental</a>. Os arquivos são lidos pelo próprio navegador e não são enviados a nenhum servidor. Por enquanto ela não tem PACS nem JPEG-LS.</p></details>
+      <details class="reveal"><summary>Dá para ver exames DICOM no navegador, sem instalar nada?</summary><p>Sim, na <a href="app/">versão web experimental</a>. Os arquivos são lidos pelo próprio navegador e não são enviados a nenhum servidor. Por enquanto ela não tem PACS nem JPEG-LS.</p></details>
       <details class="reveal"><summary>O Slyced envia meus exames para algum lugar?</summary><p>Não. Não há telemetria, contas nem verificação automática de atualizações. O programa só se conecta aos servidores PACS que você cadastrar, e só quando você busca ou baixa um exame.</p></details>
       <details class="reveal"><summary>Quais exames e formatos o Slyced abre?</summary><p>TC, RM, RX e US em DICOM, de pastas, CD/DVD com DICOMDIR e ZIP. Lê imagens sem compressão e comprimidas em JPEG (inclusive 12 bits e sem perdas), JPEG-LS, JPEG 2000 e RLE, multiframe e coloridas.</p></details>
       <details class="reveal"><summary>O Slyced faz reconstrução MPR e 3D?</summary><p>Sim: MPR axial, coronal e sagital com planos oblíquos e slab (MIP, MinIP ou média), reconstrução curva (CPR) e 3D na placa de vídeo, com VR, MIP, MinIP e superfície.</p></details>

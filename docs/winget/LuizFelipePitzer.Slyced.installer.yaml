@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.9.0.schema.json
+PackageIdentifier: LuizFelipePitzer.Slyced
+PackageVersion: 1.5.4
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: Slyced.exe
+    PortableCommandAlias: slyced
+MinimumOSVersion: 10.0.0.0
+UpgradeBehavior: install
+ReleaseDate: 2026-11-09
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/crie-studio/slyced/releases/download/v1.5.4/Slyced-1.5.4-x64.zip
+    InstallerSha256: 5A0539E9BAD69F62923BBC81AC811ACF0A4DC9BEA6AB670624AD2B45A588A35E
+  - Architecture: arm64
+    InstallerUrl: https://github.com/crie-studio/slyced/releases/download/v1.5.4/Slyced-1.5.4-arm64.zip
+    InstallerSha256: AE27632FBF31F0BEA09FF91061809C4284F52BAC076C194999060015894B1099
+ManifestType: installer
+ManifestVersion: 1.9.0

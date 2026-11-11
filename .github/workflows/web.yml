@@ -1,6 +1,6 @@
-# Web version (experimental) and project page on GitHub Pages:
-#   https://crie-studio.github.io/slyced/        the viewer, ?exemplo opens the synthetic sample exam
-#   https://crie-studio.github.io/slyced/sobre/  project page (web/sobre/index.html)
+# Project page and web version (experimental) on GitHub Pages:
+#   https://crie-studio.github.io/slyced/      project page (web/landing), English in en/
+#   https://crie-studio.github.io/slyced/app/  the viewer, ?exemplo opens the synthetic sample exam
 #
 # Every push to main that changes either one rebuilds the WebAssembly module
 # (scripts/build-web.ps1) and publishes web/dist. Both pages are static: exams are
@@ -78,9 +78,9 @@ jobs:
           rayon = "1.12.0"
           EOF
           cargo run --release --quiet --manifest-path "$p/Cargo.toml" -- "$p/saida"
-          mkdir -p web/dist/exemplo
-          (cd "$p/saida" && zip -q -r "$GITHUB_WORKSPACE/web/dist/exemplo/fantoma.zip" .)
-          ls -la web/dist web/dist/pkg web/dist/exemplo web/dist/sobre web/dist/sobre/img web/dist/app
+          mkdir -p web/dist/app/exemplo
+          (cd "$p/saida" && zip -q -r "$GITHUB_WORKSPACE/web/dist/app/exemplo/fantoma.zip" .)
+          ls -la web/dist web/dist/en web/dist/img web/dist/app web/dist/app/pkg web/dist/app/exemplo web/dist/sobre
 
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -98,7 +98,7 @@ jobs:
 
       # Tells Bing and the other IndexNow engines that the pages changed (Bing also
       # feeds the web search of ChatGPT and Copilot). The key is public by design:
-      # it is the file web/<key>.txt, published at the root of the site.
+      # it is the file web/landing/<key>.txt, published at the root of the site.
       - name: Avisar os buscadores (IndexNow)
         continue-on-error: true
         run: |
@@ -106,4 +106,4 @@ jobs:
           base=https://crie-studio.github.io/slyced
           curl -sS -o /dev/null -w 'IndexNow: HTTP %{http_code}\n' -X POST https://api.indexnow.org/indexnow \
             -H 'Content-Type: application/json; charset=utf-8' \
-            -d "{\"host\":\"crie-studio.github.io\",\"key\":\"$key\",\"keyLocation\":\"$base/$key.txt\",\"urlList\":[\"$base/\",\"$base/sobre/\",\"$base/sobre/en/\"]}"
+            -d "{\"host\":\"crie-studio.github.io\",\"key\":\"$key\",\"keyLocation\":\"$base/$key.txt\",\"urlList\":[\"$base/\",\"$base/en/\",\"$base/app/\"]}"
