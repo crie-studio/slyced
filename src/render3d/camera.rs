@@ -37,8 +37,8 @@ impl ViewPreset {
         match self {
             ViewPreset::Anterior => "Anterior",
             ViewPreset::Posterior => "Posterior",
-            ViewPreset::Left => "Esquerda",
-            ViewPreset::Right => "Direita",
+            ViewPreset::Left => tr!("Esquerda", "Left"),
+            ViewPreset::Right => tr!("Direita", "Right"),
             ViewPreset::Superior => "Superior",
             ViewPreset::Inferior => "Inferior",
         }

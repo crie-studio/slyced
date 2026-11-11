@@ -1,5 +1,7 @@
 //! Transfer functions for volume rendering, inspired by the 3D Slicer presets.
 
+use crate::i18n::Tr;
+
 use half::f16;
 
 /// Number of entries in the baked transfer function texture.
@@ -28,7 +30,7 @@ const SHADE_DEFAULT: Shading = Shading { ambient: 0.25, diffuse: 0.8, specular: 
 const SHADE_SOFT: Shading = Shading { ambient: 0.35, diffuse: 0.7, specular: 0.15, shininess: 12.0 };
 
 pub struct VrPreset {
-    pub name: &'static str,
+    pub name: Tr,
     pub ct: bool,
     pub points: &'static [TfPoint],
     pub shading: Shading,
@@ -38,7 +40,7 @@ pub struct VrPreset {
 
 pub const PRESETS: &[VrPreset] = &[
     VrPreset {
-        name: "Osso",
+        name: Tr("Osso", "Bone"),
         ct: true,
         points: &[
             p(-3024.0, 0.0, 0.0, 0.0, 0.0),
@@ -50,7 +52,7 @@ pub const PRESETS: &[VrPreset] = &[
         swatch: [232, 214, 170],
     },
     VrPreset {
-        name: "Angio",
+        name: Tr("Angio", "Angio"),
         ct: true,
         points: &[
             p(-3024.0, 0.0, 0.0, 0.0, 0.0),
@@ -64,7 +66,7 @@ pub const PRESETS: &[VrPreset] = &[
         swatch: [226, 120, 96],
     },
     VrPreset {
-        name: "Músculo",
+        name: Tr("Músculo", "Muscle"),
         ct: true,
         points: &[
             p(-3024.0, 0.0, 0.0, 0.0, 0.0),
@@ -77,7 +79,7 @@ pub const PRESETS: &[VrPreset] = &[
         swatch: [196, 92, 72],
     },
     VrPreset {
-        name: "Pele",
+        name: Tr("Pele", "Skin"),
         ct: true,
         points: &[
             p(-3024.0, 0.0, 0.0, 0.0, 0.0),
@@ -90,7 +92,7 @@ pub const PRESETS: &[VrPreset] = &[
         swatch: [238, 186, 150],
     },
     VrPreset {
-        name: "Pulmão",
+        name: Tr("Pulmão", "Lung"),
         ct: true,
         points: &[
             p(-1024.0, 0.0, 0.0, 0.0, 0.0),
@@ -106,7 +108,7 @@ pub const PRESETS: &[VrPreset] = &[
         swatch: [130, 170, 240],
     },
     VrPreset {
-        name: "Partes moles",
+        name: Tr("Partes moles", "Soft tissue"),
         ct: true,
         points: &[
             p(-3024.0, 0.0, 0.0, 0.0, 0.0),
@@ -120,7 +122,7 @@ pub const PRESETS: &[VrPreset] = &[
         swatch: [214, 132, 112],
     },
     VrPreset {
-        name: "MR padrão",
+        name: Tr("MR padrão", "MR default"),
         ct: false,
         points: &[
             p(0.0, 0.0, 0.0, 0.0, 0.0),

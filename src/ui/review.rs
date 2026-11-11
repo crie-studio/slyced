@@ -63,7 +63,7 @@ impl SlycedApp {
         let id = self.bookmarks.iter().map(|b| b.id).max().unwrap_or(0) + 1;
         self.bookmarks.push(Bookmark {
             id,
-            label: format!("Achado {n}"),
+            label: trf!("Achado {n}", "Finding {n}"),
             note: String::new(),
             study_uid: series.study.uid.clone(),
             series_uid: series.uid.clone(),
@@ -87,7 +87,10 @@ impl SlycedApp {
         self.push_nav();
         let Some(b) = self.bookmarks.iter().find(|b| b.id == id).cloned() else { return };
         if self.library.find_series(&b.series_uid).is_none() {
-            self.toast(ToastKind::Info, "A série deste achado não está aberta. Abra o exame novamente.");
+            self.toast(
+                ToastKind::Info,
+                tr!("A série deste achado não está aberta. Abra o exame novamente.", "The series of this finding is not open. Open the study again."),
+            );
             return;
         }
         self.pending_bookmark = Some(id);
@@ -143,13 +146,13 @@ impl SlycedApp {
         if items.is_empty() && self.tool != Tool::Bookmark {
             return;
         }
-        caption(ui, "Achados");
+        caption(ui, tr!("Achados", "Findings"));
         let mut go = None;
         let mut remove = None;
         let mut changed = false;
         card(ui, |ui| {
             if items.is_empty() {
-                ui.label(RichText::new("Clique na imagem para marcar um achado.").color(pal().text_faint).size(12.0));
+                ui.label(RichText::new(tr!("Clique na imagem para marcar um achado.", "Click the image to mark a finding.")).color(pal().text_faint).size(12.0));
             }
             for b in &items {
                 ui.horizontal(|ui| {
@@ -175,13 +178,13 @@ impl SlycedApp {
                             self.bookmark_edit = Some(b.id);
                             self.bookmark_focus = true;
                         }
-                        label.on_hover_text("Clique para ir ao achado · duplo clique para renomear");
+                        label.on_hover_text(tr!("Clique para ir ao achado · duplo clique para renomear", "Click to go to the finding · double-click to rename"));
                     }
                     ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                        if icon_button_sized(ui, icons::X, "Remover", false, 22.0).clicked() {
+                        if icon_button_sized(ui, icons::X, tr!("Remover", "Remove"), false, 22.0).clicked() {
                             remove = Some(b.id);
                         }
-                        if icon_button_sized(ui, icons::CROSSHAIR_SIMPLE, "Ir ao achado", false, 22.0).clicked() {
+                        if icon_button_sized(ui, icons::CROSSHAIR_SIMPLE, tr!("Ir ao achado", "Go to finding"), false, 22.0).clicked() {
                             go = Some(b.id);
                         }
                     });
@@ -203,17 +206,25 @@ impl SlycedApp {
     // ------------------------------------------------------------------ protocols
 
     pub(crate) fn protocols_menu(&mut self, ui: &mut Ui) {
-        ui.label(RichText::new("Protocolos de leitura").small().color(pal().text_faint));
-        let r = ui.add(egui::Button::new(RichText::new(format!("{}  Hérnia incisional (índice de Tanaka)", icons::CLIPBOARD_TEXT)).color(pal().text)).min_size(egui::vec2(260.0, 26.0)));
+        ui.label(RichText::new(tr!("Protocolos de leitura", "Reading protocols")).small().color(pal().text_faint));
+        let text = trf!("{}  Hérnia incisional (índice de Tanaka)", "{}  Incisional hernia (Tanaka index)", icons::CLIPBOARD_TEXT);
+        let r = ui.add(egui::Button::new(RichText::new(text).color(pal().text)).min_size(egui::vec2(260.0, 26.0)));
         let clicked = r.clicked();
-        r.on_hover_text("Volumes do saco herniário e da cavidade abdominal, índice de Tanaka, razão de Sabbagh e largura do defeito (EHS).");
+        r.on_hover_text(tr!(
+            "Volumes do saco herniário e da cavidade abdominal, índice de Tanaka, razão de Sabbagh e largura do defeito (EHS).",
+            "Hernia sac and abdominal cavity volumes, Tanaka index, Sabbagh ratio and fascial defect width (EHS)."
+        ));
         if clicked {
             self.open_hernia();
             ui.close();
         }
-        let r = ui.add(egui::Button::new(RichText::new(format!("{}  Fases: sem × com contraste (ΔHU)", icons::COLUMNS)).color(pal().text)).min_size(egui::vec2(260.0, 26.0)));
+        let text = trf!("{}  Fases: sem × com contraste (ΔHU)", "{}  Phases: non-contrast × contrast (ΔHU)", icons::COLUMNS);
+        let r = ui.add(egui::Button::new(RichText::new(text).color(pal().text)).min_size(egui::vec2(260.0, 26.0)));
         let clicked = r.clicked();
-        r.on_hover_text("Abre as fases sem e com contraste lado a lado, alinhadas: a densidade (H) mostra o ΔHU e há mapa de realce e subtração.");
+        r.on_hover_text(tr!(
+            "Abre as fases sem e com contraste lado a lado, alinhadas: a densidade (H) mostra o ΔHU e há mapa de realce e subtração.",
+            "Opens the non-contrast and contrast phases side by side, aligned: point density (H) shows the ΔHU, plus an enhancement map and subtraction."
+        ));
         if clicked {
             self.compare_phases();
             ui.close();
@@ -221,7 +232,7 @@ impl SlycedApp {
         for (i, p) in PROTOCOLS.iter().enumerate() {
             let r = ui.add(egui::Button::new(RichText::new(format!("{}  {}", icons::CLIPBOARD_TEXT, p.name)).color(pal().text)).min_size(egui::vec2(260.0, 26.0)));
             let clicked = r.clicked();
-            r.on_hover_text(p.detail);
+            r.on_hover_text(p.detail.get());
             if clicked {
                 self.apply_protocol(i);
                 ui.close();
@@ -234,12 +245,15 @@ impl SlycedApp {
         let Some(p) = PROTOCOLS.get(i) else { return };
         let study_uid = self.active_series().map(|s| s.study.uid.clone()).or_else(|| self.expanded_study.clone()).or_else(|| self.library.studies.first().map(|s| s.header.uid.clone()));
         let Some(study) = study_uid.and_then(|u| self.library.studies.iter().find(|s| s.header.uid == u)) else {
-            self.toast(ToastKind::Info, "Abra um exame primeiro.");
+            self.toast(ToastKind::Info, tr!("Abra um exame primeiro.", "Open a study first."));
             return;
         };
         let best = study.series.iter().filter_map(|s| protocols::score(p, s).map(|sc| (sc, s.uid.clone()))).max_by_key(|x| x.0);
         let Some((_, uid)) = best else {
-            self.toast(ToastKind::Error, format!("Protocolo {}: nenhuma série de TC com cortes suficientes neste exame.", p.name));
+            self.toast(
+                ToastKind::Error,
+                trf!("Protocolo {}: nenhuma série de TC com cortes suficientes neste exame.", "Protocol {}: no CT series with enough slices in this study.", p.name),
+            );
             return;
         };
         self.pending_protocol = Some(i);
@@ -271,7 +285,7 @@ impl SlycedApp {
     pub(crate) fn curve_add(&mut self, hit: Hit, series: &Arc<LoadedSeries>) {
         let Some(p) = hit.patient else { return };
         if series.volume.is_none() {
-            self.toast(ToastKind::Info, "O rastreador precisa de uma série em cortes (com volume).");
+            self.toast(ToastKind::Info, tr!("O rastreador precisa de uma série em cortes (com volume).", "The tube tracker needs a series of slices (with a volume)."));
             return;
         }
         if self.curve_series.as_ref().is_some_and(|s| !Arc::ptr_eq(s, series)) {
@@ -365,18 +379,23 @@ impl SlycedApp {
 
     pub(crate) fn inspector_cpr(&mut self, ui: &mut Ui) {
         let active = self.tool == Tool::Curve || !self.curve.is_empty();
-        caption(ui, "Rastreador tubular (CPR)");
+        caption(ui, tr!("Rastreador tubular (CPR)", "Tube tracker (CPR)"));
         card(ui, |ui| {
             if !active {
-                ui.label(RichText::new("Dê 3 ou 4 cliques ao longo do apêndice, ureter, colédoco ou vaso e veja a estrutura inteira esticada em uma imagem.").color(pal().text_faint).size(12.0));
-                if ui.button(format!("{}  Rastrear estrutura (V)", icons::BEZIER_CURVE)).clicked() {
+                let text = tr!(
+                    "Dê 3 ou 4 cliques ao longo do apêndice, ureter, colédoco ou vaso e veja a estrutura inteira esticada em uma imagem.",
+                    "Click 3 or 4 times along the appendix, ureter, common bile duct or vessel to see the whole structure straightened in one image."
+                );
+                ui.label(RichText::new(text).color(pal().text_faint).size(12.0));
+                if ui.button(trf!("{}  Rastrear estrutura (V)", "{}  Trace structure (V)", icons::BEZIER_CURVE)).clicked() {
                     self.tool = Tool::Curve;
                 }
                 return;
             }
             ui.label(
-                RichText::new(format!(
+                RichText::new(trf!(
                     "{} ponto(s). Clique ao longo da estrutura, rolando os cortes entre os cliques. Botão direito ou Enter conclui; a roda do mouse sobre a imagem esticada a gira.",
+                    "{} point(s). Click along the structure, scrolling through the slices between clicks. Right-click or Enter finishes; the mouse wheel over the straightened image rotates it.",
                     self.curve.len()
                 ))
                 .color(pal().text_faint)
@@ -397,33 +416,33 @@ impl SlycedApp {
                 rebuild = true;
             }
             let before = (self.cpr_angle, self.cpr_width);
-            labeled_slider(ui, "Rotação", &mut self.cpr_angle, -180.0..=180.0, "°");
-            labeled_slider(ui, "Largura", &mut self.cpr_width, 20.0..=160.0, " mm");
+            labeled_slider(ui, tr!("Rotação", "Rotation"), &mut self.cpr_angle, -180.0..=180.0, "°");
+            labeled_slider(ui, tr!("Largura", "Width"), &mut self.cpr_width, 20.0..=160.0, " mm");
             if before != (self.cpr_angle, self.cpr_width) {
                 rebuild = true;
             }
             ui.horizontal_wrapped(|ui| {
                 if self.tool == Tool::Curve {
-                    if ui.button(format!("{}  Concluir", icons::CHECK)).clicked() {
+                    if ui.button(trf!("{}  Concluir", "{}  Finish", icons::CHECK)).clicked() {
                         self.tool = Tool::WindowLevel;
                     }
-                } else if ui.button(format!("{}  Continuar", icons::BEZIER_CURVE)).clicked() {
+                } else if ui.button(trf!("{}  Continuar", "{}  Continue", icons::BEZIER_CURVE)).clicked() {
                     self.tool = Tool::Curve;
                 }
-                if !self.curve.is_empty() && ui.button(format!("{}  Desfazer", icons::ARROW_COUNTER_CLOCKWISE)).clicked() {
+                if !self.curve.is_empty() && ui.button(trf!("{}  Desfazer", "{}  Undo", icons::ARROW_COUNTER_CLOCKWISE)).clicked() {
                     self.curve_undo();
                 }
-                if ui.button(format!("{}  Limpar", icons::TRASH)).clicked() {
+                if ui.button(trf!("{}  Limpar", "{}  Clear", icons::TRASH)).clicked() {
                     self.curve_clear();
                     self.tool = Tool::WindowLevel;
                 }
             });
             let shown = matches!(self.mpr_views[3].content, Content::Cpr(..)) || self.cpr_view.is_some();
             if shown {
-                if ui.button(format!("{}  Fechar imagem esticada", icons::X)).clicked() {
+                if ui.button(trf!("{}  Fechar imagem esticada", "{}  Close straightened image", icons::X)).clicked() {
                     self.cpr_close();
                 }
-            } else if self.curve.len() >= 2 && ui.button(format!("{}  Mostrar imagem esticada", icons::PATH)).clicked() {
+            } else if self.curve.len() >= 2 && ui.button(trf!("{}  Mostrar imagem esticada", "{}  Show straightened image", icons::PATH)).clicked() {
                 rebuild = true;
             }
             if rebuild && self.curve.len() >= 2 {
@@ -436,34 +455,35 @@ impl SlycedApp {
 
     /// Thick slab over native images, noise filter and magnifier.
     pub(crate) fn inspector_view_aids(&mut self, ui: &mut Ui, stack: bool) {
-        caption(ui, "Leitura");
+        caption(ui, tr!("Leitura", "Reading"));
         let mut zoom = self.magnifier;
         let Some(v) = self.active_view_mut() else { return };
         card(ui, |ui| {
             if stack {
                 ui.horizontal(|ui| {
-                    ui.label("Espessura (slab)");
+                    ui.label(tr!("Espessura (slab)", "Slab thickness"));
                     ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                        ui.label(RichText::new(if v.slab_mm > 0.0 { format!("{:.0} mm", v.slab_mm) } else { "nativa".into() }).color(pal().text_dim));
+                        ui.label(RichText::new(if v.slab_mm > 0.0 { format!("{:.0} mm", v.slab_mm) } else { tr!("nativa", "native").into() }).color(pal().text_dim));
                     });
                 });
                 full_slider(ui, &mut v.slab_mm, 0.0..=40.0);
                 v.slab_mm = v.slab_mm.round();
                 let mut mode = v.slab_mode;
                 ui.add_enabled_ui(v.slab_mm > 0.0, |ui| {
-                    if segmented(ui, &mut mode, &[(SlabMode::Mip, "", "MIP"), (SlabMode::MinIp, "", "MinIP"), (SlabMode::Avg, "", "Média")]) {
+                    if segmented(ui, &mut mode, &[(SlabMode::Mip, "", "MIP"), (SlabMode::MinIp, "", "MinIP"), (SlabMode::Avg, "", tr!("Média", "Average"))]) {
                         v.slab_mode = mode;
                     }
                 });
                 ui.add_space(6.0);
             }
-            ui.label("Filtro de ruído (só exibição)");
+            ui.label(tr!("Filtro de ruído (só exibição)", "Noise reduction (display only)"));
             let mut level = v.denoise;
-            if segmented(ui, &mut level, &[(0u8, "", "Desligado"), (1, "", "Leve"), (2, "", "Médio"), (3, "", "Forte")]) {
+            let levels = [(0u8, "", tr!("Desligado", "Off")), (1, "", tr!("Leve", "Light")), (2, "", tr!("Médio", "Medium")), (3, "", tr!("Forte", "Strong"))];
+            if segmented(ui, &mut level, &levels) {
                 v.denoise = level;
             }
             ui.add_space(6.0);
-            labeled_slider(ui, "Ampliação da lupa (M)", &mut zoom, 2.0..=8.0, "×");
+            labeled_slider(ui, tr!("Ampliação da lupa (M)", "Magnifier zoom (M)"), &mut zoom, 2.0..=8.0, "×");
         });
         self.magnifier = zoom.round();
     }
@@ -485,18 +505,18 @@ impl Special {
 
     pub fn label(self) -> &'static str {
         match self {
-            Special::Fat => "Gordura mesentérica",
-            Special::Gas => "Gás livre",
-            Special::Dense => "Cálculos",
+            Special::Fat => tr!("Gordura mesentérica", "Mesenteric fat"),
+            Special::Gas => tr!("Gás livre", "Free air"),
+            Special::Dense => tr!("Cálculos", "Stones"),
         }
     }
 
     /// Name that fits under a preview.
     pub fn short(self) -> &'static str {
         match self {
-            Special::Fat => "Gordura",
-            Special::Gas => "Gás livre",
-            Special::Dense => "Cálculos",
+            Special::Fat => tr!("Gordura", "Fat"),
+            Special::Gas => tr!("Gás livre", "Free air"),
+            Special::Dense => tr!("Cálculos", "Stones"),
         }
     }
 
@@ -510,9 +530,18 @@ impl Special {
 
     pub fn help(self) -> &'static str {
         match self {
-            Special::Fat => "Janela 250/−50 para gordura e realce em laranja da gordura densificada (borramento inflamatório: apendicite, diverticulite, pancreatite).",
-            Special::Gas => "Janela 1000/−600 em negativo e todo gás dentro do corpo (< −800 HU) em ciano: microbolhas de pneumoperitônio e retropneumoperitônio saltam aos olhos.",
-            Special::Dense => "Tudo acima do limiar em magenta (cálculos, apendicolitos, calcificações). Procure no volume para listar os focos pequenos.",
+            Special::Fat => tr!(
+                "Janela 250/−50 para gordura e realce em laranja da gordura densificada (borramento inflamatório: apendicite, diverticulite, pancreatite).",
+                "Window 250/−50 for fat, with fat stranding highlighted in orange (inflammation: appendicitis, diverticulitis, pancreatitis)."
+            ),
+            Special::Gas => tr!(
+                "Janela 1000/−600 em negativo e todo gás dentro do corpo (< −800 HU) em ciano: microbolhas de pneumoperitônio e retropneumoperitônio saltam aos olhos.",
+                "Inverted window 1000/−600 with all gas inside the body (< −800 HU) in cyan: tiny bubbles of pneumoperitoneum and retropneumoperitoneum stand out."
+            ),
+            Special::Dense => tr!(
+                "Tudo acima do limiar em magenta (cálculos, apendicolitos, calcificações). Procure no volume para listar os focos pequenos.",
+                "Everything above the threshold in magenta (stones, appendicoliths, calcifications). Search the volume to list the small foci."
+            ),
         }
     }
 }
@@ -595,7 +624,10 @@ impl SlycedApp {
     /// Looks for small dense foci in the volume of the active series (background job).
     pub(crate) fn search_calculi(&mut self) {
         let Some(series) = self.active_series().filter(|s| s.volume.is_some()) else {
-            self.toast(ToastKind::Info, "Abra uma série de TC em cortes (com volume) para procurar cálculos.");
+            self.toast(
+                ToastKind::Info,
+                tr!("Abra uma série de TC em cortes (com volume) para procurar cálculos.", "Open a CT series of slices (with a volume) to search for stones."),
+            );
             return;
         };
         if !self.special_on(Special::Dense) {
@@ -619,9 +651,9 @@ impl SlycedApp {
         self.toast(
             ToastKind::Info,
             match n {
-                0 => format!("Nenhum foco denso pequeno acima de {threshold:.0} HU."),
-                1 => "1 foco denso encontrado (lista no painel).".to_string(),
-                n => format!("{n} focos densos encontrados (lista no painel)."),
+                0 => trf!("Nenhum foco denso pequeno acima de {threshold:.0} HU.", "No small dense focus above {threshold:.0} HU."),
+                1 => tr!("1 foco denso encontrado (lista no painel).", "1 dense focus found (listed in the panel).").to_string(),
+                n => trf!("{n} focos densos encontrados (lista no painel).", "{n} dense foci found (listed in the panel)."),
             },
         );
     }
@@ -666,14 +698,14 @@ impl SlycedApp {
 
     /// Menu of the reading modes (top bar).
     pub(crate) fn specials_menu(&mut self, ui: &mut Ui) {
-        ui.label(RichText::new("Realces de leitura (TC)").small().color(pal().text_faint));
+        ui.label(RichText::new(tr!("Realces de leitura (TC)", "Reading highlights (CT)")).small().color(pal().text_faint));
         if self.special_preview_row(ui) {
             ui.add_space(4.0);
         } else {
             self.special_buttons(ui);
         }
         ui.separator();
-        if ui.button(format!("{}  Procurar cálculos no volume", icons::MAGNIFYING_GLASS)).clicked() {
+        if ui.button(trf!("{}  Procurar cálculos no volume", "{}  Search the volume for stones", icons::MAGNIFYING_GLASS)).clicked() {
             self.search_calculi();
             ui.close();
         }
@@ -697,7 +729,7 @@ impl SlycedApp {
         if series.info.modality != "CT" {
             return;
         }
-        caption(ui, "Realces");
+        caption(ui, tr!("Realces", "Highlights"));
         let mut go = None;
         card(ui, |ui| {
             if !self.special_preview_row(ui) {
@@ -716,14 +748,14 @@ impl SlycedApp {
             }
             ui.add_space(6.0);
             let mut t = self.dense_threshold;
-            labeled_slider(ui, "Limiar de cálculo (HU)", &mut t, 130.0..=800.0, "");
+            labeled_slider(ui, tr!("Limiar de cálculo (HU)", "Stone threshold (HU)"), &mut t, 130.0..=800.0, "");
             let t = (t / 10.0).round() * 10.0;
             if t != self.dense_threshold {
                 self.set_dense_threshold(t);
             }
             ui.horizontal(|ui| {
                 ui.add_enabled_ui(!self.calculi_busy && series.volume.is_some(), |ui| {
-                    if ui.button(format!("{}  Procurar cálculos no volume", icons::MAGNIFYING_GLASS)).clicked() {
+                    if ui.button(trf!("{}  Procurar cálculos no volume", "{}  Search the volume for stones", icons::MAGNIFYING_GLASS)).clicked() {
                         self.search_calculi();
                     }
                 });
@@ -735,22 +767,29 @@ impl SlycedApp {
             });
             if let Some(r) = self.calculi.as_ref().filter(|r| r.study_uid == series.study.uid) {
                 ui.add_space(4.0);
+                let n = r.items.len();
+                let foci = if n == 1 { "focus" } else { "foci" };
                 ui.label(
-                    RichText::new(format!("{} foco(s) ≥ {:.0} HU, menores que osso e vasos. Clique para ir.", r.items.len(), r.threshold))
-                        .size(11.5)
-                        .color(pal().text_faint),
+                    RichText::new(trf!(
+                        "{n} foco(s) ≥ {:.0} HU, menores que osso e vasos. Clique para ir.",
+                        "{n} {foci} ≥ {:.0} HU, smaller than bone and vessels. Click to go.",
+                        r.threshold
+                    ))
+                    .size(11.5)
+                    .color(pal().text_faint),
                 );
                 egui::ScrollArea::vertical().id_salt("calculi").max_height(220.0).show(ui, |ui| {
                     for (i, c) in r.items.iter().enumerate() {
-                        let text = format!(
-                            "C{}   {:.0} HU (média {:.0}) · {:.1} mm · {:.0} mm³",
+                        let text = trf!(
+                            "C{}   {:.0} HU (média {:.0}) · {} mm · {:.0} mm³",
+                            "C{}   {:.0} HU (mean {:.0}) · {} mm · {:.0} mm³",
                             i + 1,
                             c.max_hu,
                             c.mean_hu,
-                            c.length_mm,
+                            crate::i18n::num(c.length_mm, 1),
                             c.volume_mm3
                         );
-                        if ui.add(egui::Button::new(RichText::new(text).size(12.0)).frame(false)).on_hover_text("Ir até o foco").clicked() {
+                        if ui.add(egui::Button::new(RichText::new(text).size(12.0)).frame(false)).on_hover_text(tr!("Ir até o foco", "Go to the focus")).clicked() {
                             go = Some(i);
                         }
                     }
@@ -955,7 +994,7 @@ impl SlycedApp {
             }),
             _ => {}
         }
-        self.toast(ToastKind::Info, "Imagens restauradas ao padrão. Os achados salvos foram mantidos.");
+        self.toast(ToastKind::Info, tr!("Imagens restauradas ao padrão. Os achados salvos foram mantidos.", "Images reset to default. Saved findings were kept."));
     }
 
     /// Menu of the restore button (top bar).
@@ -967,30 +1006,56 @@ impl SlycedApp {
             r.on_hover_text(tip).on_disabled_hover_text(tip);
             clicked
         };
-        ui.label(RichText::new("Voltar ao padrão").small().color(pal().text_faint));
+        ui.label(RichText::new(tr!("Voltar ao padrão", "Reset to default")).small().color(pal().text_faint));
         let changes = self.screen_changes();
         let any = |f: fn(&Change) -> bool| changes.iter().any(f);
         let has_view = self.active_view().is_some_and(|v| !matches!(v.content, Content::Empty));
-        if item(ui, has_view, icons::ARROW_COUNTER_CLOCKWISE, "Visualização desta janela", "R", "Janela/nível, zoom, posição, rotação, espelhamento e inversão de cores") {
+        let (text, tip) = (
+            tr!("Visualização desta janela", "View of this viewport"),
+            tr!("Janela/nível, zoom, posição, rotação, espelhamento e inversão de cores", "Window/level, zoom, position, rotation, flip and color inversion"),
+        );
+        if item(ui, has_view, icons::ARROW_COUNTER_CLOCKWISE, text, "R", tip) {
             if let Some(v) = self.active_view_mut() {
                 v.reset_view();
             }
             ui.close();
         }
-        if item(ui, any(|c| matches!(c, Change::Measures(_))), icons::TRASH, "Apagar medidas e setas", "Shift+Del", "Distâncias, ângulos, ROIs, pontos de densidade e setas de todas as imagens na tela") {
+        let (text, tip) = (
+            tr!("Apagar medidas e setas", "Delete measurements and arrows"),
+            tr!(
+                "Distâncias, ângulos, ROIs, pontos de densidade e setas de todas as imagens na tela",
+                "Distances, angles, ROIs, density points and arrows on all images on screen"
+            ),
+        );
+        if item(ui, any(|c| matches!(c, Change::Measures(_))), icons::TRASH, text, "Shift+Del", tip) {
             self.clear_measurements();
             ui.close();
         }
-        if item(ui, any(|c| matches!(c, Change::Gas | Change::Fat | Change::Dense | Change::Slab(_) | Change::Denoise | Change::Colormap)), icons::SPARKLE, "Desligar realces e filtros", "", "Gordura mesentérica, gás livre, cálculos, slab, filtro de ruído e mapa de cores") {
+        let (text, tip) = (
+            tr!("Desligar realces e filtros", "Turn off highlights and filters"),
+            tr!(
+                "Gordura mesentérica, gás livre, cálculos, slab, filtro de ruído e mapa de cores",
+                "Mesenteric fat, free air, stones, slab, noise reduction and color map"
+            ),
+        );
+        if item(ui, any(|c| matches!(c, Change::Gas | Change::Fat | Change::Dense | Change::Slab(_) | Change::Denoise | Change::Colormap)), icons::SPARKLE, text, "", tip) {
             self.clear_enhancements();
             ui.close();
         }
-        if item(ui, any(|c| matches!(c, Change::Cursor | Change::Calculi(_) | Change::Path)), icons::X_CIRCLE, "Limpar cursor e marcadores", "", "Cursor 3D, focos de cálculo encontrados e trajeto do rastreador tubular") {
+        let (text, tip) = (
+            tr!("Limpar cursor e marcadores", "Clear cursor and markers"),
+            tr!("Cursor 3D, focos de cálculo encontrados e trajeto do rastreador tubular", "3D cursor, stone foci found and the tube tracker path"),
+        );
+        if item(ui, any(|c| matches!(c, Change::Cursor | Change::Calculi(_) | Change::Path)), icons::X_CIRCLE, text, "", tip) {
             self.clear_markers();
             ui.close();
         }
         ui.separator();
-        if item(ui, true, icons::ARROWS_CLOCKWISE, "Restaurar tudo", "Shift+R", "Todas as janelas na tela voltam a como a série abriu: visualização, medidas, realces, filtros, cursor e planos oblíquos. Os achados salvos são mantidos.") {
+        let tip = tr!(
+            "Todas as janelas na tela voltam a como a série abriu: visualização, medidas, realces, filtros, cursor e planos oblíquos. Os achados salvos são mantidos.",
+            "All viewports on screen go back to how the series opened: view, measurements, highlights, filters, cursor and oblique planes. Saved findings are kept."
+        );
+        if item(ui, true, icons::ARROWS_CLOCKWISE, tr!("Restaurar tudo", "Reset all"), "Shift+R", tip) {
             self.reset_screen();
             ui.close();
         }
@@ -1012,10 +1077,10 @@ impl TubeKind {
 
     pub fn label(self) -> &'static str {
         match self {
-            TubeKind::Appendix => "Apêndice",
+            TubeKind::Appendix => tr!("Apêndice", "Appendix"),
             TubeKind::Ureter => "Ureter",
-            TubeKind::Bile => "Colédoco",
-            TubeKind::Vessel => "Vaso",
+            TubeKind::Bile => tr!("Colédoco", "Bile duct"),
+            TubeKind::Vessel => tr!("Vaso", "Vessel"),
         }
     }
 

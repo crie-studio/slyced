@@ -1,18 +1,28 @@
 //! Generates a synthetic head CT (plus an RGB secondary capture) for testing
 //! without real patient data:
 //!
-//!     cargo run --release --example phantom -- <output-folder> [--anterior | --sem-contraste]
+//!     cargo run --release --example phantom -- <output-folder> [--anterior | --sem-contraste] [--english]
 //!
 //! `--anterior` writes a "prior" exam of the same patient instead: another
 //! study and Frame of Reference, the head shifted and rotated, and a smaller
 //! lesion (for testing the comparison mode). `--sem-contraste` writes the same
 //! exam's phase without contrast (vessels and lesion not enhanced).
+//! `--english` writes the descriptions, institution and patient name in English
+//! (screenshots for the English project page); UIDs and images are the same.
 
 use dicom_core::{dicom_value, DataElement, PrimitiveValue, VR};
 use dicom_dictionary_std::{tags, uids};
 use dicom_object::{FileMetaTableBuilder, InMemDicomObject};
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// `--english`: texts written into the files in English.
+static ENGLISH: AtomicBool = AtomicBool::new(false);
+
+fn text(pt: &'static str, en: &'static str) -> &'static str {
+    if ENGLISH.load(Ordering::Relaxed) { en } else { pt }
+}
 
 const NX: usize = 256;
 const NY: usize = 256;
@@ -30,6 +40,7 @@ struct Variant {
     lesion_mm: f64,
     series_number: &'static str,
     description: &'static str,
+    description_en: &'static str,
     /// Vessels and lesion enhanced.
     contrast: bool,
     /// Rotation about the patient axis (degrees) and shift (mm) of the head.
@@ -45,6 +56,7 @@ const CURRENT: Variant = Variant {
     lesion_mm: 6.0,
     series_number: "2",
     description: "Cranio Angio 1.25mm",
+    description_en: "Head Angio 1.25mm",
     contrast: true,
     pose: None,
 };
@@ -54,6 +66,7 @@ const PLAIN: Variant = Variant {
     sop: "2.25.3335",
     series_number: "3",
     description: "Cranio sem contraste 1.25mm",
+    description_en: "Head without contrast 1.25mm",
     contrast: false,
     ..CURRENT
 };
@@ -67,6 +80,7 @@ const PRIOR: Variant = Variant {
     lesion_mm: 4.5,
     series_number: "2",
     description: "Cranio Angio 1.25mm",
+    description_en: "Head Angio 1.25mm",
     contrast: true,
     pose: Some((5.0, [7.0, -9.0, 14.0])),
 };
@@ -75,6 +89,7 @@ fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let prior = args.iter().any(|a| a == "--anterior");
     let plain = args.iter().any(|a| a == "--sem-contraste");
+    ENGLISH.store(args.iter().any(|a| a == "--english"), Ordering::Relaxed);
     let out = PathBuf::from(args.iter().find(|a| !a.starts_with("--")).cloned().unwrap_or_else(|| "phantom".into()));
     std::fs::create_dir_all(&out).unwrap();
     let v = if prior {
@@ -86,7 +101,7 @@ fn main() {
     };
     (0..NZ).into_par_iter().for_each(|k| write_slice(&out, v, k));
     if prior || plain {
-        println!("{} cortes ({}) gravados em {}", NZ, v.description, out.display());
+        println!("{} cortes ({}) gravados em {}", NZ, text(v.description, v.description_en), out.display());
         return;
     }
     write_rgb(&out, v.study);
@@ -209,7 +224,7 @@ fn write_slice(out: &Path, v: &Variant, k: usize) {
     };
     put(&mut o, tags::SERIES_INSTANCE_UID, VR::UI, v.series.into());
     put(&mut o, tags::SERIES_NUMBER, VR::IS, v.series_number.into());
-    put(&mut o, tags::SERIES_DESCRIPTION, VR::LO, v.description.into());
+    put(&mut o, tags::SERIES_DESCRIPTION, VR::LO, text(v.description, v.description_en).into());
     if v.contrast {
         put(&mut o, tags::CONTRAST_BOLUS_AGENT, VR::LO, "IOPAMIDOL".into());
     }
@@ -255,7 +270,7 @@ fn write_scout(out: &Path, study: &str) {
     };
     put(&mut o, tags::SERIES_INSTANCE_UID, VR::UI, "2.25.7777777777".into());
     put(&mut o, tags::SERIES_NUMBER, VR::IS, "1".into());
-    put(&mut o, tags::SERIES_DESCRIPTION, VR::LO, "Localizador".into());
+    put(&mut o, tags::SERIES_DESCRIPTION, VR::LO, text("Localizador", "Localizer").into());
     put(&mut o, tags::INSTANCE_NUMBER, VR::IS, "1".into());
     put(&mut o, tags::IMAGE_POSITION_PATIENT, VR::DS, dicom_value!(Strs, ["0", format!("{y0}"), format!("{z0}")]));
     put(&mut o, tags::IMAGE_ORIENTATION_PATIENT, VR::DS, dicom_value!(Strs, ["0", "1", "0", "0", "0", "-1"]));
@@ -290,7 +305,7 @@ fn write_rgb(out: &Path, study: &str) {
     let mut o = base(study, uids::SECONDARY_CAPTURE_IMAGE_STORAGE, sop, "OT");
     o.put(DataElement::new(tags::SERIES_INSTANCE_UID, VR::UI, PrimitiveValue::from("2.25.5555555555")));
     o.put(DataElement::new(tags::SERIES_NUMBER, VR::IS, PrimitiveValue::from("90")));
-    o.put(DataElement::new(tags::SERIES_DESCRIPTION, VR::LO, PrimitiveValue::from("Captura colorida")));
+    o.put(DataElement::new(tags::SERIES_DESCRIPTION, VR::LO, PrimitiveValue::from(text("Captura colorida", "Color capture"))));
     o.put(DataElement::new(tags::INSTANCE_NUMBER, VR::IS, PrimitiveValue::from("1")));
     o.put(DataElement::new(tags::SAMPLES_PER_PIXEL, VR::US, PrimitiveValue::from(3u16)));
     o.put(DataElement::new(tags::PHOTOMETRIC_INTERPRETATION, VR::CS, PrimitiveValue::from("RGB")));
@@ -317,9 +332,9 @@ fn base(study: &str, sop_class: &str, sop: &str, modality: &str) -> InMemDicomOb
     s(&mut o, tags::STUDY_TIME, VR::TM, "143000");
     s(&mut o, tags::ACCESSION_NUMBER, VR::SH, "A123456");
     s(&mut o, tags::MODALITY, VR::CS, modality);
-    s(&mut o, tags::INSTITUTION_NAME, VR::LO, "Hospital Demonstração");
-    s(&mut o, tags::STUDY_DESCRIPTION, VR::LO, "TC de crânio (fantoma sintético)");
-    s(&mut o, tags::PATIENT_NAME, VR::PN, "FANTOMA^JOÃO DA SILVA");
+    s(&mut o, tags::INSTITUTION_NAME, VR::LO, text("Hospital Demonstração", "Demo Hospital"));
+    s(&mut o, tags::STUDY_DESCRIPTION, VR::LO, text("TC de crânio (fantoma sintético)", "Head CT (synthetic phantom)"));
+    s(&mut o, tags::PATIENT_NAME, VR::PN, text("FANTOMA^JOÃO DA SILVA", "PHANTOM^JOHN DOE"));
     s(&mut o, tags::PATIENT_ID, VR::LO, "000123");
     s(&mut o, tags::PATIENT_BIRTH_DATE, VR::DA, "19800215");
     s(&mut o, tags::PATIENT_SEX, VR::CS, "M");

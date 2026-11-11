@@ -1,13 +1,15 @@
 //! Hanging protocols: one click arranges the reconstruction, window and slab
 //! used for a clinical question.
 
+use crate::i18n::Tr;
+
 use crate::dicom::model::SeriesInfo;
 use crate::imaging::lut::Window;
 use crate::imaging::reslice::SlabMode;
 
 pub struct Protocol {
-    pub name: &'static str,
-    pub detail: &'static str,
+    pub name: Tr,
+    pub detail: Tr,
     pub window: Window,
     pub slab_mm: f32,
     pub slab_mode: SlabMode,
@@ -18,8 +20,11 @@ pub struct Protocol {
 
 pub const PROTOCOLS: &[Protocol] = &[
     Protocol {
-        name: "Abdome agudo",
-        detail: "Axial, coronal e sagital sincronizados, janela de abdome e média de 4 mm (apêndice, diverticulite, obstrução, coleções).",
+        name: Tr("Abdome agudo", "Acute abdomen"),
+        detail: Tr(
+            "Axial, coronal e sagital sincronizados, janela de abdome e média de 4 mm (apêndice, diverticulite, obstrução, coleções).",
+            "Synchronized axial, coronal and sagittal, abdomen window and 4 mm average (appendix, diverticulitis, obstruction, collections).",
+        ),
         window: Window { center: 60.0, width: 400.0 },
         slab_mm: 4.0,
         slab_mode: SlabMode::Avg,
@@ -27,8 +32,8 @@ pub const PROTOCOLS: &[Protocol] = &[
         avoid: &["pulm", "lung", "torax", "tórax", "chest", "osso", "bone", "scout", "topo", "local"],
     },
     Protocol {
-        name: "Tórax — nódulos",
-        detail: "Janela de pulmão e MIP de 8 mm, que destaca nódulos entre os vasos.",
+        name: Tr("Tórax — nódulos", "Chest — nodules"),
+        detail: Tr("Janela de pulmão e MIP de 8 mm, que destaca nódulos entre os vasos.", "Lung window and 8 mm MIP, which makes nodules stand out among the vessels."),
         window: Window { center: -600.0, width: 1500.0 },
         slab_mm: 8.0,
         slab_mode: SlabMode::Mip,
@@ -36,8 +41,8 @@ pub const PROTOCOLS: &[Protocol] = &[
         avoid: &["mediast", "partes moles", "scout", "topo"],
     },
     Protocol {
-        name: "Angio / TEP",
-        detail: "Janela angio e MIP de 12 mm para seguir vasos e procurar falhas de enchimento.",
+        name: Tr("Angio / TEP", "Angio / PE"),
+        detail: Tr("Janela angio e MIP de 12 mm para seguir vasos e procurar falhas de enchimento.", "Angio window and 12 mm MIP to follow vessels and look for filling defects."),
         window: Window { center: 300.0, width: 600.0 },
         slab_mm: 12.0,
         slab_mode: SlabMode::Mip,
@@ -45,8 +50,8 @@ pub const PROTOCOLS: &[Protocol] = &[
         avoid: &["scout", "topo", "sem contraste"],
     },
     Protocol {
-        name: "Osso / coluna",
-        detail: "Janela óssea com cortes finos, para fraturas e alinhamento.",
+        name: Tr("Osso / coluna", "Bone / spine"),
+        detail: Tr("Janela óssea com cortes finos, para fraturas e alinhamento.", "Bone window with thin slices, for fractures and alignment."),
         window: Window { center: 400.0, width: 1800.0 },
         slab_mm: 0.0,
         slab_mode: SlabMode::Avg,
@@ -54,8 +59,8 @@ pub const PROTOCOLS: &[Protocol] = &[
         avoid: &["pulm", "scout", "topo"],
     },
     Protocol {
-        name: "Crânio / AVC",
-        detail: "Janela estreita e média de 5 mm, que realça hipodensidades sutis.",
+        name: Tr("Crânio / AVC", "Head / stroke"),
+        detail: Tr("Janela estreita e média de 5 mm, que realça hipodensidades sutis.", "Narrow window and 5 mm average, which brings out subtle hypodensities."),
         window: Window { center: 35.0, width: 40.0 },
         slab_mm: 5.0,
         slab_mode: SlabMode::Avg,

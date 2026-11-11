@@ -114,8 +114,9 @@ impl LoadedSeries {
                 // Mixed series (e.g. a scout among axial slices): keep every image for
                 // 2D review and build the volume from the largest consistent group.
                 let volume = plan.map(|p| {
-                    warnings.push(format!(
+                    warnings.push(trf!(
                         "Volume 3D montado com {} de {} imagens (as demais têm geometria diferente).",
+                        "3D volume built from {} of {} images (the others have a different geometry).",
                         p.order.len(),
                         decoded.len()
                     ));
@@ -223,12 +224,24 @@ fn plan_volume(frames: &[DecodedFrame], warnings: &mut Vec<String>) -> Option<Vo
     let min_gap = gaps.iter().cloned().fold(f64::MAX, f64::min);
     if min_gap < 1e-3 {
         // Repeated positions: multi-phase / multi-echo stacks are shown in 2D only.
-        warnings.push("Posições de corte repetidas (múltiplas fases/ecos): reconstruções 3D/MPR indisponíveis.".into());
+        warnings.push(
+            tr!(
+                "Posições de corte repetidas (múltiplas fases/ecos): reconstruções 3D/MPR indisponíveis.",
+                "Repeated slice positions (multiple phases/echoes): 3D/MPR reconstructions unavailable."
+            )
+            .into(),
+        );
         return None;
     }
     let max_gap = gaps.iter().cloned().fold(0.0, f64::max);
     if max_gap / min_gap > 1.5 {
-        warnings.push("Espaçamento irregular entre cortes: as reconstruções podem ficar distorcidas.".into());
+        warnings.push(
+            tr!(
+                "Espaçamento irregular entre cortes: as reconstruções podem ficar distorcidas.",
+                "Irregular spacing between slices: reconstructions may be distorted."
+            )
+            .into(),
+        );
     }
 
     // Keep acquisition order when instance numbers run against the spatial order,
@@ -247,7 +260,7 @@ fn plan_volume(frames: &[DecodedFrame], warnings: &mut Vec<String>) -> Option<Vo
         return None;
     }
     if span.normalize().dot(normal).abs() < 0.97 {
-        warnings.push("Aquisição com inclinação do gantry: geometria aproximada.".into());
+        warnings.push(tr!("Aquisição com inclinação do gantry: geometria aproximada.", "Gantry-tilted acquisition: approximate geometry.").into());
     }
     let (dx, dy) = frames[order[0]].geometry.spacing.unwrap_or((1.0, 1.0));
     Some(VolumePlan {

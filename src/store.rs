@@ -22,8 +22,8 @@ impl StoreUsage {
         } else {
             format!("{:.0} MB", (self.bytes as f64 / (1u64 << 20) as f64).ceil())
         };
-        let n = if self.studies == 1 { "1 exame".to_string() } else { format!("{} exames", self.studies) };
-        format!("{n} ({})", size.replace('.', ","))
+        let n = if self.studies == 1 { tr!("1 exame", "1 study").to_string() } else { trf!("{} exames", "{} studies", self.studies) };
+        format!("{n} ({})", crate::i18n::dec(size))
     }
 }
 

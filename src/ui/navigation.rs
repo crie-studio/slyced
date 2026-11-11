@@ -103,7 +103,8 @@ impl SlycedApp {
     pub(crate) fn nav_step(&mut self, back: bool) {
         let target = if back { self.nav.back.pop() } else { self.nav.forward.pop() };
         let Some(target) = target else {
-            self.toast(ToastKind::Info, if back { "Nada para voltar." } else { "Nada para avançar." });
+            let text = if back { tr!("Nada para voltar.", "Nothing to go back to.") } else { tr!("Nada para avançar.", "Nothing to go forward to.") };
+            self.toast(ToastKind::Info, text);
             return;
         };
         if let Some(here) = self.position(self.active, None) {
@@ -145,7 +146,12 @@ impl SlycedApp {
         let Some(i) = list.iter().position(|u| *u == cur.uid) else { return };
         let j = i as i32 + dir;
         if j < 0 || j >= list.len() as i32 {
-            self.toast(ToastKind::Info, if dir < 0 { "Esta é a primeira série do exame." } else { "Esta é a última série do exame." });
+            let text = if dir < 0 {
+                tr!("Esta é a primeira série do exame.", "This is the first series of the study.")
+            } else {
+                tr!("Esta é a última série do exame.", "This is the last series of the study.")
+            };
+            self.toast(ToastKind::Info, text);
             return;
         }
         self.push_nav();
@@ -199,7 +205,10 @@ impl SlycedApp {
                             if resp.hovered() {
                                 ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
                             }
-                            let tip = format!("Série {number} · {desc}\n{count} imagem(ns) · ← / → troca de série");
+                            let tip = trf!(
+                                "Série {number} · {desc}\n{count} imagem(ns) · ← / → troca de série",
+                                "Series {number} · {desc}\n{count} image(s) · ← / → switches series"
+                            );
                             if resp.on_hover_text(tip).clicked() && !current {
                                 open = Some(uid.clone());
                             }
@@ -249,7 +258,13 @@ impl SlycedApp {
     /// Ctrl+G: opens the "Ir para" box over the active view.
     pub(crate) fn open_goto(&mut self) {
         if self.workspace == Workspace::Volume || self.active_view().is_none_or(|v| v.slice_count() < 2) {
-            self.toast(ToastKind::Info, "Ir para: a janela ativa precisa mostrar uma série de cortes (2D ou MPR).");
+            self.toast(
+                ToastKind::Info,
+                tr!(
+                    "Ir para: a janela ativa precisa mostrar uma série de cortes (2D ou MPR).",
+                    "Go to: the active viewport must show a series of slices (2D or MPR)."
+                ),
+            );
             return;
         }
         self.goto = Some(GoTo { focus: true, ..Default::default() });
@@ -282,8 +297,9 @@ impl SlycedApp {
                     .show(ui, |ui| {
                         ui.set_width(316.0);
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new(format!("{}  Ir para", icons::ARROWS_VERTICAL)).font(font_bold(13.5)).color(pal().text));
-                            let edit = ui.add(egui::TextEdit::singleline(&mut g.text).desired_width(78.0).hint_text(if g.mm { "0,0" } else { "1" }));
+                            ui.label(egui::RichText::new(trf!("{}  Ir para", "{}  Go to", icons::ARROWS_VERTICAL)).font(font_bold(13.5)).color(pal().text));
+                            let hint = if g.mm { tr!("0,0", "0.0") } else { "1" };
+                            let edit = ui.add(egui::TextEdit::singleline(&mut g.text).desired_width(78.0).hint_text(hint));
                             if std::mem::take(&mut g.focus) {
                                 edit.request_focus();
                             }
@@ -295,15 +311,22 @@ impl SlycedApp {
                             }
                             go |= edit.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
                             close |= ui.input(|i| i.key_pressed(egui::Key::Escape));
-                            ui.selectable_value(&mut g.mm, false, "Corte");
+                            ui.selectable_value(&mut g.mm, false, tr!("Corte", "Slice"));
                             ui.selectable_value(&mut g.mm, true, "mm");
-                            go |= ui.button("Ir").clicked();
-                            close |= super::widgets::icon_button_sized(ui, icons::X, "Fechar (Esc)", false, 24.0).clicked();
+                            go |= ui.button(tr!("Ir", "Go")).clicked();
+                            close |= super::widgets::icon_button_sized(ui, icons::X, tr!("Fechar (Esc)", "Close (Esc)"), false, 24.0).clicked();
                         });
                         let hint = match (g.mm, range) {
-                            (false, _) => format!("De 1 a {n} · Enter vai, Esc fecha"),
-                            (true, Some((a, b))) => format!("De {} a {} mm · Enter vai, Esc fecha", format!("{a:.1}").replace('.', ","), format!("{b:.1}").replace('.', ",")),
-                            (true, None) => "Esta série não tem posição em mm; use o número do corte.".to_string(),
+                            (false, _) => trf!("De 1 a {n} · Enter vai, Esc fecha", "From 1 to {n} · Enter goes, Esc closes"),
+                            (true, Some((a, b))) => {
+                                let (a, b) = (crate::i18n::num(a, 1), crate::i18n::num(b, 1));
+                                trf!("De {a} a {b} mm · Enter vai, Esc fecha", "From {a} to {b} mm · Enter goes, Esc closes")
+                            }
+                            (true, None) => tr!(
+                                "Esta série não tem posição em mm; use o número do corte.",
+                                "This series has no position in mm; use the slice number."
+                            )
+                            .to_string(),
                         };
                         ui.label(egui::RichText::new(hint).small().color(pal().text_faint));
                         if let Some(e) = &g.error {
@@ -324,7 +347,7 @@ impl SlycedApp {
         let mm = g.mm;
         let raw = g.text.to_lowercase().replace("mm", "").replace(',', ".");
         let Ok(x) = raw.trim().parse::<f64>() else {
-            g.error = Some("Digite um número.".into());
+            g.error = Some(tr!("Digite um número.", "Type a number.").into());
             return;
         };
         let Some(view) = self.active_view() else { return };
@@ -337,7 +360,11 @@ impl SlycedApp {
         };
         let Some(k) = target else {
             if let Some(g) = self.goto.as_mut() {
-                g.error = Some(if mm { "Esta série não tem posição em mm.".to_string() } else { format!("Escolha um corte de 1 a {n}.") });
+                g.error = Some(if mm {
+                    tr!("Esta série não tem posição em mm.", "This series has no position in mm.").to_string()
+                } else {
+                    trf!("Escolha um corte de 1 a {n}.", "Choose a slice from 1 to {n}.")
+                });
             }
             return;
         };
@@ -361,18 +388,20 @@ impl SlycedApp {
                 self.focus = Some((self.left_open, self.right_open));
                 self.left_open = false;
                 self.right_open = false;
-                self.toast(ToastKind::Info, "Modo foco: Tab traz os painéis de volta.");
+                self.toast(ToastKind::Info, tr!("Modo foco: Tab traz os painéis de volta.", "Focus mode: Tab brings the panels back."));
             }
         }
     }
 
     /// Focus mode and full screen buttons (top bar, right side).
     pub(crate) fn view_mode_buttons(&mut self, ui: &mut Ui) {
-        if super::widgets::icon_button(ui, icons::CORNERS_OUT, "Tela cheia de leitura: só as imagens (F11)", self.reading).clicked() {
+        let tip = tr!("Tela cheia de leitura: só as imagens (F11)", "Reading full screen: images only (F11)");
+        if super::widgets::icon_button(ui, icons::CORNERS_OUT, tip, self.reading).clicked() {
             let ctx = ui.ctx().clone();
             self.toggle_reading(&ctx);
         }
-        if super::widgets::icon_button(ui, icons::FRAME_CORNERS, "Modo foco: só as imagens (Tab)", self.focus.is_some()).clicked() {
+        let tip = tr!("Modo foco: só as imagens (Tab)", "Focus mode: images only (Tab)");
+        if super::widgets::icon_button(ui, icons::FRAME_CORNERS, tip, self.focus.is_some()).clicked() {
             self.toggle_focus();
         }
     }

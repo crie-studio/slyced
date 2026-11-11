@@ -33,15 +33,19 @@ pub fn is_pending(status: u16) -> bool {
 
 pub fn status_text(status: u16) -> String {
     match status {
-        0x0000 => "sucesso".into(),
-        0xFF00 | 0xFF01 => "pendente".into(),
-        0xFE00 => "cancelado".into(),
-        0xB000 => "concluído com falhas parciais".into(),
-        0xA701 | 0xA702 => "sem recursos no servidor".into(),
-        0xA801 => "destino de C-MOVE desconhecido no PACS (cadastre o AE local no servidor)".into(),
-        0xA900 => "identificador não corresponde ao SOP Class".into(),
-        0x0122 => "SOP Class não suportada".into(),
-        s if s & 0xF000 == 0xC000 => format!("falha no processamento (0x{s:04X})"),
+        0x0000 => tr!("sucesso", "success").into(),
+        0xFF00 | 0xFF01 => tr!("pendente", "pending").into(),
+        0xFE00 => tr!("cancelado", "canceled").into(),
+        0xB000 => tr!("concluído com falhas parciais", "completed with partial failures").into(),
+        0xA701 | 0xA702 => tr!("sem recursos no servidor", "out of resources on the server").into(),
+        0xA801 => tr!(
+            "destino de C-MOVE desconhecido no PACS (cadastre o AE local no servidor)",
+            "C-MOVE destination unknown to the PACS (register the local AE on the server)"
+        )
+        .into(),
+        0xA900 => tr!("identificador não corresponde ao SOP Class", "identifier does not match the SOP Class").into(),
+        0x0122 => tr!("SOP Class não suportada", "SOP Class not supported").into(),
+        s if s & 0xF000 == 0xC000 => trf!("falha no processamento (0x{s:04X})", "unable to process (0x{s:04X})"),
         s => format!("status 0x{s:04X}"),
     }
 }
@@ -117,23 +121,23 @@ pub fn encode_command(mut cmd: InMemDicomObject) -> Result<Vec<u8>> {
     let ts = implicit_le();
     let _ = cmd.take_element(tags::COMMAND_GROUP_LENGTH);
     let mut body = Vec::new();
-    cmd.write_dataset_with_ts(&mut body, ts).context("codificando comando")?;
+    cmd.write_dataset_with_ts(&mut body, ts).context(tr!("codificando comando", "encoding command"))?;
     cmd.put(DataElement::new(tags::COMMAND_GROUP_LENGTH, VR::UL, PrimitiveValue::from(body.len() as u32)));
     let mut out = Vec::with_capacity(body.len() + 12);
-    cmd.write_dataset_with_ts(&mut out, ts).context("codificando comando")?;
+    cmd.write_dataset_with_ts(&mut out, ts).context(tr!("codificando comando", "encoding command"))?;
     Ok(out)
 }
 
 pub fn encode_dataset(obj: &InMemDicomObject, ts_uid: &str) -> Result<Vec<u8>> {
     let ts = transfer_syntax(ts_uid)?;
     let mut out = Vec::new();
-    obj.write_dataset_with_ts(&mut out, ts).context("codificando dataset")?;
+    obj.write_dataset_with_ts(&mut out, ts).context(tr!("codificando dataset", "encoding dataset"))?;
     Ok(out)
 }
 
 pub fn decode_dataset(bytes: &[u8], ts_uid: &str) -> Result<InMemDicomObject> {
     let ts = transfer_syntax(ts_uid)?;
-    InMemDicomObject::read_dataset_with_ts(bytes, ts).context("lendo dataset")
+    InMemDicomObject::read_dataset_with_ts(bytes, ts).context(tr!("lendo dataset", "reading dataset"))
 }
 
 fn implicit_le() -> &'static dicom_encoding::TransferSyntax {
@@ -144,7 +148,7 @@ pub fn transfer_syntax(uid: &str) -> Result<&'static dicom_encoding::TransferSyn
     // A static receiver makes the returned entry `'static`.
     static REGISTRY: TransferSyntaxRegistry = TransferSyntaxRegistry;
     let uid = uid.trim_end_matches(['\0', ' ']);
-    REGISTRY.get(uid).ok_or_else(|| anyhow!("transfer syntax não suportada: {uid}"))
+    REGISTRY.get(uid).ok_or_else(|| anyhow!(trf!("transfer syntax não suportada: {uid}", "transfer syntax not supported: {uid}")))
 }
 
 /// A complete DIMSE message.
@@ -183,10 +187,10 @@ pub trait Link {
 
 impl Link for dicom_ul::association::client::ClientAssociation<std::net::TcpStream> {
     fn send_pdu(&mut self, pdu: &Pdu) -> Result<()> {
-        self.send(pdu).map_err(|e| anyhow!("falha ao enviar: {e}"))
+        self.send(pdu).map_err(|e| anyhow!(trf!("falha ao enviar: {e}", "send failed: {e}")))
     }
     fn receive_pdu(&mut self) -> Result<Pdu> {
-        self.receive().map_err(|e| anyhow!("falha ao receber: {e}"))
+        self.receive().map_err(|e| anyhow!(trf!("falha ao receber: {e}", "receive failed: {e}")))
     }
     fn max_pdu(&self) -> u32 {
         self.acceptor_max_pdu_length()
@@ -195,10 +199,10 @@ impl Link for dicom_ul::association::client::ClientAssociation<std::net::TcpStre
 
 impl Link for dicom_ul::association::server::ServerAssociation<std::net::TcpStream> {
     fn send_pdu(&mut self, pdu: &Pdu) -> Result<()> {
-        self.send(pdu).map_err(|e| anyhow!("falha ao enviar: {e}"))
+        self.send(pdu).map_err(|e| anyhow!(trf!("falha ao enviar: {e}", "send failed: {e}")))
     }
     fn receive_pdu(&mut self) -> Result<Pdu> {
-        self.receive().map_err(|e| anyhow!("falha ao receber: {e}"))
+        self.receive().map_err(|e| anyhow!(trf!("falha ao receber: {e}", "receive failed: {e}")))
     }
     fn max_pdu(&self) -> u32 {
         self.requestor_max_pdu_length()
@@ -232,8 +236,8 @@ impl MessageReader {
                             let _ = link.send_pdu(&Pdu::ReleaseRP);
                             return Ok(Incoming::Released);
                         }
-                        Pdu::AbortRQ { source } => bail!("associação abortada pelo par: {source:?}"),
-                        other => bail!("PDU inesperada: {other:?}"),
+                        Pdu::AbortRQ { source } => bail!(trf!("associação abortada pelo par: {source:?}", "association aborted by the peer: {source:?}")),
+                        other => bail!(trf!("PDU inesperada: {other:?}", "unexpected PDU: {other:?}")),
                     }
                     continue;
                 }
@@ -243,7 +247,7 @@ impl MessageReader {
                     cmd_bytes.extend_from_slice(&pdv.data);
                     if pdv.is_last {
                         let ts = implicit_le();
-                        let cmd = InMemDicomObject::read_dataset_with_ts(&cmd_bytes[..], ts).context("lendo comando DIMSE")?;
+                        let cmd = InMemDicomObject::read_dataset_with_ts(&cmd_bytes[..], ts).context(tr!("lendo comando DIMSE", "reading DIMSE command"))?;
                         let has_data = cmd_u16(&cmd, tags::COMMAND_DATA_SET_TYPE).unwrap_or(NO_DATASET) != NO_DATASET;
                         if !has_data {
                             return Ok(Incoming::Message(Message { pc_id: pdv.presentation_context_id, command: cmd, data: None }));
@@ -255,7 +259,7 @@ impl MessageReader {
                 PDataValueType::Data => {
                     data.extend_from_slice(&pdv.data);
                     if pdv.is_last {
-                        let (pc_id, cmd) = command.take().ok_or_else(|| anyhow!("dados recebidos antes do comando"))?;
+                        let (pc_id, cmd) = command.take().ok_or_else(|| anyhow!(tr!("dados recebidos antes do comando", "data received before the command")))?;
                         return Ok(Incoming::Message(Message { pc_id, command: cmd, data: Some(data) }));
                     }
                 }
@@ -342,13 +346,13 @@ pub fn store_instance(root: &Path, sop_class: &str, sop_instance: &str, ts_uid: 
         .implementation_class_uid(IMPLEMENTATION_CLASS_UID)
         .implementation_version_name(IMPLEMENTATION_VERSION)
         .build()
-        .map_err(|e| anyhow!("meta inválida: {e}"))?;
+        .map_err(|e| anyhow!(trf!("meta inválida: {e}", "invalid file meta: {e}")))?;
     let tmp = path.with_extension("part");
     {
         let mut f = std::io::BufWriter::new(std::fs::File::create(&tmp)?);
         f.write_all(&[0u8; 128])?;
         f.write_all(b"DICM")?;
-        meta.write(&mut f).map_err(|e| anyhow!("gravando meta: {e}"))?;
+        meta.write(&mut f).map_err(|e| anyhow!(trf!("gravando meta: {e}", "writing file meta: {e}")))?;
         f.write_all(data)?;
         f.flush()?;
     }

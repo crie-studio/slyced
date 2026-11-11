@@ -30,9 +30,13 @@ fn connect(node: &PacsNode, local_ae: &str, opts: ClientAssociationOptions<'_>) 
         .map_err(|e| {
             let msg = e.to_string();
             if msg.to_lowercase().contains("reject") {
-                anyhow!("O PACS rejeitou a associação. Confira o AE Title remoto ({}) e se o AE local ({local_ae}) está cadastrado no servidor.", node.ae_title)
+                anyhow!(trf!(
+                    "O PACS rejeitou a associação. Confira o AE Title remoto ({}) e se o AE local ({local_ae}) está cadastrado no servidor.",
+                    "The PACS rejected the association. Check the remote AE Title ({}) and whether the local AE ({local_ae}) is registered on the server.",
+                    node.ae_title
+                ))
             } else {
-                anyhow!("Não foi possível conectar em {}:{} — {msg}", node.host, node.port)
+                anyhow!(trf!("Não foi possível conectar em {}:{} — {msg}", "Could not connect to {}:{} — {msg}", node.host, node.port))
             }
         })
 }
@@ -43,7 +47,7 @@ fn accepted_pc(assoc: &ClientAssociation<TcpStream>, abstract_syntax: &str) -> R
         .iter()
         .find(|pc| pc.reason == PresentationContextResultReason::Acceptance && pc.abstract_syntax.trim_end_matches('\0') == abstract_syntax)
         .map(|pc| (pc.id, pc.transfer_syntax.clone()))
-        .ok_or_else(|| anyhow!("O PACS não aceitou o serviço solicitado ({abstract_syntax})."))
+        .ok_or_else(|| anyhow!(trf!("O PACS não aceitou o serviço solicitado ({abstract_syntax}).", "The PACS did not accept the requested service ({abstract_syntax}).")))
 }
 
 fn request(field: u16, sop_class: &str, message_id: u16) -> InMemDicomObject {
@@ -66,8 +70,8 @@ pub fn echo(node: &PacsNode, local_ae: &str) -> Result<Duration> {
     let mut reader = MessageReader::default();
     let result = match reader.read(&mut assoc)? {
         Incoming::Message(m) if m.field() == C_ECHO_RSP && m.status() == STATUS_SUCCESS => Ok(start.elapsed()),
-        Incoming::Message(m) => Err(anyhow!("C-ECHO falhou: {}", status_text(m.status()))),
-        Incoming::Released => Err(anyhow!("o PACS encerrou a associação")),
+        Incoming::Message(m) => Err(anyhow!(trf!("C-ECHO falhou: {}", "C-ECHO failed: {}", status_text(m.status())))),
+        Incoming::Released => Err(anyhow!(tr!("o PACS encerrou a associação", "the PACS closed the association"))),
     };
     let _ = assoc.release();
     result
@@ -182,9 +186,9 @@ struct FindRefused {
 
 impl std::fmt::Display for FindRefused {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "C-FIND falhou: {}", status_text(self.status))?;
+        f.write_str(&trf!("C-FIND falhou: {}", "C-FIND failed: {}", status_text(self.status)))?;
         if !self.comment.is_empty() {
-            write!(f, " — o PACS informou: \"{}\"", self.comment)?;
+            f.write_str(&trf!(" — o PACS informou: \"{}\"", " — the PACS reported: \"{}\"", self.comment))?;
         }
         Ok(())
     }
@@ -221,7 +225,7 @@ fn find(node: &PacsNode, local_ae: &str, ident: InMemDicomObject) -> Result<Vec<
                     if let Some(e) = m.command.element_opt(tags::OFFENDING_ELEMENT).ok().flatten()
                         && let dicom_core::value::Value::Primitive(dicom_core::value::PrimitiveValue::Tags(t)) = e.value()
                         && let Some(t) = t.first() {
-                            comment = format!("{comment} (campo {t})").trim().to_string();
+                            comment = trf!("{comment} (campo {t})", "{comment} (field {t})").trim().to_string();
                         }
                     return Err(FindRefused { status: st, comment }.into());
                 }
@@ -258,8 +262,11 @@ fn find_adaptive(node: &PacsNode, local_ae: &str, what: &str, build: impl Fn(Que
             Err(e) => return Err(e),
         }
     }
-    let e = last.unwrap_or_else(|| anyhow!("C-FIND falhou"));
-    Err(anyhow!("{e}. O Slyced também tentou buscas simplificadas, sem sucesso. Tente filtrar por nome, ID ou data; se continuar, envie o arquivo slyced.log ao suporte do PACS."))
+    let e = last.unwrap_or_else(|| anyhow!(tr!("C-FIND falhou", "C-FIND failed")));
+    Err(anyhow!(trf!(
+        "{e}. O Slyced também tentou buscas simplificadas, sem sucesso. Tente filtrar por nome, ID ou data; se continuar, envie o arquivo slyced.log ao suporte do PACS.",
+        "{e}. Slyced also tried simpler queries, without success. Try filtering by name, ID or date; if it keeps failing, send the slyced.log file to the PACS support team."
+    )))
 }
 
 /// `A-B` with both ends: `A-` becomes `A-today` and `-B` becomes `19000101-B`.
@@ -427,7 +434,10 @@ pub fn retrieve_get(
     let mut assoc = connect(node, local_ae, opts)?;
     let Ok((pc, ts)) = accepted_pc(&assoc, sop) else {
         let _ = assoc.abort();
-        bail!("Este PACS não aceita C-GET. Em PACS → Servidores, edite o servidor e escolha C-MOVE (o receptor do Slyced liga sozinho; cadastre no PACS o AE {local_ae} com o IP deste computador).");
+        bail!(trf!(
+            "Este PACS não aceita C-GET. Em PACS → Servidores, edite o servidor e escolha C-MOVE (o receptor do Slyced liga sozinho; cadastre no PACS o AE {local_ae} com o IP deste computador).",
+            "This PACS does not accept C-GET. In PACS → Servers, edit the server and choose C-MOVE (the Slyced receiver starts by itself; register the AE {local_ae} with this computer's IP on the PACS)."
+        ));
     };
     let pc_ts: HashMap<u8, String> = assoc
         .presentation_contexts()
@@ -445,7 +455,7 @@ pub fn retrieve_get(
     loop {
         if cancel.load(Ordering::Relaxed) {
             let _ = assoc.abort();
-            bail!("Transferência cancelada.");
+            bail!(tr!("Transferência cancelada.", "Transfer canceled."));
         }
         match reader.read(&mut assoc)? {
             Incoming::Message(m) if m.field() == C_STORE_RQ => {
@@ -477,8 +487,16 @@ pub fn retrieve_get(
                     let _ = assoc.release();
                     if st != STATUS_SUCCESS && files.is_empty() {
                         let comment = m.str(tags::ERROR_COMMENT);
-                        let comment = if comment.trim().is_empty() { String::new() } else { format!(" — o PACS informou: \"{}\"", comment.trim()) };
-                        bail!("C-GET falhou: {}{comment}. Se o PACS só enviar exames por C-MOVE, troque a forma de recuperação na edição do servidor.", status_text(st));
+                        let comment = if comment.trim().is_empty() {
+                            String::new()
+                        } else {
+                            trf!(" — o PACS informou: \"{}\"", " — the PACS reported: \"{}\"", comment.trim())
+                        };
+                        bail!(trf!(
+                            "C-GET falhou: {}{comment}. Se o PACS só enviar exames por C-MOVE, troque a forma de recuperação na edição do servidor.",
+                            "C-GET failed: {}{comment}. If the PACS only sends studies by C-MOVE, change the retrieval method when editing the server.",
+                            status_text(st)
+                        ));
                     }
                     return Ok((files, progress));
                 }
@@ -517,7 +535,7 @@ pub fn retrieve_move(
     loop {
         if cancel.load(Ordering::Relaxed) {
             let _ = assoc.abort();
-            bail!("Transferência cancelada.");
+            bail!(tr!("Transferência cancelada.", "Transfer canceled."));
         }
         match reader.read(&mut assoc)? {
             Incoming::Message(m) if m.field() == C_MOVE_RSP => {
@@ -527,7 +545,7 @@ pub fn retrieve_move(
                 if !is_pending(st) {
                     let _ = assoc.release();
                     if st != STATUS_SUCCESS && progress.completed == 0 {
-                        bail!("C-MOVE falhou: {}", status_text(st));
+                        bail!(trf!("C-MOVE falhou: {}", "C-MOVE failed: {}", status_text(st)));
                     }
                     return Ok(progress);
                 }

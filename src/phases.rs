@@ -58,13 +58,13 @@ pub fn pick_pair(study: &StudyInfo) -> Option<(String, String)> {
 /// Reading of the density change between phases (renal-mass style limits).
 pub fn enhancement_label(delta: f32) -> &'static str {
     if delta < -10.0 {
-        "densidade menor na fase com contraste"
+        tr!("densidade menor na fase com contraste", "lower density in the contrast phase")
     } else if delta < 10.0 {
-        "sem realce"
+        tr!("sem realce", "no enhancement")
     } else if delta < 20.0 {
-        "realce duvidoso"
+        tr!("realce duvidoso", "equivocal enhancement")
     } else {
-        "realce presente"
+        tr!("realce presente", "enhancement present")
     }
 }
 

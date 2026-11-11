@@ -58,7 +58,7 @@ rfd = "0.17.2"
 ureq = { version = "3.5.0", default-features = false, features = ["native-tls-no-default"] }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Graphics_Dwm", "Win32_System_Registry", "Win32_System_SystemInformation", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Globalization", "Win32_Graphics_Dwm", "Win32_System_Registry", "Win32_System_SystemInformation", "Win32_UI_WindowsAndMessaging"] }
 
 # Web version (scripts/build-web.ps1). JPEG 2000 comes from openjp2 (Rust); there is
 # no JPEG-LS decoder without CharLS (C++), which does not build for the browser.

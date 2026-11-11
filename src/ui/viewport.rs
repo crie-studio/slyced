@@ -71,42 +71,48 @@ impl Tool {
 
     pub fn label(self) -> &'static str {
         match self {
-            Tool::WindowLevel => "Janela/Nível (W)",
-            Tool::Pan => "Mover (P)",
+            Tool::WindowLevel => tr!("Janela/Nível (W)", "Window/Level (W)"),
+            Tool::Pan => tr!("Mover (P)", "Pan (P)"),
             Tool::Zoom => "Zoom (Z)",
-            Tool::Scroll => "Navegar cortes (S)",
-            Tool::Crosshair => "Mira MPR (C) — arraste as alças para inclinar os planos",
-            Tool::Locate => "Cursor 3D (L ou Ctrl+clique): leva todas as séries ao mesmo ponto",
-            Tool::Length => "Distância (D)",
-            Tool::Angle => "Ângulo (A)",
-            Tool::Ellipse => "ROI elíptica (E)",
-            Tool::Probe => "Densidade pontual (H)",
-            Tool::Arrow => "Seta com texto (T)",
-            Tool::Bookmark => "Marcar achado (B)",
-            Tool::Magnifier => "Lupa (M)",
-            Tool::Curve => "Curva CPR (V): clique ao longo da estrutura; botão direito conclui",
-            Tool::Landmark => "Ponto de referência (G): marque o mesmo ponto nos dois exames",
+            Tool::Scroll => tr!("Navegar cortes (S)", "Scroll slices (S)"),
+            Tool::Crosshair => tr!("Mira MPR (C) — arraste as alças para inclinar os planos", "MPR crosshair (C) — drag the handles to tilt the planes"),
+            Tool::Locate => tr!(
+                "Cursor 3D (L ou Ctrl+clique): leva todas as séries ao mesmo ponto",
+                "3D cursor (L or Ctrl+click): brings every series to the same point"
+            ),
+            Tool::Length => tr!("Distância (D)", "Distance (D)"),
+            Tool::Angle => tr!("Ângulo (A)", "Angle (A)"),
+            Tool::Ellipse => tr!("ROI elíptica (E)", "Elliptical ROI (E)"),
+            Tool::Probe => tr!("Densidade pontual (H)", "Point density (H)"),
+            Tool::Arrow => tr!("Seta com texto (T)", "Arrow with text (T)"),
+            Tool::Bookmark => tr!("Marcar achado (B)", "Mark finding (B)"),
+            Tool::Magnifier => tr!("Lupa (M)", "Magnifier (M)"),
+            Tool::Curve => tr!(
+                "Curva CPR (V): clique ao longo da estrutura; botão direito conclui",
+                "CPR curve (V): click along the structure; right-click finishes"
+            ),
+            Tool::Landmark => tr!("Ponto de referência (G): marque o mesmo ponto nos dois exames", "Landmark (G): mark the same point on both studies"),
         }
     }
 
     /// Short name (menus, status bar).
     pub fn name(self) -> &'static str {
         match self {
-            Tool::WindowLevel => "Janela/Nível",
-            Tool::Pan => "Mover",
+            Tool::WindowLevel => tr!("Janela/Nível", "Window/Level"),
+            Tool::Pan => tr!("Mover", "Pan"),
             Tool::Zoom => "Zoom",
-            Tool::Scroll => "Navegar cortes",
-            Tool::Crosshair => "Mira MPR",
-            Tool::Locate => "Cursor 3D",
-            Tool::Length => "Distância",
-            Tool::Angle => "Ângulo",
-            Tool::Ellipse => "ROI elíptica",
-            Tool::Probe => "Densidade pontual",
-            Tool::Arrow => "Seta com texto",
-            Tool::Bookmark => "Marcar achado",
-            Tool::Magnifier => "Lupa",
-            Tool::Curve => "Rastreador tubular",
-            Tool::Landmark => "Ponto de referência",
+            Tool::Scroll => tr!("Navegar cortes", "Scroll slices"),
+            Tool::Crosshair => tr!("Mira MPR", "MPR crosshair"),
+            Tool::Locate => tr!("Cursor 3D", "3D cursor"),
+            Tool::Length => tr!("Distância", "Distance"),
+            Tool::Angle => tr!("Ângulo", "Angle"),
+            Tool::Ellipse => tr!("ROI elíptica", "Elliptical ROI"),
+            Tool::Probe => tr!("Densidade pontual", "Point density"),
+            Tool::Arrow => tr!("Seta com texto", "Arrow with text"),
+            Tool::Bookmark => tr!("Marcar achado", "Mark finding"),
+            Tool::Magnifier => tr!("Lupa", "Magnifier"),
+            Tool::Curve => tr!("Rastreador tubular", "Tube tracker"),
+            Tool::Landmark => tr!("Ponto de referência", "Landmark"),
         }
     }
 
@@ -134,21 +140,51 @@ impl Tool {
     /// How to use the tool, shown in the status bar while it is active.
     pub fn hint(self) -> &'static str {
         match self {
-            Tool::WindowLevel => "arraste: horizontal muda o contraste, vertical o brilho · teclas 1–9 e 0: predefinições",
-            Tool::Pan => "arraste para mover a imagem · também botão do meio ou Shift+arrastar",
-            Tool::Zoom => "arraste para cima ou para baixo · também Ctrl+roda ou teclas + e −",
-            Tool::Scroll => "arraste para cima ou para baixo para passar os cortes · também roda do mouse",
-            Tool::Crosshair => "clique para levar os planos ao ponto · arraste as alças coloridas para inclinar",
-            Tool::Locate => "clique para levar todas as séries ao mesmo ponto · Esc apaga o cursor",
-            Tool::Length => "clique e arraste · Del apaga a última · Shift+Del apaga todas",
-            Tool::Angle => "arraste o primeiro lado e clique onde termina o segundo",
-            Tool::Ellipse => "arraste para desenhar · mostra média, DP, mínimo, máximo e área",
-            Tool::Probe => "clique para ler a densidade · a legenda mostra os valores típicos",
-            Tool::Arrow => "arraste da ponta até a cauda e digite o texto · Enter confirma",
-            Tool::Bookmark => "clique no ponto do achado · a lista fica no painel lateral",
-            Tool::Magnifier => "passe o mouse sobre a imagem para ampliar",
-            Tool::Curve => "clique ao longo da estrutura · Enter ou botão direito conclui · Backspace desfaz",
-            Tool::Landmark => "marque o mesmo ponto em A e em B · com 3 pontos os exames se alinham",
+            Tool::WindowLevel => tr!(
+                "arraste: horizontal muda o contraste, vertical o brilho · teclas 1–9 e 0: predefinições",
+                "drag: horizontal changes the contrast, vertical the brightness · keys 1–9 and 0: presets"
+            ),
+            Tool::Pan => tr!(
+                "arraste para mover a imagem · também botão do meio ou Shift+arrastar",
+                "drag to move the image · also the middle button or Shift+drag"
+            ),
+            Tool::Zoom => tr!("arraste para cima ou para baixo · também Ctrl+roda ou teclas + e −", "drag up or down · also Ctrl+wheel or the + and − keys"),
+            Tool::Scroll => tr!(
+                "arraste para cima ou para baixo para passar os cortes · também roda do mouse",
+                "drag up or down to go through the slices · also the mouse wheel"
+            ),
+            Tool::Crosshair => tr!(
+                "clique para levar os planos ao ponto · arraste as alças coloridas para inclinar",
+                "click to bring the planes to the point · drag the colored handles to tilt"
+            ),
+            Tool::Locate => tr!(
+                "clique para levar todas as séries ao mesmo ponto · Esc apaga o cursor",
+                "click to bring every series to the same point · Esc clears the cursor"
+            ),
+            Tool::Length => tr!(
+                "clique e arraste · Del apaga a última · Shift+Del apaga todas",
+                "click and drag · Del deletes the last one · Shift+Del deletes all"
+            ),
+            Tool::Angle => tr!("arraste o primeiro lado e clique onde termina o segundo", "drag the first side and click where the second one ends"),
+            Tool::Ellipse => tr!("arraste para desenhar · mostra média, DP, mínimo, máximo e área", "drag to draw · shows mean, SD, minimum, maximum and area"),
+            Tool::Probe => tr!(
+                "clique para ler a densidade · a legenda mostra os valores típicos",
+                "click to read the density · the legend shows the typical values"
+            ),
+            Tool::Arrow => tr!(
+                "arraste da ponta até a cauda e digite o texto · Enter confirma",
+                "drag from the tip to the tail and type the text · Enter confirms"
+            ),
+            Tool::Bookmark => tr!("clique no ponto do achado · a lista fica no painel lateral", "click on the finding · the list is in the side panel"),
+            Tool::Magnifier => tr!("passe o mouse sobre a imagem para ampliar", "move the mouse over the image to magnify"),
+            Tool::Curve => tr!(
+                "clique ao longo da estrutura · Enter ou botão direito conclui · Backspace desfaz",
+                "click along the structure · Enter or right-click finishes · Backspace undoes"
+            ),
+            Tool::Landmark => tr!(
+                "marque o mesmo ponto em A e em B · com 3 pontos os exames se alinham",
+                "mark the same point on A and B · with 3 points the studies align"
+            ),
         }
     }
 
@@ -439,21 +475,21 @@ pub enum Change {
 impl Change {
     pub fn label(self) -> String {
         match self {
-            Change::Measures(1) => "1 medida".into(),
-            Change::Measures(n) => format!("{n} medidas"),
-            Change::Gas => "Gás livre".into(),
-            Change::Fat => "Gordura mesentérica".into(),
-            Change::Dense => "Cálculos".into(),
+            Change::Measures(1) => tr!("1 medida", "1 measurement").into(),
+            Change::Measures(n) => trf!("{n} medidas", "{n} measurements"),
+            Change::Gas => tr!("Gás livre", "Free air").into(),
+            Change::Fat => tr!("Gordura mesentérica", "Mesenteric fat").into(),
+            Change::Dense => tr!("Cálculos", "Stones").into(),
             Change::Slab(mm) => format!("Slab {mm:.0} mm"),
-            Change::Denoise => "Filtro de ruído".into(),
-            Change::Colormap => "Mapa de cores".into(),
-            Change::Orientation => "Girada/espelhada".into(),
-            Change::Inverted => "Cores invertidas".into(),
-            Change::Cursor => "Cursor 3D".into(),
-            Change::Calculi(1) => "1 foco marcado".into(),
-            Change::Calculi(n) => format!("{n} focos marcados"),
-            Change::Path => "Trajeto do rastreador".into(),
-            Change::Oblique => "Planos oblíquos".into(),
+            Change::Denoise => tr!("Filtro de ruído", "Noise reduction").into(),
+            Change::Colormap => tr!("Mapa de cores", "Color map").into(),
+            Change::Orientation => tr!("Girada/espelhada", "Rotated/flipped").into(),
+            Change::Inverted => tr!("Cores invertidas", "Inverted colors").into(),
+            Change::Cursor => tr!("Cursor 3D", "3D cursor").into(),
+            Change::Calculi(1) => tr!("1 foco marcado", "1 focus marked").into(),
+            Change::Calculi(n) => trf!("{n} focos marcados", "{n} foci marked"),
+            Change::Path => tr!("Trajeto do rastreador", "Tracker path").into(),
+            Change::Oblique => tr!("Planos oblíquos", "Oblique planes").into(),
         }
     }
 
@@ -1011,7 +1047,7 @@ impl Viewport {
             .measurements
             .iter()
             .filter(|m| plane.is_none_or(|k| m.key >> 32 == k))
-            .map(|m| ((m.key & 0xFFFF_FFFF) as usize, MEASURE, "Medida".to_string()))
+            .map(|m| ((m.key & 0xFFFF_FFFF) as usize, MEASURE, tr!("Medida", "Measurement").to_string()))
             .collect();
         for pin in &cx.pins {
             let k = match (pin.point, pin.image) {
@@ -1019,11 +1055,11 @@ impl Viewport {
                 (None, Some((k, _))) => Some(k),
                 _ => None,
             };
-            let label = if pin.label.trim().is_empty() { "Achado".to_string() } else { pin.label.trim().to_string() };
+            let label = if pin.label.trim().is_empty() { tr!("Achado", "Finding").to_string() } else { pin.label.trim().to_string() };
             out.extend(k.map(|k| (k, pin.color, label)));
         }
         if let Some(k) = cx.cursor.and_then(|c| self.slice_of_point(c)) {
-            out.push((k, Color32::from_rgb(40, 230, 255), "Cursor 3D".to_string()));
+            out.push((k, Color32::from_rgb(40, 230, 255), tr!("Cursor 3D", "3D cursor").to_string()));
         }
         out
     }
@@ -1172,7 +1208,7 @@ impl Viewport {
         } else if resp.drag_stopped() || resp.clicked() {
             self.finish_jump(ev);
         }
-        resp.on_hover_text("Localizador: clique ou arraste para ir a esse nível");
+        resp.on_hover_text(tr!("Localizador: clique ou arraste para ir a esse nível", "Localizer: click or drag to go to that level"));
     }
 
     /// Reports a jump of 3 or more slices, for "voltar" (Alt+←).
@@ -1413,7 +1449,7 @@ impl Viewport {
             if hot {
                 ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
             }
-            if b.on_hover_text("Fechar (Ctrl+W)").clicked() {
+            if b.on_hover_text(tr!("Fechar (Ctrl+W)", "Close (Ctrl+W)")).clicked() {
                 ev.close = true;
             }
         }
@@ -1468,7 +1504,7 @@ impl Viewport {
         };
         let stack = matches!(mode, View2D::Stack);
         let Some(mut frame) = self.current_frame(series, &mode, cx) else {
-            painter.text(rect.center(), Align2::CENTER_CENTER, "Sem imagem", font(13.0), TEXT_FAINT);
+            painter.text(rect.center(), Align2::CENTER_CENTER, tr!("Sem imagem", "No image"), font(13.0), TEXT_FAINT);
             return;
         };
         self.apply_denoise(&mut frame);
@@ -1600,21 +1636,26 @@ impl Viewport {
                 ui.set_min_width(260.0);
                 let item = |ui: &mut Ui, icon: &str, text: &str, keys: &str| ui.add(egui::Button::new(format!("{icon}  {text}")).shortcut_text(keys)).clicked();
                 if let Some(h) = hit {
-                    if h.patient.is_some() && item(ui, icons::CROSSHAIR_SIMPLE, "Cursor 3D aqui", "Ctrl+clique") {
+                    if h.patient.is_some() && item(ui, icons::CROSSHAIR_SIMPLE, tr!("Cursor 3D aqui", "3D cursor here"), tr!("Ctrl+clique", "Ctrl+click")) {
                         ev.cursor = Some(h);
                         ui.close();
                     }
-                    if item(ui, icons::MAP_PIN, "Marcar achado aqui", "B") {
+                    if item(ui, icons::MAP_PIN, tr!("Marcar achado aqui", "Mark finding here"), "B") {
                         ev.bookmark = Some(h);
                         ui.close();
                     }
-                    if item(ui, icons::TARGET, "Densidade neste ponto", "H") {
+                    if item(ui, icons::TARGET, tr!("Densidade neste ponto", "Density at this point"), "H") {
                         probe = Some(h.pixel);
                         ui.close();
                     }
                     ui.separator();
                 }
-                for (t, text) in [(Tool::Length, "Medir distância"), (Tool::Ellipse, "Medir ROI elíptica"), (Tool::Arrow, "Seta com texto")] {
+                let tools = [
+                    (Tool::Length, tr!("Medir distância", "Measure distance")),
+                    (Tool::Ellipse, tr!("Medir ROI elíptica", "Measure elliptical ROI")),
+                    (Tool::Arrow, tr!("Seta com texto", "Arrow with text")),
+                ];
+                for (t, text) in tools {
                     if item(ui, t.icon(), text, t.key()) {
                         ev.context = Some(ContextAction::Tool(t));
                         ui.close();
@@ -1622,33 +1663,33 @@ impl Viewport {
                 }
                 ui.separator();
                 if can_reconstruct {
-                    if item(ui, icons::SQUARES_FOUR, "Abrir em MPR", "") {
+                    if item(ui, icons::SQUARES_FOUR, tr!("Abrir em MPR", "Open in MPR"), "") {
                         ev.context = Some(ContextAction::OpenMpr);
                         ui.close();
                     }
-                    if item(ui, icons::CUBE, "Abrir em 3D", "") {
+                    if item(ui, icons::CUBE, tr!("Abrir em 3D", "Open in 3D"), "") {
                         ev.context = Some(ContextAction::OpenVolume);
                         ui.close();
                     }
                 }
-                if item(ui, icons::COPY, "Copiar imagem", "Ctrl+C") {
+                if item(ui, icons::COPY, tr!("Copiar imagem", "Copy image"), "Ctrl+C") {
                     ev.context = Some(ContextAction::Copy);
                     ui.close();
                 }
-                if item(ui, icons::CAMERA, "Salvar imagem (PNG)", "") {
+                if item(ui, icons::CAMERA, tr!("Salvar imagem (PNG)", "Save image (PNG)"), "") {
                     ev.context = Some(ContextAction::Save);
                     ui.close();
                 }
                 ui.separator();
-                if item(ui, icons::ARROW_COUNTER_CLOCKWISE, "Restaurar visualização", "R") {
+                if item(ui, icons::ARROW_COUNTER_CLOCKWISE, tr!("Restaurar visualização", "Reset view"), "R") {
                     ev.context = Some(ContextAction::ResetView);
                     ui.close();
                 }
-                if item(ui, icons::ARROWS_CLOCKWISE, "Restaurar tudo", "Shift+R") {
+                if item(ui, icons::ARROWS_CLOCKWISE, tr!("Restaurar tudo", "Reset all"), "Shift+R") {
                     ev.context = Some(ContextAction::ResetAll);
                     ui.close();
                 }
-                if item(ui, icons::ARROWS_OUT_CARDINAL, "Maximizar / voltar ao layout", "duplo clique") {
+                if item(ui, icons::ARROWS_OUT_CARDINAL, tr!("Maximizar / voltar ao layout", "Maximize / back to layout"), tr!("duplo clique", "double-click")) {
                     ev.context = Some(ContextAction::Maximize);
                     ui.close();
                 }
@@ -1716,9 +1757,13 @@ impl Viewport {
             draw_curve(painter, &xf, &frame, curve);
             if cx.tool == Tool::Curve && cx.active {
                 let text = match curve.len() {
-                    0 => "Rastreador: clique no início da estrutura".to_string(),
-                    1 => "Clique no próximo ponto (role os cortes para seguir a estrutura)".to_string(),
-                    n => format!("{n} pontos · continue clicando · botão direito ou Enter conclui"),
+                    0 => tr!("Rastreador: clique no início da estrutura", "Tracer: click at the start of the structure").to_string(),
+                    1 => tr!(
+                        "Clique no próximo ponto (role os cortes para seguir a estrutura)",
+                        "Click the next point (scroll the slices to follow the structure)"
+                    )
+                    .to_string(),
+                    n => trf!("{n} pontos · continue clicando · botão direito ou Enter conclui", "{n} points · keep clicking · right-click or Enter finishes"),
                 };
                 let galley = painter.layout_no_wrap(text, font_bold(12.0), Color32::WHITE);
                 let r = Rect::from_center_size(pos2(rect.center().x, rect.bottom() - 40.0), galley.size() + vec2(24.0, 12.0));
@@ -1753,7 +1798,7 @@ impl Viewport {
             frame.real_at(p).map(|v| (p, v))
         });
         if let Some((p, v)) = hu {
-            ev.status = Some(format!("x {:.0}  y {:.0}   valor {:.1}", p.x.floor(), p.y.floor(), v));
+            ev.status = Some(trf!("x {:.0}  y {:.0}   valor {}", "x {:.0}  y {:.0}   value {}", p.x.floor(), p.y.floor(), crate::i18n::num(v as f64, 1)));
         }
         use crate::config::InfoLevel;
         let level = if cx.reading { cx.info } else if cx.overlays { InfoLevel::Full } else { InfoLevel::None };
@@ -1787,7 +1832,7 @@ impl Viewport {
                     let ((u, v), (su, sv)) = (m.axes[kind.index()], kind.axes());
                     u.dot(su) < 0.9999 || v.dot(sv) < 0.9999
                 });
-                let label = if oblique { format!("{} OBLÍQUO", kind.label()) } else { kind.label().to_string() };
+                let label = if oblique { trf!("{} OBLÍQUO", "{} OBLIQUE", kind.label()) } else { kind.label().to_string() };
                 Some(plane_chip(painter, rect, &label, kind.color()))
             }
             View2D::Cpr(c) => Some(plane_chip(painter, rect, &format!("CPR · {:.0} mm", c.length_mm), CURVE)),
@@ -1917,9 +1962,10 @@ impl Viewport {
         let plane = matches!(self.content, Content::Mpr(..));
         let image = self.slice_preview(ui, k);
         let side = (rect.height() * 0.3).clamp(80.0, 150.0).min(rect.width() * 0.4);
-        let mut lines = vec![(painter.layout_no_wrap(format!("{} {} / {n}", if plane { "Corte" } else { "Imagem" }, k + 1), font_bold(12.0), TEXT), TEXT)];
+        let what = if plane { tr!("Corte", "Slice") } else { tr!("Imagem", "Image") };
+        let mut lines = vec![(painter.layout_no_wrap(format!("{what} {} / {n}", k + 1), font_bold(12.0), TEXT), TEXT)];
         if let Some(mm) = self.slice_position(k) {
-            lines.push((painter.layout_no_wrap(format!("{mm:.1} mm").replace('.', ","), font(11.5), OVERLAY_TEXT), OVERLAY_TEXT));
+            lines.push((painter.layout_no_wrap(crate::i18n::dec(format!("{mm:.1} mm")), font(11.5), OVERLAY_TEXT), OVERLAY_TEXT));
         }
         for (color, label) in marks.iter().take(3) {
             lines.push((painter.layout_no_wrap(format!("● {label}"), font(11.5), *color), *color));
@@ -2339,7 +2385,8 @@ impl Viewport {
                 .corner_radius(6)
                 .inner_margin(egui::Margin::symmetric(6, 3))
                 .show(ui, |ui| {
-                    let r = ui.add(egui::TextEdit::singleline(&mut m.text).hint_text("Texto da seta…").desired_width(160.0).frame(egui::Frame::NONE));
+                    let hint = tr!("Texto da seta…", "Arrow text…");
+                    let r = ui.add(egui::TextEdit::singleline(&mut m.text).hint_text(hint).desired_width(160.0).frame(egui::Frame::NONE));
                     if focus {
                         r.request_focus();
                     }
@@ -2369,7 +2416,7 @@ impl Viewport {
                     painter.line_segment([pts[0], pts[1]], stroke);
                     label_pos = pts[1] + vec2(8.0, -8.0);
                     let mm = length_mm(m, frame);
-                    let value = if frame.spacing_known { format!("{mm:.1} mm") } else { format!("{mm:.1} px") };
+                    let value = crate::i18n::dec(if frame.spacing_known { format!("{mm:.1} mm") } else { format!("{mm:.1} px") });
                     if m.text.is_empty() { value } else { format!("{}: {value}", m.text) }
                 }
                 MeasureKind::Angle => {
@@ -2377,7 +2424,7 @@ impl Viewport {
                     if pts.len() > 2 {
                         painter.line_segment([pts[1], pts[2]], stroke);
                         label_pos = pts[1] + vec2(10.0, 10.0);
-                        format!("{:.1}°", angle_deg(m, frame))
+                        crate::i18n::dec(format!("{:.1}°", angle_deg(m, frame)))
                     } else {
                         label_pos = pts[1];
                         String::new()
@@ -2483,10 +2530,15 @@ impl Viewport {
         }
 
         let bl = rect.left_bottom() + vec2(pad, -pad);
-        let mut lines = vec![format!("Série {}: {}", series.info.number, series.info.title())];
+        let mut lines = vec![trf!("Série {}: {}", "Series {}: {}", series.info.number, series.info.title())];
         match mode {
-            View2D::Cpr(c) => lines.push(format!("Curva de {} pontos · {:.0} mm", c.centers.len().min(9999), c.length_mm)),
-            _ => lines.push(format!("{} {} / {}", if plane { "Corte" } else { "Imagem" }, self.slice + 1, if plane { self.slice_count() } else { series.len() })),
+            View2D::Cpr(c) => lines.push(trf!("Curva de {} pontos · {:.0} mm", "{}-point curve · {:.0} mm", c.centers.len().min(9999), c.length_mm)),
+            _ => lines.push(format!(
+                "{} {} / {}",
+                if plane { tr!("Corte", "Slice") } else { tr!("Imagem", "Image") },
+                self.slice + 1,
+                if plane { self.slice_count() } else { series.len() }
+            )),
         }
         if let Some(t) = frame.thickness {
             let slab = match mode {
@@ -2494,28 +2546,30 @@ impl Viewport {
                 View2D::Stack if self.slab_mm > 0.0 && matches!(frame.src, FrameSrc::Buffer(..)) => format!(" ({})", self.slab_mode.label()),
                 _ => String::new(),
             };
-            lines.push(format!("Espessura {t:.2} mm{slab}"));
+            let t = crate::i18n::num(t, 2);
+            lines.push(trf!("Espessura {t} mm{slab}", "Thickness {t} mm{slab}"));
         }
         if self.denoise > 0 {
-            lines.push(format!("Filtro de ruído: {}", ["", "leve", "médio", "forte"][self.denoise.min(3) as usize]));
+            let level = ["", tr!("leve", "light"), tr!("médio", "medium"), tr!("forte", "strong")][self.denoise.min(3) as usize];
+            lines.push(trf!("Filtro de ruído: {level}", "Noise reduction: {level}"));
         }
         if self.highlights.any() {
             let h = self.highlights;
             let mut parts = Vec::new();
             if h.gas {
-                parts.push("gás livre (ciano)".to_string());
+                parts.push(tr!("gás livre (ciano)", "free air (cyan)").to_string());
             }
             if let Some(t) = h.dense {
                 parts.push(format!("≥ {t:.0} HU (magenta)"));
             }
             if h.fat {
-                parts.push("gordura densificada (laranja)".to_string());
+                parts.push(tr!("gordura densificada (laranja)", "fat stranding (orange)").to_string());
             }
-            lines.push(format!("Realce: {}", parts.join(" · ")));
+            lines.push(trf!("Realce: {}", "Highlight: {}", parts.join(" · ")));
         }
         if frame.cpr.is_none()
             && let Some(p) = frame.patient(pos2(frame.w as f32 * 0.5, frame.h as f32 * 0.5)) {
-                lines.push(format!("Posição {:.1} mm", p.dot(frame.normal())));
+                lines.push(trf!("Posição {} mm", "Position {} mm", crate::i18n::num(p.dot(frame.normal()), 1)));
             }
         for (i, t) in lines.iter().rev().enumerate() {
             shadow_text(painter, bl - vec2(0.0, i as f32 * line), Align2::LEFT_BOTTOM, t, f.clone(), OVERLAY_TEXT);
@@ -2610,13 +2664,14 @@ impl Viewport {
     ) {
         self.v3d.refining = false;
         let Some(vol) = series.volume.clone() else {
-            painter.text(rect.center(), Align2::CENTER_CENTER, "Série sem volume 3D", font(13.0), TEXT_FAINT);
+            painter.text(rect.center(), Align2::CENTER_CENTER, tr!("Série sem volume 3D", "Series without a 3D volume"), font(13.0), TEXT_FAINT);
             return;
         };
         if let Some(issue) = &cx.gpu_issue {
             let c = rect.center();
             painter.text(c - vec2(0.0, 34.0), Align2::CENTER_CENTER, icons::CUBE, font(30.0), TEXT_FAINT);
-            painter.text(c, Align2::CENTER_CENTER, "Reconstrução 3D indisponível neste computador", font_bold(14.0), TEXT);
+            let text = tr!("Reconstrução 3D indisponível neste computador", "3D rendering unavailable on this computer");
+            painter.text(c, Align2::CENTER_CENTER, text, font_bold(14.0), TEXT);
             let galley = painter.layout(issue.clone(), font(12.5), TEXT_DIM, (rect.width() - 60.0).clamp(120.0, 440.0));
             painter.galley(c + vec2(-galley.size().x * 0.5, 18.0), galley, TEXT_DIM);
             return;
@@ -2626,7 +2681,7 @@ impl Viewport {
                 ev.need_gpu = Some(series.clone());
             }
             spinner(painter, rect.center() - vec2(0.0, 12.0), 16.0, cx.time, ACCENT);
-            painter.text(rect.center() + vec2(0.0, 20.0), Align2::CENTER_CENTER, "Preparando volume 3D…", font(13.0), TEXT_DIM);
+            painter.text(rect.center() + vec2(0.0, 20.0), Align2::CENTER_CENTER, tr!("Preparando volume 3D…", "Preparing 3D volume…"), font(13.0), TEXT_DIM);
             ui.ctx().request_repaint();
             return;
         };
@@ -2763,7 +2818,7 @@ impl Viewport {
         let pad = 10.0;
         let title = match v.mode {
             RenderMode::Composite => format!("VR · {}", preset.name),
-            RenderMode::Iso => format!("Superfície · {:.0}", v.iso.unwrap_or_else(|| default_iso(series))),
+            RenderMode::Iso => trf!("Superfície · {:.0}", "Surface · {:.0}", v.iso.unwrap_or_else(|| default_iso(series))),
             m => format!("{} · W {:.0} L {:.0}", m.label(), window.width, window.center),
         };
         let level = if cx.reading { cx.info } else if cx.overlays { crate::config::InfoLevel::Full } else { crate::config::InfoLevel::None };
@@ -2774,10 +2829,11 @@ impl Viewport {
             let st = &series.study;
             let top = pad + self.top_inset;
             shadow_text(painter, rect.right_top() + vec2(-pad, top), Align2::RIGHT_TOP, format_person_name(&st.patient_name), font_bold(13.0), Color32::WHITE);
-            shadow_text(painter, rect.right_top() + vec2(-pad, top + 18.0), Align2::RIGHT_TOP, format!("Série {}: {}", series.info.number, series.info.title()), font(12.0), OVERLAY_TEXT);
+            let series_line = trf!("Série {}: {}", "Series {}: {}", series.info.number, series.info.title());
+            shadow_text(painter, rect.right_top() + vec2(-pad, top + 18.0), Align2::RIGHT_TOP, series_line, font(12.0), OVERLAY_TEXT);
             let mut info = format!("{} × {} × {}", gpu.dims[0], gpu.dims[1], gpu.dims[2]);
             if gpu.downsampled {
-                info.push_str("  (reduzido para a GPU)");
+                info.push_str(tr!("  (reduzido para a GPU)", "  (downsampled for the GPU)"));
             }
             shadow_text(painter, rect.left_bottom() + vec2(pad, -pad), Align2::LEFT_BOTTOM, info, font(11.5), TEXT_DIM);
         }
@@ -2785,7 +2841,7 @@ impl Viewport {
         if refining {
             let pct = (done * 100 / ACCUM_FRAMES).min(99);
             let pos = rect.center_bottom() + vec2(0.0, -16.0);
-            let text = format!("Refinando a luz… {pct}%");
+            let text = trf!("Refinando a luz… {pct}%", "Refining the lighting… {pct}%");
             let galley = painter.layout_no_wrap(text, font(11.5), OVERLAY_TEXT);
             let bg = Rect::from_center_size(pos, galley.size() + vec2(18.0, 8.0));
             painter.rect_filled(bg, CornerRadius::same(10), Color32::from_black_alpha(150));
@@ -2883,7 +2939,7 @@ fn draw_change_chips(ui: &Ui, painter: &egui::Painter, rect: Rect, bottom: f32, 
             (Some(*c), g, w)
         })
         .collect();
-    let g = painter.layout_no_wrap("Restaurar tudo".to_string(), font_bold(11.5), ACCENT);
+    let g = painter.layout_no_wrap(tr!("Restaurar tudo", "Reset all").to_string(), font_bold(11.5), ACCENT);
     let w = g.size().x + 16.0;
     items.push((None, g, w));
 
@@ -2920,13 +2976,17 @@ fn draw_change_chips(ui: &Ui, painter: &egui::Painter, rect: Rect, bottom: f32, 
                     painter.rect_stroke(r, CornerRadius::same(11), Stroke::new(1.0, with_alpha(c.color(), if hot { 230 } else { 140 })), StrokeKind::Inside);
                     painter.galley(text_at(10.0), galley.clone(), Color32::WHITE);
                     painter.text(pos2(r.right() - 11.0, r.center().y), Align2::CENTER_CENTER, icons::X, font(11.0), if hot { DANGER } else { TEXT_DIM });
-                    if resp.on_hover_text("Remover").clicked() {
+                    if resp.on_hover_text(tr!("Remover", "Remove")).clicked() {
                         ev.undo = Some(*c);
                     }
                 }
                 None => {
                     painter.galley(text_at(8.0), galley.clone(), ACCENT);
-                    if resp.on_hover_text("Todas as janelas voltam ao padrão (Shift+R). Os achados salvos ficam.").clicked() {
+                    let tip = tr!(
+                        "Todas as janelas voltam ao padrão (Shift+R). Os achados salvos ficam.",
+                        "All viewports go back to default (Shift+R). Saved findings are kept."
+                    );
+                    if resp.on_hover_text(tip).clicked() {
                         ev.reset_all = true;
                     }
                 }
@@ -3151,7 +3211,7 @@ fn draw_tissue_legend(painter: &egui::Painter, rect: Rect, value: Option<f32>, t
     let card = Rect::from_min_size(pos2(right - width, top), vec2(width, h));
     painter.rect_filled(card, CornerRadius::same(9), Color32::from_rgba_unmultiplied(12, 14, 19, 225));
     painter.rect_stroke(card, CornerRadius::same(9), Stroke::new(1.0, BORDER_STRONG), StrokeKind::Inside);
-    painter.text(card.left_top() + vec2(10.0, 8.0), Align2::LEFT_TOP, "Densidades típicas (HU)", font_bold(11.5), TEXT);
+    painter.text(card.left_top() + vec2(10.0, 8.0), Align2::LEFT_TOP, tr!("Densidades típicas (HU)", "Typical densities (HU)"), font_bold(11.5), TEXT);
     if let Some(v) = value {
         painter.text(card.right_top() + vec2(-10.0, 8.0), Align2::RIGHT_TOP, format!("{v:.0}").replace('-', "−"), font_bold(11.5), MEASURE);
     }
@@ -3172,7 +3232,8 @@ fn draw_tissue_legend(painter: &egui::Painter, rect: Rect, value: Option<f32>, t
         painter.text(pos2(r.right() - 6.0, r.center().y), Align2::RIGHT_CENTER, t.range_text(), font(11.0), if hit { TEXT } else { TEXT_FAINT });
     }
     if rows.len() > 1 {
-        painter.text(pos2(card.left() + 10.0, card.bottom() - 9.0), Align2::LEFT_CENTER, "Sem contraste; variam com aparelho e kV.", font(10.0), TEXT_FAINT);
+        let note = tr!("Sem contraste; variam com aparelho e kV.", "Non-contrast; vary with scanner and kV.");
+        painter.text(pos2(card.left() + 10.0, card.bottom() - 9.0), Align2::LEFT_CENTER, note, font(10.0), TEXT_FAINT);
     }
 }
 
@@ -3256,13 +3317,12 @@ fn ellipse_stats(frame: &Frame, c: Pos2, ra: f32, rb: f32) -> String {
     let area = if !frame.spacing_known {
         format!("{area:.0} px²")
     } else if area > 100.0 {
-        format!("{:.2} cm²", area / 100.0)
+        crate::i18n::dec(format!("{:.2} cm²", area / 100.0))
     } else {
-        format!("{area:.1} mm²")
+        crate::i18n::dec(format!("{area:.1} mm²"))
     };
-    format!("Média {mean:.1}  DP {sd:.1}
-Mín {lo:.0}  Máx {hi:.0}
-Área {area}")
+    let (mean, sd) = (crate::i18n::num(mean, 1), crate::i18n::num(sd, 1));
+    trf!("Média {mean}  DP {sd}\nMín {lo:.0}  Máx {hi:.0}\nÁrea {area}", "Mean {mean}  SD {sd}\nMin {lo:.0}  Max {hi:.0}\nArea {area}")
 }
 
 /// Orientation letters (A, P, R, L, S, I) in the middle of each edge.
@@ -3296,14 +3356,14 @@ fn title_case(s: &str) -> String {
 /// Plane of a native image from its orientation.
 fn stack_plane_name(frame: &Frame) -> &'static str {
     if frame.origin.is_none() {
-        return "Imagem";
+        return tr!("Imagem", "Image");
     }
     let n = frame.u.cross(frame.v).normalize().abs();
     match n.max_element() {
-        m if m < 0.8 => "Oblíquo",
+        m if m < 0.8 => tr!("Oblíquo", "Oblique"),
         _ if n.z >= n.x && n.z >= n.y => "Axial",
         _ if n.y >= n.x => "Coronal",
-        _ => "Sagital",
+        _ => tr!("Sagital", "Sagittal"),
     }
 }
 
@@ -3327,7 +3387,7 @@ fn draw_empty(painter: &egui::Painter, rect: Rect) {
     );
     painter.extend(dash);
     painter.text(rect.center() - vec2(0.0, 12.0), Align2::CENTER_CENTER, icons::IMAGE, font(26.0), TEXT_FAINT);
-    painter.text(rect.center() + vec2(0.0, 18.0), Align2::CENTER_CENTER, "Arraste uma série para cá", font(12.5), TEXT_FAINT);
+    painter.text(rect.center() + vec2(0.0, 18.0), Align2::CENTER_CENTER, tr!("Arraste uma série para cá", "Drag a series here"), font(12.5), TEXT_FAINT);
 }
 
 fn draw_gizmo(painter: &egui::Painter, c: Pos2, cam: &OrbitCamera) {

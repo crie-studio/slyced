@@ -46,11 +46,20 @@ pub enum RegSource {
 impl RegSource {
     fn describe(&self) -> String {
         match self {
-            RegSource::None => "Sem alinhamento: posições DICOM originais.".into(),
-            RegSource::SameFrame => "Mesmo referencial (mesma aquisição): alinhamento exato.".into(),
-            RegSource::Centers => "Aproximado pelo centro do corpo. Refine com o alinhamento automático ou com pontos.".into(),
-            RegSource::Landmarks(n) => format!("{n} par(es) de pontos de referência."),
-            RegSource::Auto(nmi) => format!("Automático por informação mútua (NMI {nmi:.3})."),
+            RegSource::None => tr!("Sem alinhamento: posições DICOM originais.", "No alignment: original DICOM positions.").into(),
+            RegSource::SameFrame => {
+                tr!("Mesmo referencial (mesma aquisição): alinhamento exato.", "Same frame of reference (same acquisition): exact alignment.").into()
+            }
+            RegSource::Centers => tr!(
+                "Aproximado pelo centro do corpo. Refine com o alinhamento automático ou com pontos.",
+                "Approximated by the body centers. Refine with automatic alignment or landmarks."
+            )
+            .into(),
+            RegSource::Landmarks(n) => trf!("{n} par(es) de pontos de referência.", "{n} landmark pair(s)."),
+            RegSource::Auto(nmi) => {
+                let nmi = crate::i18n::num(*nmi, 3);
+                trf!("Automático por informação mútua (NMI {nmi}).", "Automatic, by mutual information (NMI {nmi}).")
+            }
         }
     }
 }
@@ -197,7 +206,7 @@ impl SlycedApp {
     /// similar series of another study of the same patient (if loaded).
     pub(crate) fn start_compare(&mut self) {
         let Some(a) = self.active_series().or_else(|| self.views.iter().find_map(|v| v.content.series().cloned())) else {
-            self.toast(ToastKind::Info, "Abra uma série primeiro.");
+            self.toast(ToastKind::Info, tr!("Abra uma série primeiro.", "Open a series first."));
             return;
         };
         if self.compare_series(0).is_none() || self.compare_series(0).is_some_and(|s| !Arc::ptr_eq(&s, &a) && self.compare_series(1).is_none()) {
@@ -292,7 +301,13 @@ impl SlycedApp {
     pub(crate) fn start_auto_registration(&mut self) {
         let (Some(a), Some(b)) = (self.compare_series(0), self.compare_series(1)) else { return };
         let (Some(va), Some(vb)) = (a.volume.clone(), b.volume.clone()) else {
-            self.toast(ToastKind::Info, "O alinhamento automático precisa de duas séries com volume (cortes de TC/RM).");
+            self.toast(
+                ToastKind::Info,
+                tr!(
+                    "O alinhamento automático precisa de duas séries com volume (cortes de TC/RM).",
+                    "Automatic alignment needs two series with a volume (CT/MR slices)."
+                ),
+            );
             return;
         };
         if let Some(flag) = self.cmp.registering.take() {
@@ -314,9 +329,15 @@ impl SlycedApp {
                 self.cmp.source = RegSource::Auto(r.nmi);
                 self.cmp.version += 1;
                 self.cmp.mpr[1].point = self.cmp.reg.apply(self.cmp.mpr[0].point);
-                self.toast(ToastKind::Success, "Exames alinhados automaticamente.");
+                self.toast(ToastKind::Success, tr!("Exames alinhados automaticamente.", "Studies aligned automatically."));
             }
-            None => self.toast(ToastKind::Error, "Não foi possível alinhar automaticamente (pouca sobreposição entre os exames)."),
+            None => self.toast(
+                ToastKind::Error,
+                tr!(
+                    "Não foi possível alinhar automaticamente (pouca sobreposição entre os exames).",
+                    "Could not align automatically (too little overlap between the studies)."
+                ),
+            ),
         }
     }
 
@@ -472,8 +493,8 @@ impl SlycedApp {
                 })
             };
             let tag = match self.cmp.display {
-                CompareDisplay::Enhancement => "Mapa de realce (B − A ≥ 15 HU)",
-                CompareDisplay::Subtraction => "Subtração B − A",
+                CompareDisplay::Enhancement => tr!("Mapa de realce (B − A ≥ 15 HU)", "Enhancement map (B − A ≥ 15 HU)"),
+                CompareDisplay::Subtraction => tr!("Subtração B − A", "Subtraction B − A"),
                 _ => "A + B",
             };
             let mut cx = base(self);
@@ -499,7 +520,7 @@ impl SlycedApp {
                 let mapped = if side == 1 && link.is_none() { cursor.map(|p| self.cmp.reg.apply(p)) } else { cursor };
                 cx.cursor = mapped;
                 if side == 1 && self.compare_series(1).is_none() {
-                    cx.tag = Some(("B · arraste aqui a série do exame anterior".into(), COLOR_B));
+                    cx.tag = Some((tr!("B · arraste aqui a série do exame anterior", "B · drag the series of the prior study here").into(), COLOR_B));
                 }
                 if side == 1 && link.is_some() {
                     cx.linked = link.clone();
@@ -542,8 +563,8 @@ impl SlycedApp {
         use crate::phases::{phase, Phase};
         match (self.compare_series(0), self.compare_series(1)) {
             (Some(a), Some(b)) => match (phase(&a.info), phase(&b.info)) {
-                (Phase::Post, Phase::Pre) => ("Pós", "Pré", true),
-                (Phase::Pre, _) | (_, Phase::Post) => ("Pré", "Pós", false),
+                (Phase::Post, Phase::Pre) => (tr!("Pós", "Post"), tr!("Pré", "Pre"), true),
+                (Phase::Pre, _) | (_, Phase::Post) => (tr!("Pré", "Pre"), tr!("Pós", "Post"), false),
                 _ => ("A", "B", false),
             },
             _ => ("A", "B", false),
@@ -663,7 +684,13 @@ impl SlycedApp {
         let study_uid = self.active_series().map(|s| s.study.uid.clone()).or_else(|| self.expanded_study.clone()).or_else(|| self.library.studies.first().map(|s| s.header.uid.clone()));
         let pair = study_uid.and_then(|u| self.library.studies.iter().find(|s| s.header.uid == u)).and_then(crate::phases::pick_pair);
         let Some((pre, post)) = pair else {
-            self.toast(ToastKind::Info, "Não encontrei fases sem e com contraste (TC) neste exame. Arraste as séries para A e B na comparação.");
+            self.toast(
+                ToastKind::Info,
+                tr!(
+                    "Não encontrei fases sem e com contraste (TC) neste exame. Arraste as séries para A e B na comparação.",
+                    "No non-contrast and contrast CT phases found in this study. Drag the series to A and B in the comparison."
+                ),
+            );
             return;
         };
         self.workspace = crate::app::Workspace::Compare;
@@ -673,7 +700,13 @@ impl SlycedApp {
         self.open_series(&pre, Target::Compare(0));
         self.open_series(&post, Target::Compare(1));
         self.tool = Tool::Probe;
-        self.toast(ToastKind::Info, "Fases sem (A) e com contraste (B). Clique com a densidade (H) para ver o ΔHU; o mapa de realce está em Exibição.");
+        self.toast(
+            ToastKind::Info,
+            tr!(
+                "Fases sem (A) e com contraste (B). Clique com a densidade (H) para ver o ΔHU; o mapa de realce está em Exibição.",
+                "Non-contrast (A) and contrast (B) phases. Click with point density (H) to see the ΔHU; the enhancement map is under Display."
+            ),
+        );
     }
 
     fn compare_event(&mut self, side: usize, ev: ViewEvents, linked: bool) {
@@ -717,7 +750,7 @@ impl SlycedApp {
     }
 
     pub(crate) fn inspector_compare(&mut self, ui: &mut Ui) {
-        caption(ui, "Comparação de exames");
+        caption(ui, tr!("Comparação de exames", "Study comparison"));
         let (a, b) = (self.compare_series(0), self.compare_series(1));
         let mut swap = false;
         card(ui, |ui| {
@@ -729,16 +762,18 @@ impl SlycedApp {
                         Some(s) => {
                             ui.vertical(|ui| {
                                 ui.label(RichText::new(s.info.title()).color(pal().text).size(12.5));
-                                ui.label(RichText::new(format!("{} · {} imagens", format_date(&s.study.date), s.len())).color(pal().text_faint).size(11.5));
+                                let text = trf!("{} · {} imagens", "{} · {} images", format_date(&s.study.date), s.len());
+                                ui.label(RichText::new(text).color(pal().text_faint).size(11.5));
                             });
                         }
                         None => {
-                            ui.label(RichText::new("Arraste uma série para a janela B (exame anterior).").color(pal().text_faint).size(12.0));
+                            let text = tr!("Arraste uma série para a janela B (exame anterior).", "Drag a series to viewport B (prior study).");
+                            ui.label(RichText::new(text).color(pal().text_faint).size(12.0));
                         }
                     }
                 });
             }
-            if b.is_some() && ui.button(format!("{}  Trocar A e B", icons::SWAP)).clicked() {
+            if b.is_some() && ui.button(trf!("{}  Trocar A e B", "{}  Swap A and B", icons::SWAP)).clicked() {
                 swap = true;
             }
         });
@@ -752,47 +787,61 @@ impl SlycedApp {
         }
         let is_3d = self.compare_is_3d();
 
-        caption(ui, "Exibição");
+        caption(ui, tr!("Exibição", "Display"));
         card(ui, |ui| {
             let mut d = self.cmp.display;
             if segmented(
                 ui,
                 &mut d,
                 &[
-                    (CompareDisplay::SideBySide, icons::COLUMNS, "Lado a lado"),
-                    (CompareDisplay::Blend, icons::INTERSECT, "Sobrepor"),
-                    (CompareDisplay::Swipe, icons::SPLIT_HORIZONTAL, "Cortina"),
-                    (CompareDisplay::Checker, icons::CHECKERBOARD, "Xadrez"),
+                    (CompareDisplay::SideBySide, icons::COLUMNS, tr!("Lado a lado", "Side by side")),
+                    (CompareDisplay::Blend, icons::INTERSECT, tr!("Sobrepor", "Blend")),
+                    (CompareDisplay::Swipe, icons::SPLIT_HORIZONTAL, tr!("Cortina", "Swipe")),
+                    (CompareDisplay::Checker, icons::CHECKERBOARD, tr!("Xadrez", "Checker")),
                 ],
             ) {
                 self.set_compare_display(d);
             }
             match self.cmp.display {
-                CompareDisplay::Blend => labeled_slider(ui, "Opacidade de B", &mut self.cmp.opacity, 0.0..=1.0, ""),
-                CompareDisplay::Checker => labeled_slider(ui, "Tamanho do quadro (mm)", &mut self.cmp.checker_mm, 4.0..=80.0, ""),
+                CompareDisplay::Blend => labeled_slider(ui, tr!("Opacidade de B", "Opacity of B"), &mut self.cmp.opacity, 0.0..=1.0, ""),
+                CompareDisplay::Checker => labeled_slider(ui, tr!("Tamanho do quadro (mm)", "Square size (mm)"), &mut self.cmp.checker_mm, 4.0..=80.0, ""),
                 CompareDisplay::Swipe => {
-                    ui.label(RichText::new("Arraste a divisória: à esquerda A, à direita B.").color(pal().text_faint).size(12.0));
+                    let text = tr!("Arraste a divisória: à esquerda A, à direita B.", "Drag the divider: A on the left, B on the right.");
+                    ui.label(RichText::new(text).color(pal().text_faint).size(12.0));
                 }
                 CompareDisplay::SideBySide => {}
                 CompareDisplay::Enhancement => {
-                    ui.label(RichText::new("Amarelo → vermelho: ganho de 15 a 80+ HU entre as fases, só em partes moles da fase sem contraste.").color(pal().text_faint).size(12.0));
+                    let text = tr!(
+                        "Amarelo → vermelho: ganho de 15 a 80+ HU entre as fases, só em partes moles da fase sem contraste.",
+                        "Yellow → red: gain of 15 to 80+ HU between the phases, only in soft tissue of the non-contrast phase."
+                    );
+                    ui.label(RichText::new(text).color(pal().text_faint).size(12.0));
                 }
                 CompareDisplay::Subtraction => {
-                    ui.label(RichText::new("Imagem de subtração (com − sem contraste): cinza médio = sem mudança, claro = realce.").color(pal().text_faint).size(12.0));
+                    let text = tr!(
+                        "Imagem de subtração (com − sem contraste): cinza médio = sem mudança, claro = realce.",
+                        "Subtraction image (contrast − non-contrast): mid gray = no change, bright = enhancement."
+                    );
+                    ui.label(RichText::new(text).color(pal().text_faint).size(12.0));
                 }
             }
             if is_3d {
                 ui.horizontal_wrapped(|ui| {
-                    for (d, label) in [(CompareDisplay::Enhancement, "Mapa de realce"), (CompareDisplay::Subtraction, "Subtração")] {
+                    let maps = [
+                        (CompareDisplay::Enhancement, tr!("Mapa de realce", "Enhancement map")),
+                        (CompareDisplay::Subtraction, tr!("Subtração", "Subtraction")),
+                    ];
+                    let tip = tr!("Diferença entre as fases (B − A), alinhadas", "Difference between the aligned phases (B − A)");
+                    for (d, label) in maps {
                         let on = self.cmp.display == d;
-                        if super::panels::chip(ui, label, on, 90.0).on_hover_text("Diferença entre as fases (B − A), alinhadas").clicked() {
+                        if super::panels::chip(ui, label, on, 90.0).on_hover_text(tip).clicked() {
                             self.set_compare_display(if on { CompareDisplay::SideBySide } else { d });
                         }
                     }
                 });
             }
             ui.horizontal(|ui| {
-                ui.label("Cores de B");
+                ui.label(tr!("Cores de B", "Colors of B"));
                 let v = &mut self.cmp_views[1];
                 egui::ComboBox::from_id_salt("cmp-cmap").selected_text(v.colormap.label()).show_ui(ui, |ui| {
                     for c in Colormap::ALL {
@@ -803,15 +852,16 @@ impl SlycedApp {
             if is_3d {
                 ui.add_space(4.0);
                 let mut plane = self.cmp.plane;
-                if segmented(ui, &mut plane, &[(PlaneKind::Axial, "", "Axial"), (PlaneKind::Coronal, "", "Coronal"), (PlaneKind::Sagittal, "", "Sagital")]) {
+                let planes = [(PlaneKind::Axial, "", "Axial"), (PlaneKind::Coronal, "", "Coronal"), (PlaneKind::Sagittal, "", tr!("Sagital", "Sagittal"))];
+                if segmented(ui, &mut plane, &planes) {
                     self.cmp.plane = plane;
                     self.refresh_compare();
                 }
                 ui.horizontal(|ui| {
-                    ui.label("Espessura (slab)");
+                    ui.label(tr!("Espessura (slab)", "Slab thickness"));
                     ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
                         let t = self.cmp.mpr[0].slab_mm;
-                        ui.label(RichText::new(if t > 0.0 { format!("{t:.0} mm") } else { "fina".into() }).color(pal().text_dim));
+                        ui.label(RichText::new(if t > 0.0 { format!("{t:.0} mm") } else { tr!("fina", "thin").into() }).color(pal().text_dim));
                     });
                 });
                 let mut slab = self.cmp.mpr[0].slab_mm;
@@ -825,14 +875,17 @@ impl SlycedApp {
         });
 
         if is_3d {
-            caption(ui, "Realce entre fases (ΔHU)");
+            caption(ui, tr!("Realce entre fases (ΔHU)", "Enhancement between phases (ΔHU)"));
             card(ui, |ui| {
                 let (na, nb, _) = self.phase_names();
                 if self.cmp.deltas.is_empty() {
                     ui.label(
-                        RichText::new("Com a densidade (H), clique no mesmo ponto: o Slyced lê as duas fases (média em 2,5 mm) e mostra a diferença.")
-                            .color(pal().text_faint)
-                            .size(12.0),
+                        RichText::new(tr!(
+                            "Com a densidade (H), clique no mesmo ponto: o Slyced lê as duas fases (média em 2,5 mm) e mostra a diferença.",
+                            "With point density (H), click the same point: Slyced reads both phases (mean within 2.5 mm) and shows the difference."
+                        ))
+                        .color(pal().text_faint)
+                        .size(12.0),
                     );
                 }
                 for (name, ha, hb, d) in &self.cmp.deltas {
@@ -849,33 +902,41 @@ impl SlycedApp {
                     }
                 }
                 ui.add_space(4.0);
-                ui.label(RichText::new("Δ < 10 HU: sem realce · 10–20: duvidoso · ≥ 20: realce. Sem realce numa alça ou área hiperdensa sugere sofrimento de alça ou hematoma.").size(11.0).color(pal().text_faint));
+                let text = tr!(
+                    "Δ < 10 HU: sem realce · 10–20: duvidoso · ≥ 20: realce. Sem realce numa alça ou área hiperdensa sugere sofrimento de alça ou hematoma.",
+                    "Δ < 10 HU: no enhancement · 10–20: equivocal · ≥ 20: enhancement. No enhancement in a bowel loop or hyperdense area suggests bowel ischemia or hematoma."
+                );
+                ui.label(RichText::new(text).size(11.0).color(pal().text_faint));
             });
         }
 
-        caption(ui, "Sincronização");
+        caption(ui, tr!("Sincronização", "Synchronization"));
         card(ui, |ui| {
             let fused = self.cmp.display != CompareDisplay::SideBySide;
             ui.add_enabled_ui(!fused, |ui| {
-                ui.checkbox(&mut self.cmp.sync_position, "Posição, cortes e cursor");
+                ui.checkbox(&mut self.cmp.sync_position, tr!("Posição, cortes e cursor", "Position, slices and cursor"));
             });
-            ui.checkbox(&mut self.cmp.sync_view, "Zoom, deslocamento e rotação");
-            ui.checkbox(&mut self.cmp.sync_window, "Janela/nível");
-            ui.label(RichText::new("Ctrl+clique marca o mesmo ponto nos dois exames.").color(pal().text_faint).size(11.5));
+            ui.checkbox(&mut self.cmp.sync_view, tr!("Zoom, deslocamento e rotação", "Zoom, pan and rotation"));
+            ui.checkbox(&mut self.cmp.sync_window, tr!("Janela/nível", "Window/level"));
+            let text = tr!("Ctrl+clique marca o mesmo ponto nos dois exames.", "Ctrl+click marks the same point in both studies.");
+            ui.label(RichText::new(text).color(pal().text_faint).size(11.5));
         });
 
-        caption(ui, "Alinhamento");
+        caption(ui, tr!("Alinhamento", "Alignment"));
         let mut action = None;
         card(ui, |ui| {
             ui.label(RichText::new(self.cmp.source.describe()).color(pal().text_dim).size(12.0));
             if is_3d {
                 let t = self.cmp.reg.t;
                 if self.cmp.source != RegSource::SameFrame {
-                    ui.label(RichText::new(format!("Deslocamento {:.1} mm · rotação {:.1}°", t.length(), self.cmp.reg.angle_deg())).color(pal().text_faint).size(11.5));
+                    let (shift, angle) = (crate::i18n::num(t.length(), 1), crate::i18n::num(self.cmp.reg.angle_deg(), 1));
+                    let text = trf!("Deslocamento {shift} mm · rotação {angle}°", "Translation {shift} mm · rotation {angle}°");
+                    ui.label(RichText::new(text).color(pal().text_faint).size(11.5));
                 }
             } else {
                 let s = self.cmp.sim;
-                ui.label(RichText::new(format!("Escala {:.3}× · rotação {:.1}°", s.scale(), s.angle_deg())).color(pal().text_faint).size(11.5));
+                let (scale, angle) = (crate::i18n::num(s.scale(), 3), crate::i18n::num(s.angle_deg(), 1));
+                ui.label(RichText::new(trf!("Escala {scale}× · rotação {angle}°", "Scale {scale}× · rotation {angle}°")).color(pal().text_faint).size(11.5));
             }
             ui.add_space(6.0);
             if is_3d {
@@ -883,31 +944,43 @@ impl SlycedApp {
                     ui.horizontal(|ui| {
                         let (r, _) = ui.allocate_exact_size(vec2(16.0, 16.0), Sense::hover());
                         spinner(ui.painter(), r.center(), 6.0, self.time, pal().accent);
-                        ui.label(RichText::new("Alinhando…").color(pal().text_dim));
-                        if ui.small_button("Cancelar").clicked() {
+                        ui.label(RichText::new(tr!("Alinhando…", "Aligning…")).color(pal().text_dim));
+                        if ui.small_button(tr!("Cancelar", "Cancel")).clicked() {
                             action = Some("cancel");
                         }
                     });
                     ui.ctx().request_repaint_after(std::time::Duration::from_millis(100));
-                } else if ui.button(format!("{}  Alinhar automaticamente", icons::MAGIC_WAND)).on_hover_text("Rotação e translação por informação mútua (funciona entre fases e modalidades).").clicked() {
-                    action = Some("auto");
+                } else {
+                    let tip = tr!(
+                        "Rotação e translação por informação mútua (funciona entre fases e modalidades).",
+                        "Rotation and translation by mutual information (works across phases and modalities)."
+                    );
+                    if ui.button(trf!("{}  Alinhar automaticamente", "{}  Align automatically", icons::MAGIC_WAND)).on_hover_text(tip).clicked() {
+                        action = Some("auto");
+                    }
                 }
             }
             ui.horizontal(|ui| {
                 let on = self.tool == Tool::Landmark;
-                if ui.selectable_label(on, format!("{}  Pontos de referência", icons::ANCHOR)).clicked() {
+                if ui.selectable_label(on, trf!("{}  Pontos de referência", "{}  Landmarks", icons::ANCHOR)).clicked() {
                     action = Some(if on { "tool-off" } else { "tool-on" });
                 }
-                if ui.button(format!("{}  Redefinir", icons::ARROW_COUNTER_CLOCKWISE)).clicked() {
+                if ui.button(trf!("{}  Redefinir", "{}  Reset", icons::ARROW_COUNTER_CLOCKWISE)).clicked() {
                     action = Some("reset");
                 }
             });
             if self.tool == Tool::Landmark {
                 ui.label(
                     RichText::new(if is_3d {
-                        "Clique no mesmo ponto anatômico em A e em B (cada lado navega sozinho enquanto a ferramenta está ativa). 1 par = translação; 3 ou mais = também rotação."
+                        tr!(
+                            "Clique no mesmo ponto anatômico em A e em B (cada lado navega sozinho enquanto a ferramenta está ativa). 1 par = translação; 3 ou mais = também rotação.",
+                            "Click the same anatomical point in A and in B (each side navigates on its own while the tool is active). 1 pair = translation; 3 or more = rotation too."
+                        )
                     } else {
-                        "Clique no mesmo ponto em A e em B. 1 par = translação; 2 ou mais = também escala e rotação."
+                        tr!(
+                            "Clique no mesmo ponto em A e em B. 1 par = translação; 2 ou mais = também escala e rotação.",
+                            "Click the same point in A and in B. 1 pair = translation; 2 or more = scale and rotation too."
+                        )
                     })
                     .color(pal().text_faint)
                     .size(11.5),
@@ -923,7 +996,7 @@ impl SlycedApp {
                     ui.label(RichText::new("B").color(COLOR_B).size(11.5));
                     ui.label(mark(l.b.is_some(), COLOR_B));
                     ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                        if icon_button_sized(ui, icons::X, "Remover", false, 22.0).clicked() {
+                        if icon_button_sized(ui, icons::X, tr!("Remover", "Remove"), false, 22.0).clicked() {
                             remove = Some(i);
                         }
                     });
@@ -947,11 +1020,12 @@ impl SlycedApp {
             _ => {}
         }
 
-        caption(ui, "Medidas pareadas (imagem atual)");
+        caption(ui, tr!("Medidas pareadas (imagem atual)", "Paired measurements (current image)"));
         card(ui, |ui| {
             let linked = self.compare_linked() && !self.compare_fused();
             if !linked {
-                ui.label(RichText::new("Ative a sincronização de posição para comparar medidas.").color(pal().text_faint).size(12.0));
+                let text = tr!("Ative a sincronização de posição para comparar medidas.", "Turn on position synchronization to compare measurements.");
+                ui.label(RichText::new(text).color(pal().text_faint).size(12.0));
                 return;
             }
             let (va, vb) = (self.cmp_views[0].values.clone(), self.cmp_views[1].values.clone());
@@ -966,10 +1040,10 @@ impl SlycedApp {
                 let Some((b, _)) = best else { continue };
                 rows += 1;
                 let (icon, name) = match a.kind {
-                    MeasureKind::Length => (icons::RULER, "Distância"),
-                    MeasureKind::Angle => (icons::ANGLE, "Ângulo"),
-                    MeasureKind::Ellipse => (icons::CIRCLE, "Área"),
-                    MeasureKind::Probe => (icons::TARGET, "Densidade"),
+                    MeasureKind::Length => (icons::RULER, tr!("Distância", "Distance")),
+                    MeasureKind::Angle => (icons::ANGLE, tr!("Ângulo", "Angle")),
+                    MeasureKind::Ellipse => (icons::CIRCLE, tr!("Área", "Area")),
+                    MeasureKind::Probe => (icons::TARGET, tr!("Densidade", "Density")),
                     MeasureKind::Arrow => continue,
                 };
                 ui.horizontal(|ui| {
@@ -977,20 +1051,29 @@ impl SlycedApp {
                     ui.label(RichText::new(name).size(12.0));
                     ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
                         let change = if a.value.abs() > 1e-3 { (b.value - a.value) / a.value.abs() * 100.0 } else { 0.0 };
-                        let delta = if a.kind == MeasureKind::Probe { format!("{:+.0}", b.value - a.value) } else { format!("{change:+.1}%") };
+                        let delta =
+                            if a.kind == MeasureKind::Probe { format!("{:+.0}", b.value - a.value) } else { crate::i18n::dec(format!("{change:+.1}%")) };
                         let color = if change.abs() < 5.0 { pal().text_dim } else if change > 0.0 { WARNING } else { SUCCESS };
                         ui.label(RichText::new(delta).font(font_bold(12.5)).color(color));
-                        ui.label(RichText::new(format!("{:.1} → {:.1} {}", a.value, b.value, a.unit)).size(12.0).color(pal().text));
+                        let (va, vb) = (crate::i18n::num(a.value as f64, 1), crate::i18n::num(b.value as f64, 1));
+                        ui.label(RichText::new(format!("{va} → {vb} {}", a.unit)).size(12.0).color(pal().text));
                     });
                 });
                 if let (Some(ma), Some(mb)) = (a.mean, b.mean) {
-                    ui.label(RichText::new(format!("    média {ma:.0} → {mb:.0} ({:+.0})", mb - ma)).size(11.5).color(pal().text_faint));
+                    let text = trf!("    média {ma:.0} → {mb:.0} ({:+.0})", "    mean {ma:.0} → {mb:.0} ({:+.0})", mb - ma);
+                    ui.label(RichText::new(text).size(11.5).color(pal().text_faint));
                 }
             }
             if rows == 0 {
-                ui.label(RichText::new("Meça a mesma lesão em A e em B para ver a variação.").color(pal().text_faint).size(12.0));
+                let text = tr!("Meça a mesma lesão em A e em B para ver a variação.", "Measure the same lesion in A and in B to see the change.");
+                ui.label(RichText::new(text).color(pal().text_faint).size(12.0));
             }
-            if !self.cmp_views[0].measurements.is_empty() && ui.button(format!("{}  Copiar medidas de A para B", icons::COPY)).on_hover_text("Cria em B as mesmas medidas, para ajustar").clicked() {
+            if !self.cmp_views[0].measurements.is_empty()
+                && ui
+                    .button(trf!("{}  Copiar medidas de A para B", "{}  Copy measurements from A to B", icons::COPY))
+                    .on_hover_text(tr!("Cria em B as mesmas medidas, para ajustar", "Creates the same measurements in B, ready to adjust"))
+                    .clicked()
+            {
                 self.cmp_views[1].measurements = self.cmp_views[0].measurements.clone();
             }
         });

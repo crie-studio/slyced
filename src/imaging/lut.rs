@@ -1,5 +1,7 @@
 //! Window/level and color lookup tables for 2D display.
 
+use crate::i18n::Tr;
+
 use super::volume::Quant;
 use egui::Color32;
 use rayon::prelude::*;
@@ -21,9 +23,9 @@ impl Colormap {
 
     pub fn label(self) -> &'static str {
         match self {
-            Colormap::Gray => "Escala de cinza",
+            Colormap::Gray => tr!("Escala de cinza", "Grayscale"),
             Colormap::HotIron => "Hot iron",
-            Colormap::Rainbow => "Arco-íris",
+            Colormap::Rainbow => tr!("Arco-íris", "Rainbow"),
             Colormap::Bone => "Bone",
         }
     }
@@ -76,24 +78,24 @@ impl Window {
 }
 
 pub struct WindowPreset {
-    pub name: &'static str,
+    pub name: Tr,
     pub key: &'static str,
     pub window: Option<Window>,
 }
 
 /// Presets for CT (Hounsfield units). `None` means "full dynamic range".
 pub const CT_PRESETS: &[WindowPreset] = &[
-    WindowPreset { name: "Padrão DICOM", key: "1", window: None },
-    WindowPreset { name: "Cérebro", key: "2", window: Some(Window { center: 40.0, width: 80.0 }) },
-    WindowPreset { name: "Partes moles", key: "3", window: Some(Window { center: 50.0, width: 350.0 }) },
-    WindowPreset { name: "Pulmão", key: "4", window: Some(Window { center: -600.0, width: 1500.0 }) },
-    WindowPreset { name: "Osso", key: "5", window: Some(Window { center: 400.0, width: 1800.0 }) },
-    WindowPreset { name: "Abdome", key: "6", window: Some(Window { center: 60.0, width: 400.0 }) },
-    WindowPreset { name: "Angio", key: "7", window: Some(Window { center: 300.0, width: 600.0 }) },
-    WindowPreset { name: "Mediastino", key: "8", window: Some(Window { center: 40.0, width: 400.0 }) },
-    WindowPreset { name: "AVC", key: "9", window: Some(Window { center: 35.0, width: 35.0 }) },
+    WindowPreset { name: Tr("Padrão DICOM", "DICOM default"), key: "1", window: None },
+    WindowPreset { name: Tr("Cérebro", "Brain"), key: "2", window: Some(Window { center: 40.0, width: 80.0 }) },
+    WindowPreset { name: Tr("Partes moles", "Soft tissue"), key: "3", window: Some(Window { center: 50.0, width: 350.0 }) },
+    WindowPreset { name: Tr("Pulmão", "Lung"), key: "4", window: Some(Window { center: -600.0, width: 1500.0 }) },
+    WindowPreset { name: Tr("Osso", "Bone"), key: "5", window: Some(Window { center: 400.0, width: 1800.0 }) },
+    WindowPreset { name: Tr("Abdome", "Abdomen"), key: "6", window: Some(Window { center: 60.0, width: 400.0 }) },
+    WindowPreset { name: Tr("Angio", "Angio"), key: "7", window: Some(Window { center: 300.0, width: 600.0 }) },
+    WindowPreset { name: Tr("Mediastino", "Mediastinum"), key: "8", window: Some(Window { center: 40.0, width: 400.0 }) },
+    WindowPreset { name: Tr("AVC", "Stroke"), key: "9", window: Some(Window { center: 35.0, width: 35.0 }) },
     // Narrow window centered on fat: inflamed (densified) mesenteric fat stands out.
-    WindowPreset { name: "Gordura mesent.", key: "0", window: Some(Window { center: -50.0, width: 250.0 }) },
+    WindowPreset { name: Tr("Gordura mesent.", "Mesenteric fat"), key: "0", window: Some(Window { center: -50.0, width: 250.0 }) },
 ];
 
 /// Builds a lookup table from stored samples to display colors.

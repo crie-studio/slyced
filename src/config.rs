@@ -14,7 +14,9 @@ pub const WEBSITE: &str = env!("CARGO_PKG_HOMEPAGE");
 /// Project page (features, screens, downloads); the web version is at app/ below it.
 pub const PROJECT_PAGE: &str = "https://crie-studio.github.io/slyced/";
 /// Window title: always the same, never the patient's name.
-pub const WINDOW_TITLE: &str = "Slyced - por Luiz Felipe Pitzer";
+pub fn window_title() -> &'static str {
+    tr!("Slyced - por Luiz Felipe Pitzer", "Slyced - by Luiz Felipe Pitzer")
+}
 /// Marker file that enables portable mode.
 pub const PORTABLE_MARKER: &str = "Slyced.portable";
 /// Data folder next to the executable in portable mode.
@@ -62,7 +64,13 @@ impl Paths {
             (portable_dir.clone(), true)
         } else {
             if wants_portable {
-                notice = Some("Modo portátil indisponível: a pasta do executável é somente leitura. Usando a pasta do usuário.".to_string());
+                notice = Some(
+                    tr!(
+                        "Modo portátil indisponível: a pasta do executável é somente leitura. Usando a pasta do usuário.",
+                        "Portable mode unavailable: the program folder is read-only. Using the user folder."
+                    )
+                    .to_string(),
+                );
             }
             (user_dir, false)
         };
@@ -90,9 +98,10 @@ impl Paths {
             return None;
         }
         std::fs::copy(&old_config, &self.config).ok()?;
-        let mut msg = format!("Configurações importadas de {}.", old.display());
+        let mut msg = trf!("Configurações importadas de {}.", "Settings imported from {}.", old.display());
         if old.join("PACS").is_dir() {
-            msg.push_str(&format!(" Exames baixados anteriormente continuam em {}.", old.join("PACS").display()));
+            let store = old.join("PACS");
+            msg.push_str(&trf!(" Exames baixados anteriormente continuam em {}.", " Studies downloaded earlier remain in {}.", store.display()));
         }
         Some(msg)
     }
@@ -105,7 +114,13 @@ impl Paths {
     pub fn set_portable(&self, on: bool) -> std::io::Result<()> {
         let marker = self.exe_dir.join(PORTABLE_MARKER);
         if on {
-            std::fs::write(marker, "Apague este arquivo para o Slyced voltar a salvar os dados na pasta do usuário.\r\n")
+            std::fs::write(
+                marker,
+                tr!(
+                    "Apague este arquivo para o Slyced voltar a salvar os dados na pasta do usuário.\r\n",
+                    "Delete this file for Slyced to save its data in the user folder again.\r\n"
+                ),
+            )
         } else {
             match std::fs::remove_file(marker) {
                 Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e),
@@ -139,7 +154,13 @@ fn adopt_old_data(exe_dir: &Path, old_user: &Path, new_user: &Path) -> Option<St
             }
         }
     }
-    adopted.then(|| "O Lumen agora se chama Slyced: configurações, servidores PACS e achados foram mantidos.".to_string())
+    adopted.then(|| {
+        tr!(
+            "O Lumen agora se chama Slyced: configurações, servidores PACS e achados foram mantidos.",
+            "Lumen is now called Slyced: settings, PACS servers and findings were kept."
+        )
+        .to_string()
+    })
 }
 
 /// `%LOCALAPPDATA%\Slyced`: per user and not roaming, so large PACS downloads
@@ -242,7 +263,7 @@ impl PacsNode {
 impl Default for PacsNode {
     fn default() -> Self {
         Self {
-            name: "Novo servidor".into(),
+            name: tr!("Novo servidor", "New server").into(),
             ae_title: "ORTHANC".into(),
             host: "127.0.0.1".into(),
             port: 4242,
@@ -291,6 +312,62 @@ pub struct Settings {
     pub reading_info: InfoLevel,
     /// The patient timeline also asks the PACS for the patient's other exams.
     pub timeline_pacs: bool,
+    /// Language of the interface.
+    pub language: Language,
+}
+
+/// Language chosen in Configurações (`"auto"`, `"pt-BR"` or `"en"` in `config.json`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Language {
+    /// The system's language: Portuguese on pt-* systems, English on the others.
+    #[default]
+    #[serde(rename = "auto")]
+    Auto,
+    #[serde(rename = "pt-BR")]
+    Portuguese,
+    #[serde(rename = "en")]
+    English,
+}
+
+impl Language {
+    pub const ALL: [Language; 3] = [Language::Auto, Language::Portuguese, Language::English];
+
+    /// Names of the languages are written in their own language.
+    pub fn label(self) -> &'static str {
+        match self {
+            Language::Auto => tr!("Automático", "Automatic"),
+            Language::Portuguese => "Português (Brasil)",
+            Language::English => "English",
+        }
+    }
+
+    pub fn resolve(self) -> crate::i18n::Lang {
+        match self {
+            Language::Auto => crate::i18n::system(),
+            Language::Portuguese => crate::i18n::Lang::Pt,
+            Language::English => crate::i18n::Lang::English,
+        }
+    }
+
+    /// `"auto"`, `"pt"`/`"pt-BR"` or `"en"` (web page, `--lang`); anything else is automatic.
+    pub fn from_code(code: &str) -> Self {
+        let code = code.trim().to_ascii_lowercase();
+        if code.starts_with("pt") {
+            Language::Portuguese
+        } else if code.starts_with("en") {
+            Language::English
+        } else {
+            Language::Auto
+        }
+    }
+
+    pub fn code(self) -> &'static str {
+        match self {
+            Language::Auto => "auto",
+            Language::Portuguese => "pt-BR",
+            Language::English => "en",
+        }
+    }
 }
 
 /// How much text goes over the images in the reading full screen.
@@ -310,9 +387,9 @@ impl InfoLevel {
 
     pub fn label(self) -> &'static str {
         match self {
-            InfoLevel::Full => "Completa",
-            InfoLevel::Minimal => "Mínima",
-            InfoLevel::None => "Nenhuma",
+            InfoLevel::Full => tr!("Completa", "Full"),
+            InfoLevel::Minimal => tr!("Mínima", "Minimal"),
+            InfoLevel::None => tr!("Nenhuma", "None"),
         }
     }
 
@@ -342,17 +419,26 @@ impl Lighting {
 
     pub fn label(self) -> &'static str {
         match self {
-            Lighting::Simple => "Simples",
-            Lighting::Realistic => "Realista",
-            Lighting::Cinematic => "Cinemático",
+            Lighting::Simple => tr!("Simples", "Simple"),
+            Lighting::Realistic => tr!("Realista", "Realistic"),
+            Lighting::Cinematic => tr!("Cinemático", "Cinematic"),
         }
     }
 
     pub fn help(self) -> &'static str {
         match self {
-            Lighting::Simple => "Luz vinda da câmera, sem sombras: a mais leve para a placa de vídeo.",
-            Lighting::Realistic => "Luz lateral com sombras suaves, oclusão nas reentrâncias e contorno, em tempo real.",
-            Lighting::Cinematic => "Parado, a imagem é refinada por alguns segundos (sombras e luz ambiente mais naturais); girando, usa a luz realista.",
+            Lighting::Simple => tr!(
+                "Luz vinda da câmera, sem sombras: a mais leve para a placa de vídeo.",
+                "Light from the camera, no shadows: the lightest load for the graphics card."
+            ),
+            Lighting::Realistic => tr!(
+                "Luz lateral com sombras suaves, oclusão nas reentrâncias e contorno, em tempo real.",
+                "Side light with soft shadows, occlusion in recesses and outlines, in real time."
+            ),
+            Lighting::Cinematic => tr!(
+                "Parado, a imagem é refinada por alguns segundos (sombras e luz ambiente mais naturais); girando, usa a luz realista.",
+                "When still, the image is refined for a few seconds (more natural shadows and ambient light); while rotating, it uses the realistic light."
+            ),
         }
     }
 
@@ -379,9 +465,9 @@ impl Theme {
 
     pub fn label(self) -> &'static str {
         match self {
-            Theme::Dark => "Escuro",
-            Theme::Light => "Claro",
-            Theme::HighContrast => "Alto contraste",
+            Theme::Dark => tr!("Escuro", "Dark"),
+            Theme::Light => tr!("Claro", "Light"),
+            Theme::HighContrast => tr!("Alto contraste", "High contrast"),
         }
     }
 }
@@ -409,6 +495,7 @@ impl Default for Settings {
             vr_lighting: Lighting::Realistic,
             reading_info: InfoLevel::Minimal,
             timeline_pacs: true,
+            language: Language::Auto,
         }
     }
 }
@@ -431,8 +518,9 @@ impl Settings {
             return None;
         }
         self.local_ae = APP_NAME.to_uppercase();
-        Some(format!(
+        Some(trf!(
             "O AE Title deste computador passou de {} para {}. Se o PACS só aceita AEs cadastrados, cadastre {} nele (ou volte o nome em Configurações → Rede DICOM).",
+            "This computer's AE Title changed from {} to {}. If the PACS only accepts registered AEs, register {} there (or change the name back in Settings → DICOM network).",
             OLD_NAME.to_uppercase(),
             self.local_ae,
             self.local_ae
@@ -535,5 +623,19 @@ mod tests {
         let mut s = Settings { local_ae: "HOSPITAL".into(), ..Default::default() };
         assert!(s.drop_old_name().is_none());
         assert_eq!(s.local_ae, "HOSPITAL");
+    }
+
+    #[test]
+    fn language_is_saved_by_code() {
+        // Older config.json files have no language: automatic.
+        let s: Settings = serde_json::from_str(r#"{"local_ae":"SLYCED"}"#).unwrap();
+        assert_eq!(s.language, Language::Auto);
+        let s = Settings { language: Language::English, ..Default::default() };
+        let json = serde_json::to_string(&s).unwrap();
+        assert!(json.contains(r#""language":"en""#));
+        assert_eq!(serde_json::from_str::<Settings>(&json).unwrap().language, Language::English);
+        assert_eq!(Language::from_code("pt"), Language::Portuguese);
+        assert_eq!(Language::from_code("en-GB"), Language::English);
+        assert_eq!(Language::from_code(""), Language::Auto);
     }
 }

@@ -6,6 +6,13 @@ numeração em [versionamento semântico](https://semver.org/lang/pt-BR/).
 ## [Não lançado]
 
 ### Adicionado
+- **Interface em inglês**, no programa para Windows e na versão web. O idioma segue o do Windows
+  (ou do navegador): português nos sistemas em português, inglês nos demais. Dá para escolher em
+  **Configurações → Aparência → Idioma** ou com "Português · English" na tela inicial, e a troca
+  vale na hora, sem reiniciar. Em inglês, medidas e posições usam ponto decimal e as datas aparecem
+  como "12 Mar 2024". Na versão web, `?lang=en` ou `?lang=pt` no endereço escolhe o idioma, e a
+  escolha feita nas configurações fica guardada no navegador. A página do projeto em inglês mostra
+  as telas com a interface em inglês.
 - **Versão web (experimental)** em <https://crie-studio.github.io/slyced/app/>: o mesmo
   visualizador no navegador, com 2D, MPR e 3D. Abre pastas, arquivos e ZIP escolhidos ou
   arrastados para a página, sem enviá-los a nenhum servidor; `?exemplo` abre um exame
@@ -18,6 +25,14 @@ numeração em [versionamento semântico](https://semver.org/lang/pt-BR/).
 - **Site pronto para buscadores e IAs:** perguntas frequentes, dados estruturados, imagens de
   compartilhamento em português e inglês, `sitemap.xml`, `llms.txt`, página 404 e aviso ao Bing a
   cada publicação. Textos de divulgação e manifesto do winget em `docs/`.
+
+### Alterado
+- Em português, todos os números com casas decimais usam vírgula (espessura do slab, tempo da
+  busca no PACS, registro na comparação, cálculos, calculadoras de hérnia e de volume), não só as
+  medidas sobre a imagem. Os campos de diâmetro aceitam vírgula ou ponto.
+
+### Corrigido
+- O tour de boas-vindas fechava a versão web em telas mais estreitas que o cartão (celulares).
 
 ## [1.5.4] - 2026-11-09
 

@@ -30,9 +30,9 @@ pub struct Image {
 
 /// The encapsulated JPEG stream of each frame.
 pub fn frame_streams(obj: &InMemDicomObject, frames: usize) -> Result<Vec<Vec<u8>>> {
-    let value = obj.element(tags::PIXEL_DATA).map_err(|_| anyhow!("sem PixelData"))?.value();
+    let value = obj.element(tags::PIXEL_DATA).map_err(|_| anyhow!(tr!("sem PixelData", "no PixelData")))?.value();
     let (Some(fragments), Some(offsets)) = (value.fragments(), value.offset_table()) else {
-        bail!("PixelData não está encapsulado");
+        bail!(tr!("PixelData não está encapsulado", "PixelData is not encapsulated"));
     };
     Ok(split_frames(fragments, offsets, frames.max(1)))
 }
@@ -101,9 +101,9 @@ fn frame_header(data: &[u8]) -> Option<(u8, u8)> {
 }
 
 pub fn decode(data: &[u8]) -> Result<Image> {
-    let start = memchr::memmem::find(data, &[0xFF, 0xD8]).ok_or_else(|| anyhow!("marcador SOI ausente"))?;
+    let start = memchr::memmem::find(data, &[0xFF, 0xD8]).ok_or_else(|| anyhow!(tr!("marcador SOI ausente", "SOI marker missing")))?;
     let data = &data[start..];
-    let (sof, precision) = frame_header(data).ok_or_else(|| anyhow!("cabeçalho SOF ausente"))?;
+    let (sof, precision) = frame_header(data).ok_or_else(|| anyhow!(tr!("cabeçalho SOF ausente", "SOF header missing")))?;
     let lossless = matches!(sof, 0xC3 | 0xC7 | 0xCB | 0xCF);
     if lossless || precision > 12 {
         let img = lj::precision::decompress_lossless_arbitrary_lenient(data)?.0;

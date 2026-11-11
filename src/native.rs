@@ -54,7 +54,7 @@ fn pick_adapter(
         .filter(|a| surface.is_none_or(|s| a.is_surface_supported(s)))
         .max_by_key(|a| gpu_check::score(&a.get_info()))
         .cloned()
-        .ok_or_else(|| "nenhuma GPU compatível encontrada".to_string())
+        .ok_or_else(|| tr!("nenhuma GPU compatível encontrada", "no compatible GPU found").to_string())
 }
 
 fn init_logging(path: &std::path::Path) {
@@ -74,7 +74,11 @@ fn init_logging(path: &std::path::Path) {
         if std::thread::current().name() == Some("main") {
             platform::message_box(
                 "Slyced",
-                &format!("O Slyced encontrou um erro e precisa fechar.\n\n{info}\n\nDetalhes no log:\n{}", log_path_text()),
+                &trf!(
+                    "O Slyced encontrou um erro e precisa fechar.\n\n{info}\n\nDetalhes no log:\n{}",
+                    "Slyced ran into an error and needs to close.\n\n{info}\n\nDetails in the log:\n{}",
+                    log_path_text()
+                ),
                 true,
             );
         }
@@ -86,29 +90,49 @@ fn diagnostics(paths: &Paths) {
     let reports = gpu_check::probe(true);
     let mut lines = vec![
         format!("Slyced {}", config::APP_VERSION),
-        format!("Sistema: {}", platform::os_description()),
-        format!("Sessão remota (RDP/Citrix): {}", if platform::is_remote_session() { "sim" } else { "não" }),
-        format!("Pasta de dados: {}", paths.root.display()),
+        trf!("Sistema: {}", "System: {}", platform::os_description()),
+        trf!(
+            "Sessão remota (RDP/Citrix): {}",
+            "Remote session (RDP/Citrix): {}",
+            if platform::is_remote_session() { tr!("sim", "yes") } else { tr!("não", "no") }
+        ),
+        trf!("Pasta de dados: {}", "Data folder: {}", paths.root.display()),
         String::new(),
-        "Placas de vídeo (melhor primeiro):".to_string(),
+        tr!("Placas de vídeo (melhor primeiro):", "Graphics cards (best first):").to_string(),
     ];
     if reports.is_empty() {
-        lines.push("  nenhuma encontrada".into());
+        lines.push(tr!("  nenhuma encontrada", "  none found").into());
     }
     lines.extend(reports.iter().map(|r| format!("  • {}", r.line())));
     lines.push(String::new());
     lines.push(match gpu_check::usable(&reports) {
-        Some(r) => format!("Resultado: o Slyced vai usar {} ({:?}) com 2D, MPR e 3D.", r.info.name, r.info.backend),
-        None => "Resultado: sem DirectX 12/Vulkan utilizável; o Slyced abre em modo OpenGL (2D e MPR, sem 3D).".into(),
+        Some(r) => trf!(
+            "Resultado: o Slyced vai usar {} ({:?}) com 2D, MPR e 3D.",
+            "Result: Slyced will use {} ({:?}) with 2D, MPR and 3D.",
+            r.info.name,
+            r.info.backend
+        ),
+        None => tr!(
+            "Resultado: sem DirectX 12/Vulkan utilizável; o Slyced abre em modo OpenGL (2D e MPR, sem 3D).",
+            "Result: no usable DirectX 12/Vulkan; Slyced opens in OpenGL mode (2D and MPR, no 3D)."
+        )
+        .into(),
     });
     let report = lines.join("\n");
     log::info!("diagnóstico:\n{report}");
     let file = paths.root.join("diagnostico.txt");
     let saved = match std::fs::write(&file, &report) {
-        Ok(()) => format!("Relatório salvo em:\n{}", file.display()),
-        Err(e) => format!("Não foi possível salvar o relatório ({e}): a pasta de dados não aceita gravação."),
+        Ok(()) => trf!("Relatório salvo em:\n{}", "Report saved to:\n{}", file.display()),
+        Err(e) => trf!(
+            "Não foi possível salvar o relatório ({e}): a pasta de dados não aceita gravação.",
+            "Could not save the report ({e}): the data folder is not writable."
+        ),
     };
-    platform::message_box("Slyced — diagnóstico", &format!("{report}\n\n{saved}\n\n(Ctrl+C copia o texto desta janela.)"), false);
+    platform::message_box(
+        tr!("Slyced — diagnóstico", "Slyced — diagnostics"),
+        &trf!("{report}\n\n{saved}\n\n(Ctrl+C copia o texto desta janela.)", "{report}\n\n{saved}\n\n(Ctrl+C copies the text of this window.)"),
+        false,
+    );
 }
 
 /// Restarts the program in OpenGL mode after the GPU path failed to open a window.
@@ -119,7 +143,11 @@ fn relaunch_with_opengl() -> bool {
 
 /// Runs the viewer; returns when the window is closed.
 pub fn run() {
+    // Language first: notices and message boxes below already need it. The
+    // system's until the settings are found, then the one chosen in them.
+    crate::i18n::set(crate::i18n::system());
     let paths = Paths::resolve();
+    crate::i18n::set(config::Settings::load(&paths.config).language.resolve());
     init_logging(&paths.log);
     log::info!("Slyced {} iniciado · {} · dados em {}", config::APP_VERSION, platform::os_description(), paths.root.display());
     if platform::is_remote_session() {
@@ -154,6 +182,13 @@ pub fn run() {
             "--about" => automation.about = true,
             "--zoom" => automation.zoom = args.next().and_then(|z| z.parse().ok()),
             "--do" => automation.actions.extend(args.next()),
+            // Interface language for this run (screenshots): pt, en or auto.
+            "--lang" => {
+                if let Some(code) = args.next() {
+                    crate::i18n::set(config::Language::from_code(&code).resolve());
+                    automation.actions.insert(0, format!("lang:{code}"));
+                }
+            }
             "--workspace" => {
                 automation.workspace = match args.next().as_deref() {
                     Some("mpr") => Some(Workspace::Mpr),
@@ -210,7 +245,7 @@ pub fn run() {
     }
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_title(config::WINDOW_TITLE)
+            .with_title(config::window_title())
             .with_app_id("slyced-dicom")
             .with_inner_size(size)
             .with_min_inner_size([960.0, 600.0])
@@ -239,9 +274,12 @@ pub fn run() {
         }
         platform::message_box(
             "Slyced",
-            &format!(
+            &trf!(
                 "Não foi possível abrir a janela do Slyced.\n\nDetalhes: {e}\n\n\
                  Atualize o driver de vídeo. Para um relatório do sistema, execute \"Slyced - diagnostico.cmd\".\n\n\
+                 Log: {}",
+                "Could not open the Slyced window.\n\nDetails: {e}\n\n\
+                 Update the graphics driver. For a system report, run \"Slyced - diagnostico.cmd\".\n\n\
                  Log: {}",
                 log_path_text()
             ),

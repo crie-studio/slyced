@@ -160,7 +160,7 @@ impl Jobs {
                 .par_iter()
                 .map(|path| {
                     let r = std::panic::catch_unwind(AssertUnwindSafe(|| decode_file(path)))
-                        .unwrap_or_else(|_| Err(anyhow::anyhow!("falha inesperada ao decodificar")));
+                        .unwrap_or_else(|_| Err(anyhow::anyhow!(tr!("falha inesperada ao decodificar", "unexpected failure while decoding"))));
                     let done = p.done.fetch_add(1, Ordering::Relaxed);
                     if done.is_multiple_of(16) {
                         ctx.request_repaint();
@@ -173,13 +173,13 @@ impl Jobs {
                 .flatten()
                 .collect();
             let result = if frames.is_empty() {
-                let first = errors.first().cloned().unwrap_or_else(|| "nenhuma imagem".into());
-                Err(format!("Não foi possível decodificar a série. {first}"))
+                let first = errors.first().cloned().unwrap_or_else(|| tr!("nenhuma imagem", "no images").into());
+                Err(trf!("Não foi possível decodificar a série. {first}", "Could not decode the series. {first}"))
             } else {
                 let mut series = LoadedSeries::build(info, study, frames);
                 if !errors.is_empty() {
                     log::warn!("{} arquivo(s) com erro: {}", errors.len(), errors[0]);
-                    series.warnings.push(format!("{} arquivo(s) não puderam ser lidos.", errors.len()));
+                    series.warnings.push(trf!("{} arquivo(s) não puderam ser lidos.", "{} file(s) could not be read.", errors.len()));
                 }
                 Ok(Arc::new(series))
             };

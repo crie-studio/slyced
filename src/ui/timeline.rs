@@ -6,6 +6,7 @@ use super::theme::*;
 use super::widgets::*;
 use crate::app::{SlycedApp, ToastKind};
 use crate::dicom::model::{format_date, relative_date, StudyHeader, StudyInfo};
+use crate::i18n::Tr;
 use crate::pacs::scu::StudyResult;
 use egui::{pos2, vec2, Align2, Rect, RichText, Sense, Stroke, Ui};
 
@@ -41,17 +42,17 @@ pub enum TimelineAction {
 }
 
 /// Body regions recognized in descriptions and Body Part Examined.
-const REGIONS: &[(&str, &[&str])] = &[
-    ("crânio", &["cranio", "crânio", "head", "brain", "encefalo", "encéfalo", "cerebro", "cérebro", "skull", "sela", "orbita", "órbita", "orbitas", "órbitas", "face", "seios", "sinus", "mastoide", "mastoides", "iam"]),
-    ("pescoço", &["pescoco", "pescoço", "neck", "tireoide", "tireóide", "laringe", "cervicais"]),
-    ("tórax", &["torax", "tórax", "chest", "thorax", "pulmao", "pulmão", "pulmoes", "pulmões", "lung", "lungs", "mediastino", "tep", "pulmonar"]),
-    ("abdome", &["abdome", "abdomen", "abdômen", "abd", "abdominal", "figado", "fígado", "liver", "renal", "rins", "rim", "kidney", "pancreas", "pâncreas", "urotc", "urotomografia", "enterotc", "biliar"]),
-    ("pelve", &["pelve", "pelvis", "pélvis", "pelvic", "prostata", "próstata", "bexiga", "utero", "útero", "reto"]),
-    ("coluna", &["coluna", "spine", "lombar", "lumbar", "lspine", "cspine", "tspine", "dorsal", "toracica", "torácica", "sacro", "sacral", "cervical"]),
-    ("membro superior", &["ombro", "shoulder", "cotovelo", "elbow", "punho", "wrist", "mao", "mão", "hand", "braco", "braço", "umero", "úmero", "antebraco", "antebraço"]),
-    ("membro inferior", &["joelho", "knee", "quadril", "hip", "tornozelo", "ankle", "foot", "femur", "fêmur", "perna", "tibia", "tíbia", "coxa"]),
-    ("mama", &["mama", "mamas", "breast", "mamografia", "mammo", "mammography"]),
-    ("coração", &["coracao", "coração", "cardiac", "heart", "coronaria", "coronária", "coronarias", "coronárias", "cardio", "cardiaca", "cardíaca", "calcium"]),
+const REGIONS: &[(Tr, &[&str])] = &[
+    (Tr("crânio", "head"), &["cranio", "crânio", "head", "brain", "encefalo", "encéfalo", "cerebro", "cérebro", "skull", "sela", "orbita", "órbita", "orbitas", "órbitas", "face", "seios", "sinus", "mastoide", "mastoides", "iam"]),
+    (Tr("pescoço", "neck"), &["pescoco", "pescoço", "neck", "tireoide", "tireóide", "laringe", "cervicais"]),
+    (Tr("tórax", "chest"), &["torax", "tórax", "chest", "thorax", "pulmao", "pulmão", "pulmoes", "pulmões", "lung", "lungs", "mediastino", "tep", "pulmonar"]),
+    (Tr("abdome", "abdomen"), &["abdome", "abdomen", "abdômen", "abd", "abdominal", "figado", "fígado", "liver", "renal", "rins", "rim", "kidney", "pancreas", "pâncreas", "urotc", "urotomografia", "enterotc", "biliar"]),
+    (Tr("pelve", "pelvis"), &["pelve", "pelvis", "pélvis", "pelvic", "prostata", "próstata", "bexiga", "utero", "útero", "reto"]),
+    (Tr("coluna", "spine"), &["coluna", "spine", "lombar", "lumbar", "lspine", "cspine", "tspine", "dorsal", "toracica", "torácica", "sacro", "sacral", "cervical"]),
+    (Tr("membro superior", "upper limb"), &["ombro", "shoulder", "cotovelo", "elbow", "punho", "wrist", "mao", "mão", "hand", "braco", "braço", "umero", "úmero", "antebraco", "antebraço"]),
+    (Tr("membro inferior", "lower limb"), &["joelho", "knee", "quadril", "hip", "tornozelo", "ankle", "foot", "femur", "fêmur", "perna", "tibia", "tíbia", "coxa"]),
+    (Tr("mama", "breast"), &["mama", "mamas", "breast", "mamografia", "mammo", "mammography"]),
+    (Tr("coração", "heart"), &["coracao", "coração", "cardiac", "heart", "coronaria", "coronária", "coronarias", "coronárias", "cardio", "cardiaca", "cardíaca", "calcium"]),
 ];
 
 /// Image modalities (reports, presentation states and key objects are left out).
@@ -81,7 +82,7 @@ fn regions(text: &str) -> u16 {
 }
 
 fn region_names(bits: u16) -> String {
-    REGIONS.iter().enumerate().filter(|(i, _)| bits & (1 << i) != 0).map(|(_, r)| r.0).collect::<Vec<_>>().join(", ")
+    REGIONS.iter().enumerate().filter(|(i, _)| bits & (1 << i) != 0).map(|(_, r)| r.0.get()).collect::<Vec<_>>().join(", ")
 }
 
 /// Why `other` matters when reading `current`: the same body region or, when a
@@ -89,23 +90,23 @@ fn region_names(bits: u16) -> String {
 fn relevance(current: (&str, &[String]), other: (&str, &[String])) -> Option<String> {
     let (a, b) = (regions(current.0), regions(other.0));
     if a & b != 0 {
-        return Some(format!("mesma região ({})", region_names(a & b)));
+        return Some(trf!("mesma região ({})", "same region ({})", region_names(a & b)));
     }
     if a != 0 && b != 0 {
         return None;
     }
-    current.1.iter().find(|m| other.1.contains(m)).map(|m| format!("mesma modalidade ({})", modality_name(m)))
+    current.1.iter().find(|m| other.1.contains(m)).map(|m| trf!("mesma modalidade ({})", "same modality ({})", modality_name(m)))
 }
 
 fn modality_name(m: &str) -> &str {
     match m {
-        "CT" => "TC",
-        "MR" => "RM",
+        "CT" => tr!("TC", "CT"),
+        "MR" => tr!("RM", "MRI"),
         "US" => "US",
-        "CR" | "DX" => "RX",
-        "MG" => "mamografia",
+        "CR" | "DX" => tr!("RX", "X-ray"),
+        "MG" => tr!("mamografia", "mammography"),
         "PT" => "PET",
-        "NM" => "medicina nuclear",
+        "NM" => tr!("medicina nuclear", "nuclear medicine"),
         _ => m,
     }
 }
@@ -170,12 +171,25 @@ fn day_number(raw: &str) -> Option<i64> {
     Some(era * 146_097 + doe - 719_468)
 }
 
-/// "mar/2025".
+/// "mar/2025" ("Mar 2025" in English).
 fn month_year(raw: &str) -> String {
-    const MONTHS: [&str; 12] = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+    const MONTHS: [Tr; 12] = [
+        Tr("jan", "Jan"),
+        Tr("fev", "Feb"),
+        Tr("mar", "Mar"),
+        Tr("abr", "Apr"),
+        Tr("mai", "May"),
+        Tr("jun", "Jun"),
+        Tr("jul", "Jul"),
+        Tr("ago", "Aug"),
+        Tr("set", "Sep"),
+        Tr("out", "Oct"),
+        Tr("nov", "Nov"),
+        Tr("dez", "Dec"),
+    ];
     let d = raw.trim();
     match (d.get(..4), d.get(4..6).and_then(|m| m.parse::<usize>().ok())) {
-        (Some(y), Some(m @ 1..=12)) => format!("{}/{y}", MONTHS[m - 1]),
+        (Some(y), Some(m @ 1..=12)) => trf!("{}/{y}", "{} {y}", MONTHS[m - 1]),
         _ => String::new(),
     }
 }
@@ -282,9 +296,15 @@ impl SlycedApp {
         }
         let date = format_date(&r.date);
         let text = match then {
-            Some(true) => format!("Baixando o exame de {date} do PACS; a comparação abre quando terminar."),
-            Some(false) => format!("Baixando o exame de {date} do PACS; ele abre quando terminar."),
-            None => format!("Baixando o exame de {date} do PACS."),
+            Some(true) => trf!(
+                "Baixando o exame de {date} do PACS; a comparação abre quando terminar.",
+                "Downloading the {date} study from the PACS; the comparison opens when it's done."
+            ),
+            Some(false) => trf!(
+                "Baixando o exame de {date} do PACS; ele abre quando terminar.",
+                "Downloading the {date} study from the PACS; it opens when it's done."
+            ),
+            None => trf!("Baixando o exame de {date} do PACS.", "Downloading the {date} study from the PACS."),
         };
         self.toast(ToastKind::Info, text);
     }
@@ -383,7 +403,7 @@ pub fn timeline_strip(ui: &mut Ui, rect: Rect, items: &[TimelineItem], pending: 
         }
         let compare = can_compare && !item.current;
         let resp = resp.on_hover_ui(|ui| {
-            let desc = if item.description.is_empty() { "Exame sem descrição" } else { &item.description };
+            let desc = if item.description.is_empty() { tr!("Exame sem descrição", "Study without description") } else { &item.description };
             ui.label(RichText::new(format!("{} · {desc}", format_date(&item.date))).font(font_bold(13.0)).color(pal().text));
             let mut facts = Vec::new();
             let rel = relative_date(&item.date);
@@ -394,29 +414,31 @@ pub fn timeline_strip(ui: &mut Ui, rect: Rect, items: &[TimelineItem], pending: 
                 facts.push(item.modalities.iter().map(|m| modality_name(m).to_string()).collect::<Vec<_>>().join(", "));
             }
             if item.series > 0 {
-                facts.push(format!("{} série{}", item.series, if item.series == 1 { "" } else { "s" }));
+                let n = item.series;
+                facts.push(if n == 1 { trf!("{n} série", "{n} series") } else { trf!("{n} séries", "{n} series") });
             }
             if item.images > 0 {
-                facts.push(format!("{} image{}", item.images, if item.images == 1 { "m" } else { "ns" }));
+                let n = item.images;
+                facts.push(if n == 1 { trf!("{n} imagem", "{n} image") } else { trf!("{n} imagens", "{n} images") });
             }
             ui.label(RichText::new(facts.join(" · ")).color(pal().text_dim));
             let place = if item.current {
-                "Exame aberto agora"
+                tr!("Exame aberto agora", "Study open now")
             } else if item.local.is_some() {
-                "Neste computador"
+                tr!("Neste computador", "On this computer")
             } else {
-                "No PACS (ainda não baixado)"
+                tr!("No PACS (ainda não baixado)", "On the PACS (not downloaded yet)")
             };
             ui.label(RichText::new(place).color(pal().text_dim));
             if let Some(why) = &item.relevant {
-                ui.label(RichText::new(format!("Relevante: {why}")).color(pal().accent));
+                ui.label(RichText::new(trf!("Relevante: {why}", "Relevant: {why}")).color(pal().accent));
             }
             let hint = match (item.current, compare, item.local.is_some()) {
                 (true, _, _) => None,
-                (_, true, true) => Some("Clique para comparar com o exame aberto"),
-                (_, true, false) => Some("Clique para baixar e comparar com o exame aberto"),
-                (_, false, true) => Some("Clique para abrir"),
-                (_, false, false) => Some("Clique para baixar e abrir"),
+                (_, true, true) => Some(tr!("Clique para comparar com o exame aberto", "Click to compare with the open study")),
+                (_, true, false) => Some(tr!("Clique para baixar e comparar com o exame aberto", "Click to download and compare with the open study")),
+                (_, false, true) => Some(tr!("Clique para abrir", "Click to open")),
+                (_, false, false) => Some(tr!("Clique para baixar e abrir", "Click to download and open")),
             };
             if let Some(h) = hint {
                 ui.label(RichText::new(h).small().color(pal().text_faint));
@@ -431,7 +453,7 @@ pub fn timeline_strip(ui: &mut Ui, rect: Rect, items: &[TimelineItem], pending: 
             };
         }
         resp.context_menu(|ui| {
-            if compare && ui.button(format!("{}  Comparar com o exame aberto", super::icons::COLUMNS)).clicked() {
+            if compare && ui.button(trf!("{}  Comparar com o exame aberto", "{}  Compare with the open study", super::icons::COLUMNS)).clicked() {
                 action = match (&item.local, &item.remote) {
                     (Some(uid), _) => Some(TimelineAction::Compare(uid.clone())),
                     (None, Some(r)) => Some(TimelineAction::Retrieve(r.clone(), true)),
@@ -440,15 +462,15 @@ pub fn timeline_strip(ui: &mut Ui, rect: Rect, items: &[TimelineItem], pending: 
             }
             match (&item.local, &item.remote) {
                 (Some(uid), _) if !item.current => {
-                    if ui.button(format!("{}  Abrir", super::icons::IMAGE)).clicked() {
+                    if ui.button(trf!("{}  Abrir", "{}  Open", super::icons::IMAGE)).clicked() {
                         action = Some(TimelineAction::Open(uid.clone()));
                     }
                 }
                 (None, Some(r)) => {
-                    if ui.button(format!("{}  Baixar e abrir", super::icons::DOWNLOAD_SIMPLE)).clicked() {
+                    if ui.button(trf!("{}  Baixar e abrir", "{}  Download and open", super::icons::DOWNLOAD_SIMPLE)).clicked() {
                         action = Some(TimelineAction::Retrieve(r.clone(), false));
                     }
-                    if ui.button(format!("{}  Só baixar", super::icons::TRAY_ARROW_DOWN)).clicked() {
+                    if ui.button(trf!("{}  Só baixar", "{}  Download only", super::icons::TRAY_ARROW_DOWN)).clicked() {
                         action = Some(TimelineAction::Download(r.clone()));
                     }
                 }

@@ -219,30 +219,30 @@ impl SlycedApp {
 
     pub(crate) fn undo(&mut self) {
         let Some(prev) = self.history.undo.pop() else {
-            self.toast(ToastKind::Info, "Nada para desfazer.");
+            self.toast(ToastKind::Info, tr!("Nada para desfazer.", "Nothing to undo."));
             return;
         };
-        let what = self.history.current.as_ref().map(|cur| describe(cur, &prev)).unwrap_or("alteração");
+        let what = self.history.current.as_ref().map(|cur| describe(cur, &prev)).unwrap_or(tr!("alteração", "change"));
         if let Some(cur) = self.history.current.take() {
             self.history.redo.push(cur);
         }
         self.apply_snapshot(&prev);
         self.history.current = Some(prev);
-        self.toast(ToastKind::Info, format!("Desfeito: {what} · Ctrl+Y refaz"));
+        self.toast(ToastKind::Info, trf!("Desfeito: {what} · Ctrl+Y refaz", "Undone: {what} · Ctrl+Y to redo"));
     }
 
     pub(crate) fn redo(&mut self) {
         let Some(next) = self.history.redo.pop() else {
-            self.toast(ToastKind::Info, "Nada para refazer.");
+            self.toast(ToastKind::Info, tr!("Nada para refazer.", "Nothing to redo."));
             return;
         };
-        let what = self.history.current.as_ref().map(|cur| describe(cur, &next)).unwrap_or("alteração");
+        let what = self.history.current.as_ref().map(|cur| describe(cur, &next)).unwrap_or(tr!("alteração", "change"));
         if let Some(cur) = self.history.current.take() {
             self.history.undo.push(cur);
         }
         self.apply_snapshot(&next);
         self.history.current = Some(next);
-        self.toast(ToastKind::Info, format!("Refeito: {what}"));
+        self.toast(ToastKind::Info, trf!("Refeito: {what}", "Redone: {what}"));
     }
 }
 
@@ -250,47 +250,47 @@ impl SlycedApp {
 fn describe(a: &Snapshot, b: &Snapshot) -> &'static str {
     for (x, y) in a.views.iter().zip(&b.views) {
         if x.measurements.len() != y.measurements.len() {
-            return "medida";
+            return tr!("medida", "measurement");
         }
         if x.highlights != y.highlights {
-            return "realce";
+            return tr!("realce", "highlight");
         }
         if x.slab != y.slab {
             return "slab";
         }
         if x.denoise != y.denoise {
-            return "filtro de ruído";
+            return tr!("filtro de ruído", "noise reduction");
         }
         if x.colormap != y.colormap {
-            return "mapa de cores";
+            return tr!("mapa de cores", "color map");
         }
         if x.rot != y.rot || x.flip != y.flip {
-            return "rotação";
+            return tr!("rotação", "rotation");
         }
         if x.invert != y.invert {
-            return "inversão de cores";
+            return tr!("inversão de cores", "color inversion");
         }
         if x.window != y.window {
-            return "janela";
+            return tr!("janela", "window");
         }
         if x.measurements.iter().zip(&y.measurements).any(|(m, n)| m.pts != n.pts || m.text != n.text) {
-            return "medida";
+            return tr!("medida", "measurement");
         }
     }
     if a.cursor.as_ref().map(|c| c.0) != b.cursor.as_ref().map(|c| c.0) || a.cmp_cursor != b.cmp_cursor {
-        return "cursor 3D";
+        return tr!("cursor 3D", "3D cursor");
     }
     if a.calculi.is_some() != b.calculi.is_some() {
-        return "focos de cálculo";
+        return tr!("focos de cálculo", "stone foci");
     }
     if a.curve != b.curve {
-        return "trajeto do rastreador";
+        return tr!("trajeto do rastreador", "tracker path");
     }
     if a.planes.iter().zip(&b.planes).any(|(x, y)| x.2 != y.2) {
-        return "planos oblíquos";
+        return tr!("planos oblíquos", "oblique planes");
     }
     if a.planes.iter().zip(&b.planes).any(|(x, y)| x.0 != y.0) {
         return "slab";
     }
-    "alteração"
+    tr!("alteração", "change")
 }

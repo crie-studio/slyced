@@ -30,13 +30,13 @@ impl DateRange {
 
     fn label(self) -> &'static str {
         match self {
-            DateRange::Today => "Hoje",
-            DateRange::Yesterday => "Ontem",
-            DateRange::Week => "7 dias",
-            DateRange::Month => "30 dias",
-            DateRange::Year => "1 ano",
-            DateRange::All => "Todos",
-            DateRange::Custom => "Período…",
+            DateRange::Today => tr!("Hoje", "Today"),
+            DateRange::Yesterday => tr!("Ontem", "Yesterday"),
+            DateRange::Week => tr!("7 dias", "7 days"),
+            DateRange::Month => tr!("30 dias", "30 days"),
+            DateRange::Year => tr!("1 ano", "1 year"),
+            DateRange::All => tr!("Todos", "All"),
+            DateRange::Custom => tr!("Período…", "Custom…"),
         }
     }
 }
@@ -173,7 +173,8 @@ fn date_days_ago(days: i64) -> String {
     format!("{y:04}{m:02}{d:02}")
 }
 
-/// `DD/MM/AAAA` (or already `AAAAMMDD`) -> `AAAAMMDD`.
+/// `DD/MM/AAAA` -> `AAAAMMDD`; without a '/' the digits are kept in order, so
+/// `AAAA-MM-DD` (the English hint) and `AAAAMMDD` give `AAAAMMDD` too.
 fn parse_br_date(s: &str) -> String {
     let digits: String = s.chars().filter(|c| c.is_ascii_digit()).collect();
     if digits.len() == 8 && s.contains('/') {
@@ -202,7 +203,9 @@ impl SlycedApp {
             return;
         }
         let mut open = self.pacs.open;
-        egui::Window::new(RichText::new(format!("{}  PACS — pesquisa e download de exames", icons::NETWORK)).font(font_bold(15.0)))
+        let title = trf!("{}  PACS — pesquisa e download de exames", "{}  PACS — search and download studies", icons::NETWORK);
+        egui::Window::new(RichText::new(title).font(font_bold(15.0)))
+            .id(egui::Id::unique("pacs-window"))
             .open(&mut open)
             .default_size(vec2(1240.0, 760.0))
             .min_width(900.0)
@@ -226,14 +229,18 @@ impl SlycedApp {
     }
 
     fn pacs_nodes(&mut self, ui: &mut Ui) {
-        caption(ui, "Servidores");
+        caption(ui, tr!("Servidores", "Servers"));
         let mut echo = None;
         let mut edit = None;
         let mut remove = None;
         if self.settings.nodes.is_empty() {
             card(ui, |ui| {
-                ui.label(RichText::new("Nenhum servidor cadastrado.").color(pal().text_dim).size(12.5));
-                ui.label(RichText::new("Adicione o PACS do hospital (AE Title, IP e porta) ou um endereço DICOMweb.").color(pal().text_faint).size(11.5));
+                ui.label(RichText::new(tr!("Nenhum servidor cadastrado.", "No servers added.")).color(pal().text_dim).size(12.5));
+                let hint = tr!(
+                    "Adicione o PACS do hospital (AE Title, IP e porta) ou um endereço DICOMweb.",
+                    "Add the hospital PACS (AE Title, IP and port) or a DICOMweb address."
+                );
+                ui.label(RichText::new(hint).color(pal().text_faint).size(11.5));
             });
         }
         for (i, n) in self.settings.nodes.iter().enumerate() {
@@ -255,23 +262,24 @@ impl SlycedApp {
                         badge(ui, n.badge(), pal().text_dim);
                         match status {
                             Some(Ok(ms)) => {
-                                ui.label(RichText::new(format!("● {ms} ms")).size(11.0).color(SUCCESS)).on_hover_text("Último teste de conexão: OK");
+                                ui.label(RichText::new(format!("● {ms} ms")).size(11.0).color(SUCCESS))
+                                    .on_hover_text(tr!("Último teste de conexão: OK", "Last connection test: OK"));
                             }
                             Some(Err(e)) => {
-                                ui.label(RichText::new("● falhou").size(11.0).color(DANGER)).on_hover_text(e.as_str());
+                                ui.label(RichText::new(tr!("● falhou", "● failed")).size(11.0).color(DANGER)).on_hover_text(e.as_str());
                             }
                             None => {}
                         }
                         ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                            if icon_button_sized(ui, icons::TRASH_SIMPLE, "Remover", false, 24.0).clicked() {
+                            if icon_button_sized(ui, icons::TRASH_SIMPLE, tr!("Remover", "Remove"), false, 24.0).clicked() {
                                 remove = Some(i);
                             }
-                            if icon_button_sized(ui, icons::SLIDERS_HORIZONTAL, "Editar", false, 24.0).clicked() {
+                            if icon_button_sized(ui, icons::SLIDERS_HORIZONTAL, tr!("Editar", "Edit"), false, 24.0).clicked() {
                                 edit = Some(i);
                             }
                             let test = match n.protocol {
-                                PacsProtocol::Dimse => "Testar conexão (C-ECHO)",
-                                PacsProtocol::DicomWeb => "Testar conexão (QIDO-RS)",
+                                PacsProtocol::Dimse => tr!("Testar conexão (C-ECHO)", "Test connection (C-ECHO)"),
+                                PacsProtocol::DicomWeb => tr!("Testar conexão (QIDO-RS)", "Test connection (QIDO-RS)"),
                             };
                             if icon_button_sized(ui, icons::PLUGS_CONNECTED, test, false, 24.0).clicked() {
                                 echo = Some(i);
@@ -290,12 +298,12 @@ impl SlycedApp {
             ui.add_space(4.0);
         }
         ui.add_space(4.0);
-        if ghost_button(ui, icons::PLUS, "Adicionar servidor").clicked() {
+        if ghost_button(ui, icons::PLUS, tr!("Adicionar servidor", "Add server")).clicked() {
             self.pacs.editing = Some((None, PacsNode::default()));
         }
         if let Some(i) = echo {
             let node = self.settings.nodes[i].clone();
-            self.toast(ToastKind::Info, format!("Testando {}…", node.name));
+            self.toast(ToastKind::Info, trf!("Testando {}…", "Testing {}…", node.name));
             self.jobs.echo(node, self.settings.local_ae.clone());
         }
         if let Some(i) = edit {
@@ -308,27 +316,28 @@ impl SlycedApp {
         }
 
         ui.add_space(14.0);
-        caption(ui, "Este computador");
+        caption(ui, tr!("Este computador", "This computer"));
         card(ui, |ui| {
             kv(ui, "AE Title", &self.settings.local_ae);
-            kv(ui, "Porta", &self.settings.local_port.to_string());
+            kv(ui, tr!("Porta", "Port"), &self.settings.local_port.to_string());
             ui.add_space(4.0);
             let running = self.scp.is_some();
-            let text = if running { "Receptor ativo" } else { "Receptor parado" };
+            let text = if running { tr!("Receptor ativo", "Receiver running") } else { tr!("Receptor parado", "Receiver stopped") };
             ui.horizontal(|ui| {
                 ui.label(RichText::new("●").color(if running { SUCCESS } else { pal().text_faint }));
                 ui.label(RichText::new(text).size(12.0).color(pal().text_dim));
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
                     if running {
-                        if ui.small_button("Parar").clicked() {
+                        if ui.small_button(tr!("Parar", "Stop")).clicked() {
                             self.stop_scp();
                         }
-                    } else if ui.small_button("Iniciar").clicked() {
+                    } else if ui.small_button(tr!("Iniciar", "Start")).clicked() {
                         self.start_scp();
                     }
                 });
             });
-            ui.label(RichText::new("Necessário só para C-MOVE. Cadastre este AE e a porta no PACS.").size(11.0).color(pal().text_faint));
+            let note = tr!("Necessário só para C-MOVE. Cadastre este AE e a porta no PACS.", "Only needed for C-MOVE. Register this AE and port on the PACS.");
+            ui.label(RichText::new(note).size(11.0).color(pal().text_faint));
         });
     }
 
@@ -375,14 +384,14 @@ impl SlycedApp {
             ui.horizontal(|ui| {
                 let w = (ui.available_width() - 3.0 * 10.0) / 4.0;
                 ui.spacing_mut().item_spacing.x = 10.0;
-                field(ui, "Paciente", &mut self.pacs.query.patient_name, "Nome (parte do nome)", w);
-                field(ui, "ID do paciente", &mut self.pacs.query.patient_id, "Prontuário / ID", w);
-                field(ui, "Nº de acesso", &mut self.pacs.query.accession, "Accession", w);
-                field(ui, "Descrição do estudo", &mut self.pacs.query.description, "Ex.: abdome", w);
+                field(ui, tr!("Paciente", "Patient"), &mut self.pacs.query.patient_name, tr!("Nome (parte do nome)", "Name (or part of it)"), w);
+                field(ui, tr!("ID do paciente", "Patient ID"), &mut self.pacs.query.patient_id, tr!("Prontuário / ID", "MRN / ID"), w);
+                field(ui, tr!("Nº de acesso", "Accession number"), &mut self.pacs.query.accession, "Accession", w);
+                field(ui, tr!("Descrição do estudo", "Study description"), &mut self.pacs.query.description, tr!("Ex.: abdome", "e.g. abdomen"), w);
             });
             ui.add_space(8.0);
             ui.horizontal_wrapped(|ui| {
-                ui.label(RichText::new(format!("{}  Período", icons::CALENDAR_BLANK)).size(12.0).color(pal().text_dim));
+                ui.label(RichText::new(trf!("{}  Período", "{}  Date", icons::CALENDAR_BLANK)).size(12.0).color(pal().text_dim));
                 ui.add_space(4.0);
                 for r in DateRange::ALL {
                     if chip(ui, r.label(), self.pacs.range == r, 54.0).clicked() {
@@ -391,29 +400,33 @@ impl SlycedApp {
                 }
                 if self.pacs.range == DateRange::Custom {
                     ui.add_space(6.0);
-                    ui.label(RichText::new("de").size(12.0).color(pal().text_dim));
-                    ui.add(egui::TextEdit::singleline(&mut self.pacs.custom_from).hint_text("DD/MM/AAAA").desired_width(92.0));
-                    ui.label(RichText::new("até").size(12.0).color(pal().text_dim));
-                    ui.add(egui::TextEdit::singleline(&mut self.pacs.custom_to).hint_text("DD/MM/AAAA").desired_width(92.0));
+                    let hint = tr!("DD/MM/AAAA", "YYYY-MM-DD");
+                    ui.label(RichText::new(tr!("de", "from")).size(12.0).color(pal().text_dim));
+                    ui.add(egui::TextEdit::singleline(&mut self.pacs.custom_from).hint_text(hint).desired_width(92.0));
+                    ui.label(RichText::new(tr!("até", "to")).size(12.0).color(pal().text_dim));
+                    ui.add(egui::TextEdit::singleline(&mut self.pacs.custom_to).hint_text(hint).desired_width(92.0));
                 }
             });
             ui.add_space(6.0);
             ui.horizontal(|ui| {
-                ui.label(RichText::new(format!("{}  Modalidade", icons::STACK)).size(12.0).color(pal().text_dim));
+                ui.label(RichText::new(trf!("{}  Modalidade", "{}  Modality", icons::STACK)).size(12.0).color(pal().text_dim));
                 ui.add_space(4.0);
                 for m in MODALITIES {
-                    let label = if m.is_empty() { "Todas" } else { m };
+                    let label = if m.is_empty() { tr!("Todas", "All") } else { m };
                     if chip(ui, label, self.pacs.query.modality == m, 40.0).clicked() {
                         self.pacs.query.modality = m.to_string();
                     }
                 }
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
                     ui.add_enabled_ui(has_node && !self.pacs.searching, |ui| {
-                        if primary_button(ui, icons::MAGNIFYING_GLASS, "Pesquisar").clicked() {
+                        if primary_button(ui, icons::MAGNIFYING_GLASS, tr!("Pesquisar", "Search")).clicked() {
                             search = true;
                         }
                     });
-                    if ghost_button(ui, icons::ARROW_COUNTER_CLOCKWISE, "Limpar").on_hover_text("Limpar os campos da pesquisa").clicked() {
+                    if ghost_button(ui, icons::ARROW_COUNTER_CLOCKWISE, tr!("Limpar", "Clear"))
+                        .on_hover_text(tr!("Limpar os campos da pesquisa", "Clear the search fields"))
+                        .clicked()
+                    {
                         self.pacs.query = StudyQuery::default();
                         self.pacs.range = DateRange::Week;
                         self.pacs.custom_from.clear();
@@ -434,24 +447,28 @@ impl SlycedApp {
         ui.add_space(4.0);
         ui.horizontal(|ui| {
             if !has_node {
-                ui.label(RichText::new(format!("{}  Cadastre um servidor PACS à esquerda para pesquisar.", icons::INFO)).color(WARNING).size(12.5));
+                let text = trf!("{}  Cadastre um servidor PACS à esquerda para pesquisar.", "{}  Add a PACS server on the left to search.", icons::INFO);
+                ui.label(RichText::new(text).color(WARNING).size(12.5));
             } else if self.pacs.searching {
                 let (rect, _) = ui.allocate_exact_size(vec2(18.0, 18.0), Sense::hover());
                 spinner(ui.painter(), rect.center(), 6.0, self.time, pal().accent);
-                ui.label(RichText::new(format!("Consultando {node_name}…")).color(pal().text_dim).size(12.5));
+                ui.label(RichText::new(trf!("Consultando {node_name}…", "Querying {node_name}…")).color(pal().text_dim).size(12.5));
                 ui.ctx().request_repaint();
             } else if let Some(e) = &self.pacs.error {
                 ui.label(RichText::new(format!("{}  {e}", icons::WARNING_CIRCLE)).color(DANGER).size(12.5));
             } else if let Some((n, secs)) = self.pacs.last_search {
-                ui.label(RichText::new(format!("{} em {node_name} · {secs:.1} s", plural(n, "estudo encontrado", "estudos encontrados"))).color(pal().text_dim).size(12.5));
+                let found = plural(n, tr!("estudo encontrado", "study found"), tr!("estudos encontrados", "studies found"));
+                let secs = crate::i18n::num(secs, 1);
+                ui.label(RichText::new(trf!("{found} em {node_name} · {secs} s", "{found} on {node_name} · {secs} s")).color(pal().text_dim).size(12.5));
             } else {
-                ui.label(RichText::new("Preencha os filtros e pressione Enter ou Pesquisar.").color(pal().text_faint).size(12.5));
+                let text = tr!("Preencha os filtros e pressione Enter ou Pesquisar.", "Fill in the filters and press Enter or Search.");
+                ui.label(RichText::new(text).color(pal().text_faint).size(12.5));
             }
             if !self.pacs.results.is_empty() {
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
                     ui.scope(|ui| {
                         ui.set_width(240.0);
-                        search_box(ui, &mut self.pacs.filter, "Filtrar resultados…");
+                        search_box(ui, &mut self.pacs.filter, tr!("Filtrar resultados…", "Filter results…"));
                     });
                 });
             }
@@ -486,10 +503,15 @@ impl SlycedApp {
                         ui.add_space(area_h * 0.3);
                         ui.vertical_centered(|ui| {
                             ui.label(RichText::new(icons::MAGNIFYING_GLASS).size(30.0).color(pal().text_faint));
-                            let msg = if self.pacs.last_search.is_some() { "Nenhum estudo encontrado com esses filtros." } else { "Os estudos encontrados aparecem aqui." };
+                            let msg = if self.pacs.last_search.is_some() {
+                                tr!("Nenhum estudo encontrado com esses filtros.", "No studies found with these filters.")
+                            } else {
+                                tr!("Os estudos encontrados aparecem aqui.", "Matching studies appear here.")
+                            };
                             ui.label(RichText::new(msg).color(pal().text_dim));
                             if self.pacs.last_search.is_some() {
-                                ui.label(RichText::new("Tente ampliar o período ou usar só parte do nome.").size(12.0).color(pal().text_faint));
+                                let tip = tr!("Tente ampliar o período ou usar só parte do nome.", "Try a wider date range or only part of the name.");
+                                ui.label(RichText::new(tip).size(12.0).color(pal().text_faint));
                             }
                         });
                         return;
@@ -510,11 +532,11 @@ impl SlycedApp {
                         .max_scroll_height(area_h - 50.0)
                         .header(26.0, |mut h| {
                             for (title, k) in [
-                                ("Paciente", Some(SortKey::Patient)),
-                                ("Data", Some(SortKey::Date)),
+                                (tr!("Paciente", "Patient"), Some(SortKey::Patient)),
+                                (tr!("Data", "Date"), Some(SortKey::Date)),
                                 ("Mod.", Some(SortKey::Modality)),
-                                ("Descrição", Some(SortKey::Description)),
-                                ("Imagens", Some(SortKey::Images)),
+                                (tr!("Descrição", "Description"), Some(SortKey::Description)),
+                                (tr!("Imagens", "Images"), Some(SortKey::Images)),
                                 ("", None),
                             ] {
                                 h.col(|ui| {
@@ -524,7 +546,7 @@ impl SlycedApp {
                                     };
                                     let r = ui.add(egui::Label::new(RichText::new(text).font(font_bold(12.0)).color(pal().text_faint)).sense(Sense::click()));
                                     if let Some(k) = k
-                                        && r.on_hover_text("Ordenar").clicked() {
+                                        && r.on_hover_text(tr!("Ordenar", "Sort")).clicked() {
                                             sort_by = Some(k);
                                         }
                                 });
@@ -549,7 +571,7 @@ impl SlycedApp {
                                             info.push(r.sex.clone());
                                         }
                                         if !r.birth_date.is_empty() {
-                                            info.push(format!("nasc. {}", format_date(&r.birth_date)));
+                                            info.push(trf!("nasc. {}", "DOB {}", format_date(&r.birth_date)));
                                         }
                                         ui.add(egui::Label::new(RichText::new(info.join(" · ")).size(11.0).color(pal().text_faint)).truncate());
                                     });
@@ -572,13 +594,13 @@ impl SlycedApp {
                                         let d = if r.description.is_empty() { "—" } else { &r.description };
                                         ui.add(egui::Label::new(RichText::new(d).size(12.5).color(pal().text_dim)).truncate());
                                         if !r.accession.is_empty() {
-                                            ui.label(RichText::new(format!("Acesso {}", r.accession)).size(11.0).color(pal().text_faint));
+                                            ui.label(RichText::new(trf!("Acesso {}", "Accession {}", r.accession)).size(11.0).color(pal().text_faint));
                                         }
                                     });
                                 });
                                 row.col(|ui| {
                                     let n = r.instance_count.map(|n| n.to_string()).unwrap_or_else(|| "–".into());
-                                    let s = r.series_count.map(|n| format!("{n} sér.")).unwrap_or_default();
+                                    let s = r.series_count.map(|n| trf!("{n} sér.", "{n} series")).unwrap_or_default();
                                     ui.vertical(|ui| {
                                         ui.add_space(3.0);
                                         ui.label(RichText::new(n).size(12.5).color(pal().text_dim));
@@ -591,12 +613,14 @@ impl SlycedApp {
                                         progress_bar(ui.painter(), rect, t.fraction());
                                     }
                                     None if is_local => {
-                                        if ui.add(egui::Button::new(RichText::new(format!("{}  Abrir", icons::ARROW_SQUARE_OUT)).size(12.0))).on_hover_text("Já está neste computador").clicked() {
+                                        let text = trf!("{}  Abrir", "{}  Open", icons::ARROW_SQUARE_OUT);
+                                        if ui.add(egui::Button::new(RichText::new(text).size(12.0))).on_hover_text(tr!("Já está neste computador", "Already on this computer")).clicked() {
                                             open_row = Some(i);
                                         }
                                     }
                                     None => {
-                                        if ui.add(egui::Button::new(RichText::new(format!("{}  Baixar", icons::DOWNLOAD_SIMPLE)).size(12.0))).on_hover_text("Baixar e abrir o estudo").clicked() {
+                                        let text = trf!("{}  Baixar", "{}  Download", icons::DOWNLOAD_SIMPLE);
+                                        if ui.add(egui::Button::new(RichText::new(text).size(12.0))).on_hover_text(tr!("Baixar e abrir o estudo", "Download and open the study")).clicked() {
                                             retrieve_row = Some(i);
                                         }
                                     }
@@ -656,8 +680,8 @@ impl SlycedApp {
                 ui.add_space(40.0);
                 ui.vertical_centered(|ui| {
                     ui.label(RichText::new(icons::CLIPBOARD_TEXT).size(26.0).color(pal().text_faint));
-                    ui.label(RichText::new("Selecione um estudo para ver as séries.").color(pal().text_faint).size(12.5));
-                    ui.label(RichText::new("Duplo clique baixa e abre.").color(pal().text_faint).size(11.5));
+                    ui.label(RichText::new(tr!("Selecione um estudo para ver as séries.", "Select a study to see its series.")).color(pal().text_faint).size(12.5));
+                    ui.label(RichText::new(tr!("Duplo clique baixa e abre.", "Double-click to download and open.")).color(pal().text_faint).size(11.5));
                 });
                 return;
             };
@@ -666,11 +690,11 @@ impl SlycedApp {
             ui.add_space(6.0);
             for (k, v) in [
                 ("ID", sel.patient_id.clone()),
-                ("Nascimento", format_date(&sel.birth_date)),
-                ("Sexo", sel.sex.clone()),
-                ("Acesso", sel.accession.clone()),
-                ("Descrição", sel.description.clone()),
-                ("Solicitante", format_person_name(&sel.referring)),
+                (tr!("Nascimento", "Date of birth"), format_date(&sel.birth_date)),
+                (tr!("Sexo", "Sex"), sel.sex.clone()),
+                (tr!("Acesso", "Accession"), sel.accession.clone()),
+                (tr!("Descrição", "Description"), sel.description.clone()),
+                (tr!("Solicitante", "Referring physician"), format_person_name(&sel.referring)),
             ] {
                 if !v.trim().is_empty() {
                     kv(ui, k, &v);
@@ -679,11 +703,11 @@ impl SlycedApp {
             ui.add_space(8.0);
             let list = self.pacs.series.get(&sel.study_uid).cloned().unwrap_or_default();
             ui.horizontal(|ui| {
-                caption(ui, &format!("Séries ({})", list.len()));
+                caption(ui, &trf!("Séries ({})", "Series ({})", list.len()));
                 if !list.is_empty() {
                     ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
                         let all = list.iter().all(|s| self.pacs.checked.contains(&s.series_uid));
-                        if ui.small_button(if all { "Nenhuma" } else { "Todas" }).clicked() {
+                        if ui.small_button(if all { tr!("Nenhuma", "None") } else { tr!("Todas", "All") }).clicked() {
                             if all {
                                 self.pacs.checked.clear();
                             } else {
@@ -700,7 +724,7 @@ impl SlycedApp {
                     ui.horizontal(|ui| {
                         let (rect, _) = ui.allocate_exact_size(vec2(16.0, 16.0), Sense::hover());
                         spinner(ui.painter(), rect.center(), 5.0, self.time, pal().accent);
-                        ui.label(RichText::new("Carregando séries…").size(12.0).color(pal().text_faint));
+                        ui.label(RichText::new(tr!("Carregando séries…", "Loading series…")).size(12.0).color(pal().text_faint));
                     });
                     ui.ctx().request_repaint_after(std::time::Duration::from_millis(100));
                 }
@@ -715,7 +739,8 @@ impl SlycedApp {
                             }
                         }
                         badge(ui, &s.modality, modality_color(&s.modality));
-                        let title = format!("{} {}", s.number.map(|n| format!("{n} ·")).unwrap_or_default(), if s.description.is_empty() { "Sem descrição" } else { &s.description });
+                        let description = if s.description.is_empty() { tr!("Sem descrição", "No description") } else { &s.description };
+                        let title = format!("{} {}", s.number.map(|n| format!("{n} ·")).unwrap_or_default(), description);
                         ui.add(egui::Label::new(RichText::new(title).size(12.0).color(pal().text)).truncate());
                         ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
                             ui.label(RichText::new(s.instance_count.map(|n| n.to_string()).unwrap_or_default()).size(11.5).color(pal().text_faint));
@@ -724,11 +749,11 @@ impl SlycedApp {
                 }
             });
             ui.add_space(6.0);
-            if is_local && primary_button(ui, icons::ARROW_SQUARE_OUT, "Abrir no Slyced").clicked() {
+            if is_local && primary_button(ui, icons::ARROW_SQUARE_OUT, tr!("Abrir no Slyced", "Open in Slyced")).clicked() {
                 self.open_local_study(&sel.study_uid);
             }
             ui.horizontal(|ui| {
-                let label = if is_local { "Baixar de novo" } else { "Baixar estudo" };
+                let label = if is_local { tr!("Baixar de novo", "Download again") } else { tr!("Baixar estudo", "Download study") };
                 if !is_local {
                     if primary_button(ui, icons::DOWNLOAD_SIMPLE, label).clicked() {
                         self.start_retrieve(&sel, None);
@@ -738,7 +763,7 @@ impl SlycedApp {
                 }
                 let n = list.iter().filter(|s| self.pacs.checked.contains(&s.series_uid)).count();
                 ui.add_enabled_ui(n > 0, |ui| {
-                    if ghost_button(ui, icons::CHECK_SQUARE, &format!("Só as marcadas ({n})")).clicked() {
+                    if ghost_button(ui, icons::CHECK_SQUARE, &trf!("Só as marcadas ({n})", "Checked only ({n})")).clicked() {
                         let picked: Vec<SeriesResult> = list.iter().filter(|s| self.pacs.checked.contains(&s.series_uid)).cloned().collect();
                         for s in &picked {
                             self.start_retrieve(&sel, Some(s));
@@ -756,10 +781,10 @@ impl SlycedApp {
         }
         ui.add_space(6.0);
         ui.horizontal(|ui| {
-            caption(ui, "Transferências");
+            caption(ui, tr!("Transferências", "Transfers"));
             if self.pacs.transfers.iter().any(|t| t.done) {
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                    if ui.small_button("Limpar concluídas").clicked() {
+                    if ui.small_button(tr!("Limpar concluídas", "Clear finished")).clicked() {
                         self.pacs.transfers.retain(|t| !t.done);
                     }
                 });
@@ -783,7 +808,7 @@ impl SlycedApp {
         let cancel = Arc::new(AtomicBool::new(false));
         let mut label = format_person_name(&study.patient_name);
         if let Some(s) = series {
-            label.push_str(&format!(" · série {}", s.description));
+            label.push_str(&trf!(" · série {}", " · series {}", s.description));
         } else if !study.description.is_empty() {
             label.push_str(&format!(" · {}", study.description));
         }
@@ -840,7 +865,7 @@ impl SlycedApp {
         if t.queued {
             t.queued = false;
             t.done = true;
-            t.error = Some("cancelada".into());
+            t.error = Some(tr!("cancelada", "canceled").into());
             self.compare_after_retrieve.remove(&t.study_uid);
         } else {
             t.cancel.store(true, Ordering::Relaxed);
@@ -864,7 +889,7 @@ impl SlycedApp {
             }
             None => {
                 self.open_after_scan = Some(study_uid.to_string());
-                self.toast(ToastKind::Info, "O exame abre assim que terminar de ser lido.");
+                self.toast(ToastKind::Info, tr!("O exame abre assim que terminar de ser lido.", "The study opens as soon as it finishes loading."));
             }
         }
     }
@@ -891,25 +916,28 @@ impl SlycedApp {
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
                     match (&t.error, t.done) {
                         (Some(_), _) => {
-                            if ui.small_button(format!("{}  Tentar de novo", icons::ARROWS_CLOCKWISE)).clicked() {
+                            if ui.small_button(trf!("{}  Tentar de novo", "{}  Retry", icons::ARROWS_CLOCKWISE)).clicked() {
                                 act = Some(Act::Retry(t.id));
                             }
                         }
                         (None, true) => {
-                            if ui.small_button(format!("{}  Abrir", icons::ARROW_SQUARE_OUT)).clicked() {
+                            if ui.small_button(trf!("{}  Abrir", "{}  Open", icons::ARROW_SQUARE_OUT)).clicked() {
                                 act = Some(Act::Open(t.study_uid.clone()));
                             }
                         }
                         _ => {
-                            if icon_button_sized(ui, icons::X, "Cancelar", false, 22.0).clicked() {
+                            if icon_button_sized(ui, icons::X, tr!("Cancelar", "Cancel"), false, 22.0).clicked() {
                                 act = Some(Act::Cancel(t.id));
                             }
                         }
                     }
                     let status = match &t.error {
                         Some(e) => e.clone(),
-                        None if t.done => format!("concluída · {}", plural(p.completed.max(p.received) as usize, "imagem", "imagens")),
-                        None if t.queued => "na fila".to_string(),
+                        None if t.done => {
+                            let images = plural(p.completed.max(p.received) as usize, tr!("imagem", "image"), tr!("imagens", "images"));
+                            trf!("concluída · {images}", "done · {images}")
+                        }
+                        None if t.queued => tr!("na fila", "queued").to_string(),
                         None => format!("{} / {}", p.completed.max(p.received), total),
                     };
                     ui.add(egui::Label::new(RichText::new(status).size(11.5).color(pal().text_dim)).truncate());
@@ -938,13 +966,14 @@ impl SlycedApp {
         let mut save = false;
         egui::Modal::new(egui::Id::unique("node-editor")).show(ctx, |ui| {
             ui.set_width(380.0);
-            ui.label(RichText::new(if index.is_some() { "Editar servidor" } else { "Novo servidor PACS" }).font(font_bold(16.0)));
+            let title = if index.is_some() { tr!("Editar servidor", "Edit server") } else { tr!("Novo servidor PACS", "New PACS server") };
+            ui.label(RichText::new(title).font(font_bold(16.0)));
             ui.add_space(10.0);
             egui::Grid::new("node-form").num_columns(2).spacing(vec2(12.0, 10.0)).show(ui, |ui| {
-                ui.label("Nome");
+                ui.label(tr!("Nome", "Name"));
                 ui.add(egui::TextEdit::singleline(&mut node.name).desired_width(240.0));
                 ui.end_row();
-                ui.label("Protocolo");
+                ui.label(tr!("Protocolo", "Protocol"));
                 ui.horizontal(|ui| {
                     ui.selectable_value(&mut node.protocol, PacsProtocol::Dimse, "DICOM (DIMSE)");
                     ui.selectable_value(&mut node.protocol, PacsProtocol::DicomWeb, "DICOMweb");
@@ -955,13 +984,13 @@ impl SlycedApp {
                         ui.label("AE Title");
                         ui.add(egui::TextEdit::singleline(&mut node.ae_title).desired_width(240.0).char_limit(16));
                         ui.end_row();
-                        ui.label("Endereço");
-                        ui.add(egui::TextEdit::singleline(&mut node.host).desired_width(240.0).hint_text("IP ou nome"));
+                        ui.label(tr!("Endereço", "Address"));
+                        ui.add(egui::TextEdit::singleline(&mut node.host).desired_width(240.0).hint_text(tr!("IP ou nome", "IP or host name")));
                         ui.end_row();
-                        ui.label("Porta");
+                        ui.label(tr!("Porta", "Port"));
                         ui.add(egui::DragValue::new(&mut node.port).range(1..=65535));
                         ui.end_row();
-                        ui.label("Recuperação");
+                        ui.label(tr!("Recuperação", "Retrieval"));
                         ui.horizontal(|ui| {
                             ui.selectable_value(&mut node.retrieve, RetrieveMethod::CGet, "C-GET");
                             ui.selectable_value(&mut node.retrieve, RetrieveMethod::CMove, "C-MOVE");
@@ -969,27 +998,27 @@ impl SlycedApp {
                         ui.end_row();
                     }
                     PacsProtocol::DicomWeb => {
-                        ui.label("URL base");
+                        ui.label(tr!("URL base", "Base URL"));
                         ui.add(
                             egui::TextEdit::singleline(&mut node.base_url)
                                 .desired_width(240.0)
-                                .hint_text("http://servidor:8042/dicom-web"),
+                                .hint_text(tr!("http://servidor:8042/dicom-web", "http://server:8042/dicom-web")),
                         );
                         ui.end_row();
-                        ui.label("Autenticação");
+                        ui.label(tr!("Autenticação", "Authentication"));
                         ui.horizontal(|ui| {
-                            ui.selectable_value(&mut node.auth, WebAuth::None, "Nenhuma");
-                            ui.selectable_value(&mut node.auth, WebAuth::Basic, "Usuário e senha");
+                            ui.selectable_value(&mut node.auth, WebAuth::None, tr!("Nenhuma", "None"));
+                            ui.selectable_value(&mut node.auth, WebAuth::Basic, tr!("Usuário e senha", "Username and password"));
                             ui.selectable_value(&mut node.auth, WebAuth::Bearer, "Token");
                         });
                         ui.end_row();
                         match node.auth {
                             WebAuth::None => {}
                             WebAuth::Basic => {
-                                ui.label("Usuário");
+                                ui.label(tr!("Usuário", "Username"));
                                 ui.add(egui::TextEdit::singleline(&mut node.username).desired_width(240.0));
                                 ui.end_row();
-                                ui.label("Senha");
+                                ui.label(tr!("Senha", "Password"));
                                 ui.add(egui::TextEdit::singleline(&mut node.secret).desired_width(240.0).password(true));
                                 ui.end_row();
                             }
@@ -1004,32 +1033,39 @@ impl SlycedApp {
             });
             ui.add_space(6.0);
             let help = match (node.protocol, node.retrieve) {
-                (PacsProtocol::Dimse, RetrieveMethod::CGet) => {
-                    "C-GET recebe as imagens pela mesma conexão: não exige porta de entrada nem liberação no firewall."
-                }
-                (PacsProtocol::Dimse, RetrieveMethod::CMove) => {
-                    "C-MOVE: o PACS envia as imagens para este computador. Cadastre o AE local e a porta no servidor."
-                }
-                (PacsProtocol::DicomWeb, _) => {
-                    "DICOMweb usa HTTP(S): pesquisa por QIDO-RS e download por WADO-RS, sem porta de entrada. No Orthanc, a URL costuma terminar em /dicom-web."
-                }
+                (PacsProtocol::Dimse, RetrieveMethod::CGet) => tr!(
+                    "C-GET recebe as imagens pela mesma conexão: não exige porta de entrada nem liberação no firewall.",
+                    "C-GET receives the images over the same connection: no inbound port or firewall rule needed."
+                ),
+                (PacsProtocol::Dimse, RetrieveMethod::CMove) => tr!(
+                    "C-MOVE: o PACS envia as imagens para este computador. Cadastre o AE local e a porta no servidor.",
+                    "C-MOVE: the PACS sends the images to this computer. Register the local AE and port on the server."
+                ),
+                (PacsProtocol::DicomWeb, _) => tr!(
+                    "DICOMweb usa HTTP(S): pesquisa por QIDO-RS e download por WADO-RS, sem porta de entrada. No Orthanc, a URL costuma terminar em /dicom-web.",
+                    "DICOMweb uses HTTP(S): search via QIDO-RS and download via WADO-RS, with no inbound port. On Orthanc, the URL usually ends in /dicom-web."
+                ),
             };
             ui.label(RichText::new(help).size(11.5).color(pal().text_faint));
             if node.protocol == PacsProtocol::DicomWeb && node.auth != WebAuth::None {
-                ui.label(RichText::new("A senha/token fica gravada em config.json, na pasta de dados do Slyced.").size(11.5).color(pal().text_faint));
+                let note = tr!(
+                    "A senha/token fica gravada em config.json, na pasta de dados do Slyced.",
+                    "The password/token is stored in config.json, in the Slyced data folder."
+                );
+                ui.label(RichText::new(note).size(11.5).color(pal().text_faint));
             }
             let url = node.base_url.trim().to_ascii_lowercase();
             let valid = node.protocol == PacsProtocol::Dimse || url.starts_with("http://") || url.starts_with("https://");
             if !valid {
-                ui.label(RichText::new("A URL deve começar com http:// ou https://").size(11.5).color(WARNING));
+                ui.label(RichText::new(tr!("A URL deve começar com http:// ou https://", "The URL must start with http:// or https://")).size(11.5).color(WARNING));
             }
             ui.add_space(12.0);
             ui.horizontal(|ui| {
-                if ui.add_enabled_ui(valid, |ui| primary_button(ui, icons::CHECK, "Salvar")).inner.clicked() {
+                if ui.add_enabled_ui(valid, |ui| primary_button(ui, icons::CHECK, tr!("Salvar", "Save"))).inner.clicked() {
                     save = true;
                     keep = false;
                 }
-                if ghost_button(ui, "", "Cancelar").clicked() {
+                if ghost_button(ui, "", tr!("Cancelar", "Cancel")).clicked() {
                     keep = false;
                 }
             });

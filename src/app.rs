@@ -6,6 +6,7 @@ use crate::dicom::model::Library;
 use crate::dicom::scan::ScanProgress;
 use crate::dicom::series::LoadedSeries;
 use crate::dicom::tags::TagRow;
+use crate::i18n::Tr;
 use crate::imaging::reslice::{PlaneKind, SlabMode};
 use crate::jobs::{Jobs, LoadProgress, Msg};
 use crate::pacs::scp::{ScpEvent, StorageScp};
@@ -59,8 +60,8 @@ impl Layout {
     pub fn label(self) -> &'static str {
         match self {
             Layout::One => "1 × 1",
-            Layout::Cols2 => "2 colunas",
-            Layout::Rows2 => "2 linhas",
+            Layout::Cols2 => tr!("2 colunas", "2 columns"),
+            Layout::Rows2 => tr!("2 linhas", "2 rows"),
             Layout::Grid4 => "2 × 2",
             Layout::Grid6 => "3 × 2",
         }
@@ -140,7 +141,7 @@ pub struct SlycedApp {
     pub(crate) gpu_limits: (u32, usize),
     pub(crate) adapter: String,
     /// Why the 3D view cannot run on this computer, if it cannot.
-    pub(crate) gpu_3d_issue: Option<String>,
+    pub(crate) gpu_3d_issue: Option<Tr>,
     pub(crate) pacs: PacsUi,
     pub(crate) scp: Option<StorageScp>,
     pub(crate) incoming: Vec<PathBuf>,
@@ -257,8 +258,20 @@ impl SlycedApp {
         #[cfg(windows)]
         theme::style_title_bar(cc);
 
+        let mut settings = Settings::load(&paths.config);
+        // The web version saves nothing on disk: the page remembers the choice.
+        #[cfg(target_arch = "wasm32")]
+        {
+            settings.language = crate::web::chosen_language();
+        }
+        crate::i18n::set(settings.language.resolve());
+        let renamed = settings.drop_old_name();
+        if renamed.is_some() {
+            settings.save(&paths.config);
+        }
+
         let mut gpu_limits = (2048u32, 256 * 1024 * 1024usize);
-        let mut adapter = String::from("GPU indisponível");
+        let mut adapter = tr!("GPU indisponível", "GPU unavailable").to_string();
         let mut gpu_3d_issue = None;
         if let Some(rs) = &cc.wgpu_render_state {
             use crate::render3d::renderer::{VolumeRenderer, GPU_FAULT};
@@ -288,7 +301,7 @@ impl SlycedApp {
                 }
                 Some(e) => {
                     log::error!("renderizador 3D recusado pelo driver: {e}");
-                    gpu_3d_issue = Some("O driver de vídeo não aceitou o renderizador 3D.".to_string());
+                    gpu_3d_issue = Some(Tr("O driver de vídeo não aceitou o renderizador 3D.", "The graphics driver did not accept the 3D renderer."));
                 }
             }
         } else if graphics == crate::Graphics::OpenGl {
@@ -296,18 +309,13 @@ impl SlycedApp {
                 use eframe::glow::HasContext;
                 adapter = format!("{} (OpenGL)", unsafe { gl.get_parameter_string(eframe::glow::RENDERER) });
             }
-            gpu_3d_issue = Some(
-                "Modo de compatibilidade: a placa de vídeo ou o driver deste computador não permite a reconstrução 3D (ela precisa de DirectX 12, Vulkan ou OpenGL 3.3). 2D e MPR funcionam normalmente."
-                    .to_string(),
-            );
+            gpu_3d_issue = Some(Tr(
+                "Modo de compatibilidade: a placa de vídeo ou o driver deste computador não permite a reconstrução 3D (ela precisa de DirectX 12, Vulkan ou OpenGL 3.3). 2D e MPR funcionam normalmente.",
+                "Compatibility mode: this computer's graphics card or driver does not support 3D reconstruction (it needs DirectX 12, Vulkan or OpenGL 3.3). 2D and MPR work normally.",
+            ));
         }
         log::info!("GPU: {adapter}");
 
-        let mut settings = Settings::load(&paths.config);
-        let renamed = settings.drop_old_name();
-        if renamed.is_some() {
-            settings.save(&paths.config);
-        }
         let jobs = Jobs::new(cc.egui_ctx.clone());
         let mut app = Self {
             pacs: PacsUi::new(&settings),
@@ -482,7 +490,7 @@ impl SlycedApp {
         #[cfg(target_arch = "wasm32")]
         crate::web::pick(true);
         #[cfg(not(target_arch = "wasm32"))]
-        if let Some(dir) = rfd::FileDialog::new().set_title("Abrir pasta DICOM").pick_folder() {
+        if let Some(dir) = rfd::FileDialog::new().set_title(tr!("Abrir pasta DICOM", "Open DICOM folder")).pick_folder() {
             self.open_paths(vec![dir], true);
         }
     }
@@ -491,7 +499,7 @@ impl SlycedApp {
         #[cfg(target_arch = "wasm32")]
         crate::web::pick(false);
         #[cfg(not(target_arch = "wasm32"))]
-        if let Some(files) = rfd::FileDialog::new().set_title("Abrir arquivos DICOM").pick_files() {
+        if let Some(files) = rfd::FileDialog::new().set_title(tr!("Abrir arquivos DICOM", "Open DICOM files")).pick_files() {
             self.open_paths(files, true);
         }
     }
@@ -534,7 +542,10 @@ impl SlycedApp {
             }
             Target::Volume => {
                 if series.volume.is_none() {
-                    self.toast(ToastKind::Error, "Esta série não forma um volume 3D (geometria insuficiente).");
+                    self.toast(
+                        ToastKind::Error,
+                        tr!("Esta série não forma um volume 3D (geometria insuficiente).", "This series does not form a 3D volume (insufficient geometry)."),
+                    );
                     return;
                 }
                 self.vr_view.set_content(Content::Volume(series));
@@ -545,7 +556,7 @@ impl SlycedApp {
 
     fn setup_mpr(&mut self, series: Arc<LoadedSeries>) {
         let Some(vol) = series.volume.clone() else {
-            self.toast(ToastKind::Error, "Esta série não forma um volume (MPR indisponível).");
+            self.toast(ToastKind::Error, tr!("Esta série não forma um volume (MPR indisponível).", "This series does not form a volume (MPR unavailable)."));
             return;
         };
         let same = self.mpr_views[0].content.series().is_some_and(|s| Arc::ptr_eq(s, &series));
@@ -620,7 +631,8 @@ impl SlycedApp {
                 self.open_series(&uid, Target::View(self.active));
             }
         self.toasts.retain(|t| t.action != Some(ToastAction::ReopenClosed));
-        self.toast(ToastKind::Success, if n == 1 { "Exame reaberto.".to_string() } else { format!("{n} exames reabertos.") });
+        let text = if n == 1 { tr!("Exame reaberto.", "Study reopened.").to_string() } else { trf!("{n} exames reabertos.", "{n} studies reopened.") };
+        self.toast(ToastKind::Success, text);
     }
 
     pub(crate) fn close_study(&mut self, uid: &str) {
@@ -734,11 +746,17 @@ impl SlycedApp {
             }
             Workspace::Mpr | Workspace::Volume => {
                 let Some(s) = series else {
-                    self.toast(ToastKind::Info, "Abra uma série primeiro.");
+                    self.toast(ToastKind::Info, tr!("Abra uma série primeiro.", "Open a series first."));
                     return;
                 };
                 if s.volume.is_none() {
-                    self.toast(ToastKind::Error, "Esta série não forma um volume 3D (é preciso uma série de cortes com geometria).");
+                    self.toast(
+                        ToastKind::Error,
+                        tr!(
+                            "Esta série não forma um volume 3D (é preciso uma série de cortes com geometria).",
+                            "This series does not form a 3D volume (it needs a series of slices with geometry)."
+                        ),
+                    );
                     return;
                 }
                 let target = if ws == Workspace::Mpr { Target::Mpr } else { Target::Volume };
@@ -762,11 +780,11 @@ impl SlycedApp {
             ctx.request_repaint();
         }) {
             Ok(scp) => {
-                let text = format!("Receptor DICOM ativo: {} na porta {}", scp.ae_title, scp.port);
+                let text = trf!("Receptor DICOM ativo: {} na porta {}", "DICOM receiver active: {} on port {}", scp.ae_title, scp.port);
                 self.scp = Some(scp);
                 self.toast(ToastKind::Success, text);
             }
-            Err(e) => self.toast(ToastKind::Error, format!("Não foi possível iniciar o receptor DICOM: {e:#}")),
+            Err(e) => self.toast(ToastKind::Error, trf!("Não foi possível iniciar o receptor DICOM: {e:#}", "Could not start the DICOM receiver: {e:#}")),
         }
     }
 
@@ -782,7 +800,7 @@ impl SlycedApp {
         let path = info.path.clone();
         match crate::dicom::tags::dump(&path) {
             Ok(rows) => self.tags = Some((path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default(), rows)),
-            Err(e) => self.toast(ToastKind::Error, format!("Não foi possível ler as tags: {e:#}")),
+            Err(e) => self.toast(ToastKind::Error, trf!("Não foi possível ler as tags: {e:#}", "Could not read the tags: {e:#}")),
         }
     }
 
@@ -829,7 +847,10 @@ impl SlycedApp {
         if self.export_clipboard {
             let size = [buf.width() as usize, buf.height() as usize];
             ctx.copy_image(egui::ColorImage::from_rgba_unmultiplied(size, buf.as_raw()));
-            self.toast(ToastKind::Success, "Imagem copiada: cole no laudo ou em outro programa (Ctrl+V).");
+            self.toast(
+                ToastKind::Success,
+                tr!("Imagem copiada: cole no laudo ou em outro programa (Ctrl+V).", "Image copied: paste it into the report or another program (Ctrl+V)."),
+            );
             return;
         }
         let default = format!("slyced-{}.png", chrono_like_stamp());
@@ -838,14 +859,14 @@ impl SlycedApp {
             let mut png = std::io::Cursor::new(Vec::new());
             match buf.write_to(&mut png, image::ImageFormat::Png) {
                 Ok(()) => crate::web::download(&default, png.get_ref()),
-                Err(e) => self.toast(ToastKind::Error, format!("Falha ao salvar: {e}")),
+                Err(e) => self.toast(ToastKind::Error, trf!("Falha ao salvar: {e}", "Could not save: {e}")),
             }
         }
         #[cfg(not(target_arch = "wasm32"))]
-        if let Some(path) = rfd::FileDialog::new().set_title("Salvar imagem").set_file_name(&default).add_filter("PNG", &["png"]).save_file() {
+        if let Some(path) = rfd::FileDialog::new().set_title(tr!("Salvar imagem", "Save image")).set_file_name(&default).add_filter("PNG", &["png"]).save_file() {
             match buf.save(&path) {
-                Ok(()) => self.toast(ToastKind::Success, format!("Imagem salva em {}", path.display())),
-                Err(e) => self.toast(ToastKind::Error, format!("Falha ao salvar: {e}")),
+                Ok(()) => self.toast(ToastKind::Success, trf!("Imagem salva em {}", "Image saved to {}", path.display())),
+                Err(e) => self.toast(ToastKind::Error, trf!("Falha ao salvar: {e}", "Could not save: {e}")),
             }
         }
     }
@@ -861,7 +882,10 @@ impl SlycedApp {
                     if encrypted > 0 {
                         self.toast(
                             ToastKind::Error,
-                            format!("{encrypted} arquivo(s) dentro do ZIP estão protegidos por senha e foram ignorados."),
+                            trf!(
+                                "{encrypted} arquivo(s) dentro do ZIP estão protegidos por senha e foram ignorados.",
+                                "{encrypted} file(s) in the ZIP are password-protected and were skipped."
+                            ),
                         );
                     }
                     if self.scans_active == 0 {
@@ -870,10 +894,18 @@ impl SlycedApp {
                     let n_files = files.len();
                     let added = self.library.merge(files);
                     if n_files == 0 {
-                        self.toast(ToastKind::Error, format!("Nenhuma imagem DICOM encontrada ({total} arquivo(s) verificado(s))."));
+                        self.toast(
+                            ToastKind::Error,
+                            trf!("Nenhuma imagem DICOM encontrada ({total} arquivo(s) verificado(s)).", "No DICOM images found ({total} file(s) checked)."),
+                        );
                         continue;
                     }
-                    self.toast(ToastKind::Success, format!("{added} imagem(ns) adicionada(s) · {} estudo(s)", self.library.studies.len()));
+                    let studies = self.library.studies.len();
+                    let (images_s, studies_s) = (if added == 1 { "" } else { "s" }, if studies == 1 { "y" } else { "ies" });
+                    self.toast(
+                        ToastKind::Success,
+                        trf!("{added} imagem(ns) adicionada(s) · {studies} estudo(s)", "{added} image{images_s} added · {studies} stud{studies_s}"),
+                    );
                     self.request_thumbnails();
                     if open {
                         self.open_first_series();
@@ -943,8 +975,12 @@ impl SlycedApp {
                     self.store_usage = Some(left);
                     if removed.studies > 0 {
                         let text = match days {
-                            Some(days) => format!("Limpeza automática: {} baixado(s) há mais de {days} dias foram apagados.", removed.describe()),
-                            None => format!("{} baixado(s) do PACS foram apagados.", removed.describe()),
+                            Some(days) => trf!(
+                                "Limpeza automática: {} baixado(s) há mais de {days} dias foram apagados.",
+                                "Automatic cleanup: {} downloaded more than {days} days ago were deleted.",
+                                removed.describe()
+                            ),
+                            None => trf!("{} baixado(s) do PACS foram apagados.", "{} downloaded from the PACS were deleted.", removed.describe()),
                         };
                         self.toast(ToastKind::Info, text);
                     }
@@ -966,8 +1002,8 @@ impl SlycedApp {
         match msg {
             Msg::Echo { node, result } => {
                 match &result {
-                    Ok(d) => self.toast(ToastKind::Success, format!("Conexão com {node}: OK ({} ms)", d.as_millis())),
-                    Err(e) => self.toast(ToastKind::Error, format!("Teste de conexão com {node} falhou: {e}")),
+                    Ok(d) => self.toast(ToastKind::Success, trf!("Conexão com {node}: OK ({} ms)", "Connection to {node}: OK ({} ms)", d.as_millis())),
+                    Err(e) => self.toast(ToastKind::Error, trf!("Teste de conexão com {node} falhou: {e}", "Connection test to {node} failed: {e}")),
                 }
                 self.pacs.node_status.insert(node, result.map(|d| d.as_millis()));
             }
@@ -1027,7 +1063,7 @@ impl SlycedApp {
                 match result {
                     Ok(p) => {
                         let n = files.len().max(p.completed as usize);
-                        self.toast(ToastKind::Success, format!("Transferência concluída: {n} imagem(ns)."));
+                        self.toast(ToastKind::Success, trf!("Transferência concluída: {n} imagem(ns).", "Transfer complete: {n} image(s)."));
                         self.open_after_scan = open_study;
                         if !files.is_empty() {
                             self.start_scan(files, false);
@@ -1337,10 +1373,14 @@ impl SlycedApp {
             }),
             _ => None,
         };
-        let gpu_issue = self.gpu_3d_issue.clone().or_else(|| {
-            crate::render3d::renderer::GPU_FAULT
-                .load(Ordering::Relaxed)
-                .then(|| "A placa de vídeo relatou um erro; a reconstrução 3D foi desativada. Detalhes no log.".to_string())
+        let gpu_issue = self.gpu_3d_issue.map(|t| t.get().to_string()).or_else(|| {
+            crate::render3d::renderer::GPU_FAULT.load(Ordering::Relaxed).then(|| {
+                tr!(
+                    "A placa de vídeo relatou um erro; a reconstrução 3D foi desativada. Detalhes no log.",
+                    "The graphics card reported an error; 3D reconstruction was turned off. Details in the log."
+                )
+                .to_string()
+            })
         });
         // Labels of what the tools changed go on the active 2D view (never into exported images).
         let changes = if self.export_request.is_none() && !self.reading { self.screen_changes() } else { Vec::new() };
@@ -1367,7 +1407,7 @@ impl SlycedApp {
             let loading = loading_uid.filter(|_| is_target).and_then(|u| {
                 let p = self.loading.get(&u)?;
                 let title = self.library.find_series(&u).map(|(_, s)| s.title()).unwrap_or_default();
-                Some((format!("Carregando {title}"), p.done.load(Ordering::Relaxed) as f32 / p.total.max(1) as f32))
+                Some((trf!("Carregando {title}", "Loading {title}"), p.done.load(Ordering::Relaxed) as f32 / p.total.max(1) as f32))
             });
             let gpu_series = match self.workspace {
                 Workspace::Mpr if i == 3 => true,
@@ -1745,7 +1785,7 @@ impl SlycedApp {
                     }
                     "arrow" => {
                         if let Some(v) = self.active_view_mut() {
-                            v.add_arrow_at(p, "Lesão hiperdensa");
+                            v.add_arrow_at(p, tr!("Lesão hiperdensa", "Hyperdense lesion"));
                         }
                     }
                     "bookmark" => {
@@ -1941,6 +1981,7 @@ impl SlycedApp {
                 };
             }
             "scale" => self.settings.ui_scale = num.unwrap_or(100.0) as f32 / 100.0,
+            "lang" => self.settings.language = crate::config::Language::from_code(arg),
             // Reading full screen without asking Windows (same window size for screenshots);
             // `reading:full` as F11, `reading:bar` / `reading:drawer` keep the controls showing.
             "reading" => match arg {
@@ -2037,6 +2078,12 @@ impl eframe::App for SlycedApp {
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
         self.time = ctx.input(|i| i.time);
+        let lang = self.settings.language.resolve();
+        if crate::i18n::current() != lang {
+            crate::i18n::set(lang);
+            #[cfg(not(target_arch = "wasm32"))]
+            ctx.send_viewport_cmd(egui::ViewportCommand::Title(crate::config::window_title().into()));
+        }
         let look = (self.settings.theme, self.settings.ui_scale.clamp(0.8, 1.5));
         if self.applied_look != Some(look) {
             theme::set_theme(&ctx, look.0);

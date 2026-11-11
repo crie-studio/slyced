@@ -53,7 +53,7 @@ pub fn author_card(ui: &mut Ui) -> Response {
     monogram(&p, m, INITIALS);
 
     let x = m.right() + 22.0;
-    let cap = spaced(&p, "CRIADO E DESENVOLVIDO POR", font_bold(10.0), pal().text_faint, 1.4);
+    let cap = spaced(&p, tr!("CRIADO E DESENVOLVIDO POR", "CREATED AND DEVELOPED BY"), font_bold(10.0), pal().text_faint, 1.4);
     let mut y = m.top() + 6.0;
     let cap_h = cap.size().y;
     p.galley(pos2(x, y), cap, pal().text_faint);
@@ -93,7 +93,7 @@ pub fn author_badge(ui: &mut Ui, height: f32) -> Response {
     let mono = height - 10.0;
     let size = vec2(5.0 + mono + 8.0 + name.size().x + 18.0 + site.size().x + 12.0, height);
     let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
-    let resp = resp.on_hover_text(format!("Abrir {WEBSITE}"));
+    let resp = resp.on_hover_text(trf!("Abrir {WEBSITE}", "Open {WEBSITE}"));
     let hovered = resp.hovered();
     let radius = (height * 0.5) as u8;
     p.rect_filled(rect, CornerRadius::same(radius), if hovered { pal().bg_hover } else { pal().bg_raised });

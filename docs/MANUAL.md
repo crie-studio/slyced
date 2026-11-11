@@ -48,7 +48,7 @@ achados do Lumen são trazidos automaticamente.
 - **PACS** (o mesmo tipo de servidor que o RadiAnt acessa): C-ECHO, C-FIND (estudo/série), recuperação por **C-GET** (sem porta de entrada) ou **C-MOVE** (com receptor Storage SCP embutido). Também **DICOMweb** (HTTP/HTTPS): pesquisa por QIDO-RS e download por WADO-RS, com usuário/senha ou token. Os downloads formam uma fila (dois por vez), com "Tentar de novo" e "Abrir", acessível também pela barra de status.
 - **Tags DICOM** com filtro, exportação PNG da janela ativa, overlays com dados do paciente, orientação anatômica e régua.
 - **Tela de abertura** em duas colunas: o programa à esquerda; à direita, Pasta, Arquivos e PACS com o mesmo destaque, cada um com uma linha dizendo o que abre e o atalho, e os exames recentes. A barra de título mostra só "Slyced - por Luiz Felipe Pitzer", nunca o nome do paciente.
-- **Aparência** (Configurações): tema escuro, claro ou de alto contraste e tamanho da interface (80–150%). Um tour de boas-vindas mostra os controles principais na primeira vez (e pode ser refeito pela ajuda, F1).
+- **Aparência** (Configurações): idioma (português ou inglês; no automático, segue o idioma do Windows ou do navegador), tema escuro, claro ou de alto contraste e tamanho da interface (80–150%). Na tela inicial, "Português · English" troca o idioma com um clique. Um tour de boas-vindas mostra os controles principais na primeira vez (e pode ser refeito pela ajuda, F1).
 - **Fechar com segurança**: "Fechar todos os exames" pede confirmação, e o aviso de exame fechado tem **Desfazer**.
 
 ## Uso

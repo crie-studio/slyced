@@ -54,7 +54,7 @@ fn stamp(path: &Path) -> Result<(u64, Option<SystemTime>)> {
     if let Some(bytes) = memfs::get(path) {
         return Ok((bytes.len() as u64, None));
     }
-    let m = std::fs::metadata(path).with_context(|| format!("abrindo {}", path.display()))?;
+    let m = std::fs::metadata(path).with_context(|| trf!("abrindo {}", "opening {}", path.display()))?;
     Ok((m.len(), m.modified().ok()))
 }
 
@@ -67,7 +67,7 @@ fn open_archive(path: &Path) -> Result<ZipArchive<Box<dyn ReadSeek>>> {
     let st = stamp(path)?;
     let file: Box<dyn ReadSeek> = match memfs::get(path) {
         Some(bytes) => Box::new(Cursor::new(bytes)),
-        None => Box::new(BufReader::new(File::open(path).with_context(|| format!("abrindo {}", path.display()))?)),
+        None => Box::new(BufReader::new(File::open(path).with_context(|| trf!("abrindo {}", "opening {}", path.display()))?)),
     };
     let cached = INDEXES
         .lock()
@@ -77,7 +77,7 @@ fn open_archive(path: &Path) -> Result<ZipArchive<Box<dyn ReadSeek>>> {
         // SAFETY: the metadata was parsed from this same file, unchanged since (size and mtime match).
         return Ok(unsafe { ZipArchive::unsafe_new_with_metadata(file, metadata) });
     }
-    let archive = ZipArchive::new(file).with_context(|| format!("ZIP inválido: {}", path.display()))?;
+    let archive = ZipArchive::new(file).with_context(|| trf!("ZIP inválido: {}", "Invalid ZIP: {}", path.display()))?;
     if let Ok(mut c) = INDEXES.lock() {
         c.retain(|i| i.path != path);
         c.push(CachedIndex { path: path.to_path_buf(), stamp: st, metadata: archive.metadata() });
@@ -134,17 +134,17 @@ pub fn open_dicom(path: &Path, header_only: bool) -> Result<DefaultDicomObject> 
             } else if plausible_raw_dataset(&bytes) {
                 0
             } else {
-                bail!("{} não é um arquivo DICOM", path.display());
+                bail!(trf!("{} não é um arquivo DICOM", "{} is not a DICOM file", path.display()));
             };
             return opts
                 .read_preamble(ReadPreamble::Never)
                 .from_reader(&bytes[start..])
-                .with_context(|| format!("lendo {}", path.display()));
+                .with_context(|| trf!("lendo {}", "reading {}", path.display()));
         }
-        return opts.open_file(path).with_context(|| format!("abrindo {}", path.display()));
+        return opts.open_file(path).with_context(|| trf!("abrindo {}", "opening {}", path.display()));
     };
     let mut archive = open_archive(&zip_path)?;
-    let mut entry = archive.by_name(&name).with_context(|| format!("{name} em {}", zip_path.display()))?;
+    let mut entry = archive.by_name(&name).with_context(|| trf!("{name} em {}", "{name} in {}", zip_path.display()))?;
     let mut head = [0u8; 132];
     let mut n = 0;
     while n < head.len() {
@@ -159,12 +159,12 @@ pub fn open_dicom(path: &Path, header_only: bool) -> Result<DefaultDicomObject> 
     } else if plausible_raw_dataset(&head[..n]) {
         0
     } else {
-        bail!("{name} não é um arquivo DICOM");
+        bail!(trf!("{name} não é um arquivo DICOM", "{name} is not a DICOM file"));
     };
     let reader = Cursor::new(&head[start..n]).chain(entry);
     opts.read_preamble(ReadPreamble::Never)
         .from_reader(reader)
-        .with_context(|| format!("lendo {name} em {}", zip_path.display()))
+        .with_context(|| trf!("lendo {name} em {}", "reading {name} in {}", zip_path.display()))
 }
 
 #[cfg(test)]

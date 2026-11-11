@@ -23,7 +23,7 @@ impl PlaneKind {
         match self {
             PlaneKind::Axial => "AXIAL",
             PlaneKind::Coronal => "CORONAL",
-            PlaneKind::Sagittal => "SAGITAL",
+            PlaneKind::Sagittal => tr!("SAGITAL", "SAGITTAL"),
         }
     }
 
@@ -60,7 +60,7 @@ impl SlabMode {
         match self {
             SlabMode::Mip => "MIP",
             SlabMode::MinIp => "MinIP",
-            SlabMode::Avg => "Média",
+            SlabMode::Avg => tr!("Média", "Average"),
         }
     }
 }

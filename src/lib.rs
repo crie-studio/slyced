@@ -1,5 +1,9 @@
 //! Slyced: portable DICOM viewer (library crate; the executable lives in `main.rs`).
 
+// First: its tr!/trf! macros are used by every module below.
+#[macro_use]
+pub mod i18n;
+
 pub mod app;
 pub mod bookmarks;
 pub mod config;

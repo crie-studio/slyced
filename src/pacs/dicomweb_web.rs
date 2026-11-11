@@ -4,23 +4,24 @@
 
 use super::scu::{RetrieveProgress, SeriesResult, StudyQuery, StudyResult};
 use crate::config::PacsNode;
+use crate::i18n::Tr;
 use anyhow::{bail, Result};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-const UNAVAILABLE: &str = "PACS indisponível na versão web: use o Slyced para Windows.";
+const UNAVAILABLE: Tr = Tr("PACS indisponível na versão web: use o Slyced para Windows.", "PACS is not available in the web version: use Slyced for Windows.");
 
 pub fn echo(_node: &PacsNode) -> Result<Duration> {
-    bail!(UNAVAILABLE)
+    bail!(UNAVAILABLE.get())
 }
 
 pub fn find_studies(_node: &PacsNode, _q: &StudyQuery) -> Result<Vec<StudyResult>> {
-    bail!(UNAVAILABLE)
+    bail!(UNAVAILABLE.get())
 }
 
 pub fn find_series(_node: &PacsNode, _study_uid: &str) -> Result<Vec<SeriesResult>> {
-    bail!(UNAVAILABLE)
+    bail!(UNAVAILABLE.get())
 }
 
 pub fn retrieve(
@@ -31,5 +32,5 @@ pub fn retrieve(
     _cancel: &AtomicBool,
     _on_progress: impl FnMut(RetrieveProgress),
 ) -> Result<(Vec<PathBuf>, RetrieveProgress)> {
-    bail!(UNAVAILABLE)
+    bail!(UNAVAILABLE.get())
 }

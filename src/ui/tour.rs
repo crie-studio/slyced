@@ -6,26 +6,63 @@ use super::theme::*;
 use super::widgets::*;
 use crate::app::SlycedApp;
 use crate::config::APP_VERSION;
+use crate::i18n::Tr;
 use egui::{pos2, vec2, Color32, CornerRadius, Frame, Id, LayerId, Margin, Order, Rect, RichText, Sense, Stroke, StrokeKind};
 
 /// Title and text of each step; `SlycedApp::tour_targets` holds what each one points at.
-const STEPS: [(&str, &str); 5] = [
-    ("Abra seus exames", "Pasta, arquivos, ZIP ou CD/DVD — ou arraste para a janela. Os abertos recentemente ficam no menu ⋯ da lista de exames."),
-    ("Busque no PACS", "Cadastre o servidor do hospital e baixe exames sem sair do Slyced. O andamento dos downloads aparece na barra de status."),
+const STEPS: [(Tr, Tr); 5] = [
     (
-        "Ferramentas",
-        "As de navegação ficam à mostra; Medir e Leitura agrupam as demais (o botão usa a última, a seta mostra todas). Como usar a ferramenta ativa aparece na barra de status.",
+        Tr("Abra seus exames", "Open your studies"),
+        Tr(
+            "Pasta, arquivos, ZIP ou CD/DVD — ou arraste para a janela. Os abertos recentemente ficam no menu ⋯ da lista de exames.",
+            "Folder, files, ZIP or CD/DVD — or drag them onto the window. Recently opened ones are in the ⋯ menu of the study list.",
+        ),
     ),
-    ("Desfazer e restaurar", "Ctrl+Z desfaz e Ctrl+Y refaz. O que mudou na imagem aparece em etiquetas no canto, e Restaurar volta tudo ao padrão."),
-    ("Do seu jeito", "Nas Configurações: tema escuro, claro ou de alto contraste e o tamanho da interface. F1 mostra todos os atalhos."),
+    (
+        Tr("Busque no PACS", "Search the PACS"),
+        Tr(
+            "Cadastre o servidor do hospital e baixe exames sem sair do Slyced. O andamento dos downloads aparece na barra de status.",
+            "Add the hospital's server and download studies without leaving Slyced. Download progress shows in the status bar.",
+        ),
+    ),
+    (
+        Tr("Ferramentas", "Tools"),
+        Tr(
+            "As de navegação ficam à mostra; Medir e Leitura agrupam as demais (o botão usa a última, a seta mostra todas). Como usar a ferramenta ativa aparece na barra de status.",
+            "Navigation tools are always shown; Measure and Reading group the rest (the button uses the last one, the arrow shows them all). How to use the active tool shows in the status bar.",
+        ),
+    ),
+    (
+        Tr("Desfazer e restaurar", "Undo and reset"),
+        Tr(
+            "Ctrl+Z desfaz e Ctrl+Y refaz. O que mudou na imagem aparece em etiquetas no canto, e Restaurar volta tudo ao padrão.",
+            "Ctrl+Z undoes and Ctrl+Y redoes. What changed on the image shows as labels in the corner, and Reset puts everything back to default.",
+        ),
+    ),
+    (
+        Tr("Do seu jeito", "Make it yours"),
+        Tr(
+            "Nas Configurações: tema escuro, claro ou de alto contraste e o tamanho da interface. F1 mostra todos os atalhos.",
+            "In Settings: dark, light or high-contrast theme and the interface size. F1 shows all shortcuts.",
+        ),
+    ),
 ];
 
 /// What changed in this version (shown once after an update).
-const NEWS: &[&str] = &[
-    "Versão para Windows 7 (64 e 32 bits), com o 3D por OpenGL ou Vulkan.",
-    "Tela de abertura nova: Pasta, Arquivos e PACS lado a lado, cada um com o que abre e o atalho.",
-    "A barra de título mostra só \"Slyced - por Luiz Felipe Pitzer\", sem o nome do paciente.",
-    "Na 1.4: tela cheia de leitura (F11), prévia na barra de cortes, Ctrl+G e linha do tempo do paciente com os exames do PACS.",
+const NEWS: &[Tr] = &[
+    Tr("Versão para Windows 7 (64 e 32 bits), com o 3D por OpenGL ou Vulkan.", "Windows 7 version (64 and 32 bit), with 3D through OpenGL or Vulkan."),
+    Tr(
+        "Tela de abertura nova: Pasta, Arquivos e PACS lado a lado, cada um com o que abre e o atalho.",
+        "New start screen: Folder, Files and PACS side by side, each with what it opens and its shortcut.",
+    ),
+    Tr(
+        "A barra de título mostra só \"Slyced - por Luiz Felipe Pitzer\", sem o nome do paciente.",
+        "The title bar shows only \"Slyced - by Luiz Felipe Pitzer\", without the patient's name.",
+    ),
+    Tr(
+        "Na 1.4: tela cheia de leitura (F11), prévia na barra de cortes, Ctrl+G e linha do tempo do paciente com os exames do PACS.",
+        "In 1.4: reading full screen (F11), preview on the slice bar, Ctrl+G and a patient timeline with the PACS studies.",
+    ),
 ];
 
 enum TourAction {
@@ -89,7 +126,9 @@ impl SlycedApp {
 
         let card_w = 360.0;
         let pos = if has_target {
-            pos2((target.center().x - card_w * 0.5).clamp(screen.left() + 12.0, screen.right() - card_w - 12.0), target.bottom() + 18.0)
+            // max(): on screens narrower than the card (phones) the range would be empty and clamp panics.
+            let left = screen.left() + 12.0;
+            pos2((target.center().x - card_w * 0.5).clamp(left, (screen.right() - card_w - 12.0).max(left)), target.bottom() + 18.0)
         } else {
             screen.center() - vec2(card_w * 0.5, 90.0)
         };
@@ -103,21 +142,22 @@ impl SlycedApp {
                 .shadow(egui::Shadow { offset: [0, 10], blur: 30, spread: 0, color: Color32::from_black_alpha(pal().shadow) })
                 .show(ui, |ui| {
                     ui.set_width(card_w - 32.0);
-                    ui.label(RichText::new(format!("{} DE {}", step + 1, STEPS.len())).font(font_bold(10.5)).color(pal().text_faint).extra_letter_spacing(0.8));
-                    ui.label(RichText::new(STEPS[step].0).font(font_bold(16.0)).color(pal().text));
+                    let counter = trf!("{} DE {}", "{} OF {}", step + 1, STEPS.len());
+                    ui.label(RichText::new(counter).font(font_bold(10.5)).color(pal().text_faint).extra_letter_spacing(0.8));
+                    ui.label(RichText::new(STEPS[step].0.get()).font(font_bold(16.0)).color(pal().text));
                     ui.add_space(2.0);
-                    ui.add(egui::Label::new(RichText::new(STEPS[step].1).size(12.5).color(pal().text_dim)).wrap());
+                    ui.add(egui::Label::new(RichText::new(STEPS[step].1.get()).size(12.5).color(pal().text_dim)).wrap());
                     ui.add_space(12.0);
                     ui.horizontal(|ui| {
-                        if ui.add(egui::Button::new(RichText::new("Pular").color(pal().text_dim)).frame(false)).clicked() {
+                        if ui.add(egui::Button::new(RichText::new(tr!("Pular", "Skip")).color(pal().text_dim)).frame(false)).clicked() {
                             action = Some(TourAction::Skip);
                         }
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             let last = step + 1 == STEPS.len();
-                            if primary_button(ui, "", if last { "Concluir" } else { "Próximo" }).clicked() {
+                            if primary_button(ui, "", if last { tr!("Concluir", "Finish") } else { tr!("Próximo", "Next") }).clicked() {
                                 action = Some(TourAction::Next);
                             }
-                            if step > 0 && ui.button("Voltar").clicked() {
+                            if step > 0 && ui.button(tr!("Voltar", "Back")).clicked() {
                                 action = Some(TourAction::Back);
                             }
                         });
@@ -150,21 +190,22 @@ impl SlycedApp {
         let mut tour = false;
         egui::Modal::new(Id::unique("news")).show(ctx, |ui| {
             ui.set_width(440.0);
-            ui.label(RichText::new(format!("{}  Novidades da versão {APP_VERSION}", icons::ROCKET_LAUNCH)).font(font_bold(16.0)).color(pal().text));
+            let title = trf!("{}  Novidades da versão {APP_VERSION}", "{}  What's new in version {APP_VERSION}", icons::ROCKET_LAUNCH);
+            ui.label(RichText::new(title).font(font_bold(16.0)).color(pal().text));
             ui.add_space(8.0);
             for n in NEWS {
                 ui.horizontal_top(|ui| {
                     ui.label(RichText::new(icons::CHECK).color(pal().accent));
-                    ui.add(egui::Label::new(RichText::new(*n).size(12.5).color(pal().text)).wrap());
+                    ui.add(egui::Label::new(RichText::new(n.get()).size(12.5).color(pal().text)).wrap());
                 });
             }
             ui.add_space(12.0);
             ui.horizontal(|ui| {
-                if ghost_button(ui, icons::LIGHTBULB, "Fazer o tour").clicked() {
+                if ghost_button(ui, icons::LIGHTBULB, tr!("Fazer o tour", "Take the tour")).clicked() {
                     tour = true;
                 }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if primary_button(ui, "", "Entendi").clicked() {
+                    if primary_button(ui, "", tr!("Entendi", "Got it")).clicked() {
                         close = true;
                     }
                 });

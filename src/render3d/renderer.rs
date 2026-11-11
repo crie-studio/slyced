@@ -116,7 +116,7 @@ impl RenderMode {
             RenderMode::Composite => "VR",
             RenderMode::Mip => "MIP",
             RenderMode::MinIp => "MinIP",
-            RenderMode::Iso => "Superfície",
+            RenderMode::Iso => tr!("Superfície", "Surface"),
         }
     }
 

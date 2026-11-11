@@ -108,7 +108,8 @@ relação à versão para Windows:
 - sem JPEG-LS; JPEG 2000 ainda em teste;
 - a série é carregada em um único núcleo, então exames grandes demoram mais e a página fica
   parada enquanto carrega;
-- as configurações não são guardadas entre uma visita e outra.
+- as configurações não são guardadas entre uma visita e outra (só o idioma escolhido fica guardado no navegador;
+  `?lang=en` ou `?lang=pt` no endereço escolhe o idioma da visita).
 
 ## Recursos
 
@@ -123,7 +124,7 @@ relação à versão para Windows:
 | **Comparação** | Lado a lado, sobreposição, cortina e xadrez; alinhamento por referencial, pontos ou automático; variação das medidas em % |
 | **Leitura de TC** | Gás livre, gordura mesentérica, cálculos, fases com e sem contraste (ΔHU, mapa de realce, subtração) e hérnia incisional |
 | **PACS** | C-ECHO, C-FIND, C-GET, C-MOVE com receptor embutido e DICOMweb (QIDO-RS/WADO-RS); fila de downloads e limpeza automática |
-| **Conforto** | Desfazer/refazer, etiquetas do que mudou na imagem, temas, tour de boas-vindas e atalhos (F1) |
+| **Conforto** | Desfazer/refazer, etiquetas do que mudou na imagem, temas, interface em português ou inglês, tour de boas-vindas e atalhos (F1) |
 
 A lista completa, os atalhos e a configuração do PACS estão no [manual](docs/MANUAL.md).
 
@@ -204,6 +205,7 @@ com a página do projeto (`web/landing/`) na raiz, em português e em `en/`, e o
 cargo run --release --example phantom -- C:\temp\fantoma          # TC sintética de crânio
 cargo run --release --example phantom -- C:\temp\anterior --anterior   # "exame anterior" (comparação)
 cargo run --release --example phantom -- C:\temp\sem --sem-contraste   # fase sem contraste do mesmo exame
+cargo run --release --example phantom -- C:\temp\en --english          # textos do exame em inglês (telas em inglês)
 cargo run --release --example test_pacs -- C:\temp\fantoma        # mini-PACS local (AE TESTPACS, porta 4242)
 cargo run --release --example pacs_selftest -- 127.0.0.1 4242 TESTPACS C:\temp\saida
 cargo run --release --example dicomweb_selftest -- http://127.0.0.1:8042/dicom-web C:\temp\saida
@@ -256,8 +258,9 @@ executable with no installer that opens CT, MR, X-ray and ultrasound studies fro
 CDs/DVDs (DICOMDIR), ZIP files and PACS servers (DIMSE C-FIND/C-GET/C-MOVE and DICOMweb). It
 offers 2D reading tools, MPR with oblique planes and curved reformation, GPU volume rendering
 (DirectX 12, Vulkan or OpenGL), side-by-side comparison with prior exams and CT reading aids.
-The interface is in Brazilian Portuguese. Written in Rust and licensed under MIT or Apache 2.0.
+The interface is in English and Brazilian Portuguese: it follows the Windows (or browser) language and can be
+switched in Settings → Appearance. Written in Rust and licensed under MIT or Apache 2.0.
 Downloads are on the [releases page](https://github.com/crie-studio/slyced/releases/latest).
 Project page: <https://crie-studio.github.io/slyced/en/>. An experimental web version runs in the browser at
-<https://crie-studio.github.io/slyced/app/> ([with a synthetic sample exam](https://crie-studio.github.io/slyced/app/?exemplo)); files opened
+<https://crie-studio.github.io/slyced/app/?lang=en> ([with a synthetic sample study](https://crie-studio.github.io/slyced/app/?exemplo&lang=en)); files opened
 there stay on the user's computer.

@@ -11,7 +11,7 @@ License: MIT OR Apache-2.0
 LicenseUrl: https://github.com/crie-studio/slyced/blob/main/LICENSE-MIT
 Copyright: Copyright (c) 2026 Luiz Felipe Pitzer
 ShortDescription: Free, portable DICOM viewer for CT, MR, X-ray and ultrasound in 2D, MPR and 3D.
-Description: Slyced opens DICOM studies from folders, CDs/DVDs with DICOMDIR, ZIP files and PACS servers (C-FIND, C-GET, C-MOVE and DICOMweb), with MPR, curved reformation, GPU volume rendering and comparison with prior studies. No telemetry and no accounts; studies stay on the computer. Not certified as a medical device. Interface in Portuguese.
+Description: Slyced opens DICOM studies from folders, CDs/DVDs with DICOMDIR, ZIP files and PACS servers (C-FIND, C-GET, C-MOVE and DICOMweb), with MPR, curved reformation, GPU volume rendering and comparison with prior studies. No telemetry and no accounts; studies stay on the computer. Not certified as a medical device. Interface in English and Portuguese.
 Moniker: slyced
 Tags:
   - dicom

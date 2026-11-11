@@ -35,7 +35,7 @@ impl StorageScp {
         root: PathBuf,
         on_event: impl Fn(ScpEvent) + Send + Sync + 'static,
     ) -> Result<Self> {
-        let listener = TcpListener::bind(("0.0.0.0", port)).with_context(|| format!("porta {port} indisponível"))?;
+        let listener = TcpListener::bind(("0.0.0.0", port)).with_context(|| trf!("porta {port} indisponível", "port {port} unavailable"))?;
         listener.set_nonblocking(true)?;
         let stop = Arc::new(AtomicBool::new(false));
         let on_event = Arc::new(on_event);
@@ -77,7 +77,7 @@ fn serve(stream: TcpStream, ae: &str, root: &Path, on_event: &dyn Fn(ScpEvent)) 
     for sc in STORAGE_CLASSES {
         opts = opts.with_abstract_syntax(*sc);
     }
-    let mut assoc = opts.establish(stream).context("negociando associação")?;
+    let mut assoc = opts.establish(stream).context(tr!("negociando associação", "negotiating association"))?;
     let pc_ts: std::collections::HashMap<u8, String> =
         assoc.presentation_contexts().iter().map(|p| (p.id, p.transfer_syntax.clone())).collect();
     let mut reader = MessageReader::default();

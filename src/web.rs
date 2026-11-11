@@ -26,6 +26,29 @@ extern "C" {
     /// Removes the loading message once the viewer is running.
     #[wasm_bindgen(js_namespace = slyced, js_name = started)]
     fn js_started();
+    /// Language chosen for this visit: `?lang=` in the address, else the one the
+    /// page remembers, else "auto".
+    #[wasm_bindgen(js_namespace = slyced, js_name = language)]
+    fn js_language() -> String;
+    /// The browser's language (`navigator.language`).
+    #[wasm_bindgen(js_namespace = slyced, js_name = browserLanguage)]
+    fn js_browser_language() -> String;
+    /// Remembers the language chosen in Configurações for the next visits.
+    #[wasm_bindgen(js_namespace = slyced, js_name = rememberLanguage)]
+    fn js_remember_language(code: &str);
+}
+
+/// Language chosen on the page (or automatic).
+pub fn chosen_language() -> crate::config::Language {
+    crate::config::Language::from_code(&js_language())
+}
+
+pub fn browser_language() -> String {
+    js_browser_language()
+}
+
+pub fn remember_language(language: crate::config::Language) {
+    js_remember_language(language.code());
 }
 
 pub fn pick(folder: bool) {
@@ -156,13 +179,14 @@ mod libc {
 pub fn start() {
     let _ = eframe::WebLogger::init(log::LevelFilter::Info);
     log::info!("Slyced {} (web)", crate::config::APP_VERSION);
+    crate::i18n::set(chosen_language().resolve());
     wasm_bindgen_futures::spawn_local(async {
         let Some(canvas) = web_sys::window()
             .and_then(|w| w.document())
             .and_then(|d| d.get_element_by_id("slyced"))
             .and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok())
         else {
-            js_failed("Página sem o elemento <canvas id=\"slyced\">.");
+            js_failed(tr!("Página sem o elemento <canvas id=\"slyced\">.", "The page has no <canvas id=\"slyced\"> element."));
             return;
         };
         let mut wgpu_options = eframe::egui_wgpu::WgpuConfiguration::default();
@@ -182,7 +206,7 @@ pub fn start() {
             .await;
         match result {
             Ok(()) => js_started(),
-            Err(e) => js_failed(&format!("Não foi possível iniciar o Slyced neste navegador: {e:?}")),
+            Err(e) => js_failed(&trf!("Não foi possível iniciar o Slyced neste navegador: {e:?}", "Slyced could not start in this browser: {e:?}")),
         }
     });
 }

@@ -12,16 +12,16 @@ pub struct AdapterReport {
 impl AdapterReport {
     pub fn line(&self) -> String {
         let kind = match self.info.device_type {
-            wgpu::DeviceType::DiscreteGpu => "GPU dedicada",
-            wgpu::DeviceType::IntegratedGpu => "GPU integrada",
-            wgpu::DeviceType::VirtualGpu => "GPU virtual",
+            wgpu::DeviceType::DiscreteGpu => tr!("GPU dedicada", "dedicated GPU"),
+            wgpu::DeviceType::IntegratedGpu => tr!("GPU integrada", "integrated GPU"),
+            wgpu::DeviceType::VirtualGpu => tr!("GPU virtual", "virtual GPU"),
             wgpu::DeviceType::Cpu => "software (CPU)",
-            wgpu::DeviceType::Other => "outro",
+            wgpu::DeviceType::Other => tr!("outro", "other"),
         };
         let status = match &self.device {
-            None => "não testado".to_string(),
+            None => tr!("não testado", "not tested").to_string(),
             Some(Ok(())) => "OK".to_string(),
-            Some(Err(e)) => format!("FALHOU: {e}"),
+            Some(Err(e)) => trf!("FALHOU: {e}", "FAILED: {e}"),
         };
         let driver = [self.info.driver.as_str(), self.info.driver_info.as_str()]
             .into_iter()

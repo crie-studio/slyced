@@ -38,7 +38,7 @@ fn walk(obj: &InMemDicomObject, depth: usize, rows: &mut Vec<TagRow>) {
         let value = if let Some(items) = e.items() {
             format!("{} item(s)", items.len())
         } else if matches!(vr, VR::OB | VR::OW | VR::OF | VR::OD | VR::OL | VR::OV | VR::UN) {
-            format!("<binário, {} bytes>", e.to_bytes().map(|b| b.len()).unwrap_or(0))
+            trf!("<binário, {} bytes>", "<binary, {} bytes>", e.to_bytes().map(|b| b.len()).unwrap_or(0))
         } else {
             e.to_str().map(|s| clean(&s)).unwrap_or_else(|_| "<?>".into())
         };
@@ -60,9 +60,9 @@ fn walk(obj: &InMemDicomObject, depth: usize, rows: &mut Vec<TagRow>) {
 
 fn name_of(tag: Tag) -> String {
     if tag.group() % 2 == 1 {
-        return "Privado".into();
+        return tr!("Privado", "Private").into();
     }
-    StandardDataDictionary.by_tag(tag).map(|e| e.alias().to_string()).unwrap_or_else(|| "Desconhecido".into())
+    StandardDataDictionary.by_tag(tag).map(|e| e.alias().to_string()).unwrap_or_else(|| tr!("Desconhecido", "Unknown").into())
 }
 
 fn clean(s: &str) -> String {

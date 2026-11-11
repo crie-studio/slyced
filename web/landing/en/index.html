@@ -36,12 +36,12 @@
       "@id": "__SITE__#software",
       "name": "Slyced",
       "alternateName": "Slyced DICOM Viewer",
-      "description": "Free, open-source DICOM viewer for Windows 7 to 11 and the browser: CT, MR, X-ray and ultrasound in 2D, MPR and 3D, with prior-study comparison and PACS. Studies are opened on the user's own computer. The interface is in Brazilian Portuguese.",
+      "description": "Free, open-source DICOM viewer for Windows 7 to 11 and the browser: CT, MR, X-ray and ultrasound in 2D, MPR and 3D, with prior-study comparison and PACS. Studies are opened on the user's own computer. The interface is in English and Brazilian Portuguese.",
       "applicationCategory": "MedicalApplication",
       "applicationSubCategory": "DICOM viewer",
       "operatingSystem": "Windows 7, Windows 8, Windows 10, Windows 11, web browser (WebAssembly)",
       "softwareVersion": "__VERSION__",
-      "inLanguage": "pt-BR",
+      "inLanguage": ["en", "pt-BR"],
       "isAccessibleForFree": true,
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "url": "__SITE__en/",
@@ -49,10 +49,10 @@
       "license": "https://github.com/crie-studio/slyced/blob/main/LICENSE-MIT",
       "sameAs": ["https://github.com/crie-studio/slyced", "__SITE__app/"],
       "screenshot": [
-        "__SITE__img/mpr.webp",
-        "__SITE__img/3d.webp",
-        "__SITE__img/comparacao.webp",
-        "__SITE__img/pacs.webp"
+        "__SITE__img/mpr-en.webp",
+        "__SITE__img/3d-en.webp",
+        "__SITE__img/comparison-en.webp",
+        "__SITE__img/pacs-en.webp"
       ],
       "featureList": [
         "Opens folders, CDs/DVDs with DICOMDIR and ZIP files without extracting them",
@@ -69,13 +69,13 @@
       "@type": "FAQPage",
       "inLanguage": "en",
       "mainEntity": [
-        { "@type": "Question", "name": "How do I open a CT or MRI CD on my computer?", "acceptedAnswer": { "@type": "Answer", "text": "Download Slyced, extract it and run Slyced.exe. Click Abrir pasta (Open folder) and pick the CD drive, or drag the CD folder onto the window: it finds the DICOMDIR and lists the studies, with nothing to install. Without a CD drive, copy the disc to a USB stick or a ZIP file, which Slyced opens without extracting." } },
+        { "@type": "Question", "name": "How do I open a CT or MRI CD on my computer?", "acceptedAnswer": { "@type": "Answer", "text": "Download Slyced, extract it and run Slyced.exe. Click Open folder and pick the CD drive, or drag the CD folder onto the window: it finds the DICOMDIR and lists the studies, with nothing to install. Without a CD drive, copy the disc to a USB stick or a ZIP file, which Slyced opens without extracting." } },
         { "@type": "Question", "name": "Is there a free DICOM viewer that runs on Windows 7?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Slyced has packages for Windows 7 SP1, 8 and 8.1, 64-bit and 32-bit, as well as Windows 10 and 11 (x64 and ARM64). It is free and open source." } },
-        { "@type": "Question", "name": "Can I view DICOM files in the browser without installing anything?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, with the experimental web version of Slyced at __SITE__app/. Files are read by the browser itself and never uploaded to any server. It does not support PACS or JPEG-LS yet." } },
+        { "@type": "Question", "name": "Can I view DICOM files in the browser without installing anything?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, with the experimental web version of Slyced at __SITE__app/?lang=en. Files are read by the browser itself and never uploaded to any server. It does not support PACS or JPEG-LS yet." } },
         { "@type": "Question", "name": "Does Slyced send my studies anywhere?", "acceptedAnswer": { "@type": "Answer", "text": "No. There is no telemetry, no account and no automatic update check. The program only connects to the PACS servers you set up, and only when you search or download a study." } },
         { "@type": "Question", "name": "Which studies and formats does Slyced open?", "acceptedAnswer": { "@type": "Answer", "text": "CT, MR, X-ray and ultrasound DICOM files from folders, CDs/DVDs with DICOMDIR and ZIP files. It reads uncompressed images and JPEG (including 12-bit and lossless), JPEG-LS, JPEG 2000 and RLE, multiframe and color." } },
         { "@type": "Question", "name": "Does Slyced do MPR and 3D?", "acceptedAnswer": { "@type": "Answer", "text": "Yes: axial, coronal and sagittal MPR with oblique planes and slab (MIP, MinIP or average), curved planar reformation (CPR) and GPU volume rendering with VR, MIP, MinIP and surface modes." } },
-        { "@type": "Question", "name": "Is Slyced available in English?", "acceptedAnswer": { "@type": "Answer", "text": "The interface is in Brazilian Portuguese for now. The workflow follows the usual conventions of DICOM viewers, and this page, the README summary and the source code are available in English." } },
+        { "@type": "Question", "name": "Is Slyced available in English?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The interface is in English and Brazilian Portuguese: it follows the language of Windows (or of the browser, in the web version) and can be changed at any time in Settings → Appearance. The user manual is in Portuguese for now." } },
         { "@type": "Question", "name": "Can I use Slyced for diagnosis?", "acceptedAnswer": { "@type": "Answer", "text": "Slyced is not certified as a medical device (ANVISA, FDA or CE). Use it to view and study images, not as the sole basis for a diagnosis." } }
       ]
     }
@@ -123,17 +123,17 @@
         <a class="btn primary magnetic" href="https://github.com/crie-studio/slyced/releases/latest">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg>
           Download for Windows</a>
-        <a class="btn magnetic" href="../app/">
+        <a class="btn magnetic" href="../app/?lang=en">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg>
           Open in the browser</a>
       </div>
-      <p class="cta-sub">No scan at hand? <a href="../app/?exemplo">Try it with a synthetic study →</a> The interface is in Brazilian Portuguese.</p>
+      <p class="cta-sub">No scan at hand? <a href="../app/?exemplo&amp;lang=en">Try it with a synthetic study →</a></p>
       <div class="chips"><span class="chip">Windows 7 · 8 · 10 · 11</span><span class="chip">x64 · ARM64 · 32-bit</span><span class="chip">WebGPU · WebGL2</span><span class="chip">MIT or Apache 2.0</span></div>
     </div>
     <div class="hero-visual" id="heroVisual">
       <div class="ring" aria-hidden="true"></div><div class="ring r2" aria-hidden="true"></div>
       <canvas id="vr" role="img" aria-label="Real-time volume rendering of a synthetic skull, with a cutaway showing the inside as on a CT scan"></canvas>
-      <img class="vr-fallback" src="../img/3d.webp" alt="Slyced volume rendering" width="1600" height="1000">
+      <img class="vr-fallback" src="../img/3d-en.webp" alt="Slyced volume rendering" width="1600" height="1000">
       <div class="vr-hud" aria-hidden="true">ray casting · <b id="fps">–</b> fps<br>synthetic phantom · <span id="vrMode">bone + cutaway</span></div>
       <div class="vr-hint" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/></svg>drag to rotate</div>
       <div class="vr-ui" role="group" aria-label="3D presets">
@@ -208,7 +208,7 @@
         </div>
       </div>
     </div>
-    <img class="mpr-fallback" src="../img/mpr.webp" alt="Slyced MPR with axial, coronal, sagittal and 3D views" width="1600" height="1000" loading="lazy">
+    <img class="mpr-fallback" src="../img/mpr-en.webp" alt="Slyced MPR with axial, coronal, sagittal and 3D views" width="1600" height="1000" loading="lazy">
   </div>
 </section>
 
@@ -225,21 +225,21 @@
         <div>
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M7 9l2 2-2 2M17 9l-2 2 2 2"/></svg></div>
           <h3>Study comparison</h3>
-          <p>Current and prior side by side, overlaid, as a curtain or a checkerboard, aligned automatically (by frame of reference, landmarks or mutual information), with the change in each measurement as a percentage.</p>
+          <p>Current and prior side by side, blended, with a swipe divider or as a checkerboard, aligned automatically (by frame of reference, landmarks or mutual information), with the change in each measurement as a percentage.</p>
         </div>
-        <figure class="shot" style="margin:0" data-full="../img/comparacao.webp" data-cap="Study comparison with a curtain"><img src="../img/comparacao.webp" alt="Study comparison with a curtain in Slyced" width="1600" height="1000" loading="lazy"></figure>
+        <figure class="shot" style="margin:0" data-full="../img/comparison-en.webp" data-cap="Study comparison with the swipe view"><img src="../img/comparison-en.webp" alt="Study comparison with the swipe view in Slyced" width="1600" height="1000" loading="lazy"></figure>
       </article>
       <article class="card wide reveal tilt" style="--i:1">
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/><path d="M12 8v4M5 16v-2h14v2"/></svg></div>
         <h3>Built-in PACS</h3>
         <p>C-FIND, C-GET and C-MOVE with a built-in receiver, or DICOMweb. Download queue, automatic cleanup and a timeline with every study of the patient.</p>
-        <figure class="shot" data-full="../img/pacs.webp" data-cap="Searching and downloading studies from the PACS"><img src="../img/pacs.webp" alt="Slyced PACS window" width="1600" height="1000" loading="lazy"></figure>
+        <figure class="shot" data-full="../img/pacs-en.webp" data-cap="Searching and downloading studies from the PACS"><img src="../img/pacs-en.webp" alt="Slyced PACS window" width="1600" height="1000" loading="lazy"></figure>
       </article>
       <article class="card wide reveal tilt" style="--i:2">
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5M12 12v10"/></svg></div>
         <h3>3D on the graphics card</h3>
         <p>VR with presets (bone, angio, skin, lung…), MIP, MinIP and surface; cropping and simple, realistic or cinematic lighting.</p>
-        <figure class="shot" data-full="../img/3d.webp" data-cap="Volume rendering with cinematic lighting"><img src="../img/3d.webp" alt="Volume rendering in Slyced" width="1600" height="1000" loading="lazy"></figure>
+        <figure class="shot" data-full="../img/3d-en.webp" data-cap="Volume rendering with cinematic lighting"><img src="../img/3d-en.webp" alt="Volume rendering in Slyced" width="1600" height="1000" loading="lazy"></figure>
       </article>
       <article class="card reveal tilt">
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="3"/></svg></div>
@@ -353,7 +353,7 @@
       <a class="pkg reveal" style="--i:1" href="https://github.com/crie-studio/slyced/releases/latest"><span class="arch">ARM64</span><span class="for">Windows 10 and 11 on Snapdragon</span><span class="file">Slyced-‹version›-arm64.zip</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
       <a class="pkg reveal" style="--i:2" href="https://github.com/crie-studio/slyced/releases/latest"><span class="arch">Win 7 · 64</span><span class="for">Windows 7 SP1, 8 and 8.1, 64-bit</span><span class="file">Slyced-‹version›-win7-x64.zip</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
       <a class="pkg reveal" style="--i:3" href="https://github.com/crie-studio/slyced/releases/latest"><span class="arch">Win 7 · 32</span><span class="for">Windows 7 SP1, 8 and 8.1, 32-bit</span><span class="file">Slyced-‹version›-win7-x86.zip</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
-      <a class="pkg web reveal" style="--i:4" href="../app/"><span class="arch">Browser</span><span class="for">Experimental web version: no PACS yet</span><span class="file">crie-studio.github.io/slyced/app</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+      <a class="pkg web reveal" style="--i:4" href="../app/?lang=en"><span class="arch">Browser</span><span class="for">Experimental web version: no PACS yet</span><span class="file">crie-studio.github.io/slyced/app</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
     </div>
     <p class="note reveal">The packages are not digitally signed yet: if Windows shows “Windows protected your PC”, click <b>More info → Run anyway</b>. Check the file against the release's <code>SHA256SUMS.txt</code>. Details in the <a href="https://github.com/crie-studio/slyced/blob/main/docs/MANUAL.md">manual</a> (Portuguese).</p>
   </div>
@@ -367,13 +367,13 @@
       <h2 class="reveal" style="--i:1">Frequently asked<br><span class="grad">questions.</span></h2>
     </div>
     <div class="faq">
-      <details class="reveal"><summary>How do I open a CT or MRI CD on my computer?</summary><p>Download Slyced, extract it and run <code>Slyced.exe</code>. Click <b>Abrir pasta</b> (Open folder) and pick the CD drive, or drag the CD folder onto the window: it finds the DICOMDIR and lists the studies, with nothing to install. Without a CD drive, copy the disc to a USB stick or a ZIP file, which Slyced opens without extracting.</p></details>
+      <details class="reveal"><summary>How do I open a CT or MRI CD on my computer?</summary><p>Download Slyced, extract it and run <code>Slyced.exe</code>. Click <b>Open folder</b> and pick the CD drive, or drag the CD folder onto the window: it finds the DICOMDIR and lists the studies, with nothing to install. Without a CD drive, copy the disc to a USB stick or a ZIP file, which Slyced opens without extracting.</p></details>
       <details class="reveal"><summary>Is there a free DICOM viewer that runs on Windows 7?</summary><p>Yes. Slyced has packages for Windows 7 SP1, 8 and 8.1, 64-bit and 32-bit, as well as Windows 10 and 11 (x64 and ARM64). It is free and open source.</p></details>
-      <details class="reveal"><summary>Can I view DICOM files in the browser without installing anything?</summary><p>Yes, with the <a href="../app/">experimental web version</a>. Files are read by the browser itself and never uploaded to any server. It does not support PACS or JPEG-LS yet.</p></details>
+      <details class="reveal"><summary>Can I view DICOM files in the browser without installing anything?</summary><p>Yes, with the <a href="../app/?lang=en">experimental web version</a>. Files are read by the browser itself and never uploaded to any server. It does not support PACS or JPEG-LS yet.</p></details>
       <details class="reveal"><summary>Does Slyced send my studies anywhere?</summary><p>No. There is no telemetry, no account and no automatic update check. The program only connects to the PACS servers you set up, and only when you search or download a study.</p></details>
       <details class="reveal"><summary>Which studies and formats does Slyced open?</summary><p>CT, MR, X-ray and ultrasound DICOM files from folders, CDs/DVDs with DICOMDIR and ZIP files. It reads uncompressed images and JPEG (including 12-bit and lossless), JPEG-LS, JPEG 2000 and RLE, multiframe and color.</p></details>
       <details class="reveal"><summary>Does Slyced do MPR and 3D?</summary><p>Yes: axial, coronal and sagittal MPR with oblique planes and slab (MIP, MinIP or average), curved planar reformation (CPR) and GPU volume rendering with VR, MIP, MinIP and surface modes.</p></details>
-      <details class="reveal"><summary>Is Slyced available in English?</summary><p>The interface is in Brazilian Portuguese for now. The workflow follows the usual conventions of DICOM viewers, and this page, the README summary and the source code are available in English.</p></details>
+      <details class="reveal"><summary>Is Slyced available in English?</summary><p>Yes. The interface is in English and Brazilian Portuguese: it follows the language of Windows (or of the browser, in the web version) and can be changed at any time in <b>Settings → Appearance</b>. The user manual is in Portuguese for now.</p></details>
       <details class="reveal"><summary>Can I use Slyced for diagnosis?</summary><p>Slyced is not certified as a medical device (ANVISA, FDA or CE). Use it to view and study images, not as the sole basis for a diagnosis.</p></details>
     </div>
   </div>

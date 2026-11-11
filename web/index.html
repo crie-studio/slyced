@@ -54,13 +54,14 @@
 <body>
 <canvas id="slyced"></canvas>
 <div id="status">
-  <h1>Slyced · visualizador DICOM no navegador</h1>
-  <p>Abra exames de TC, RM, RX e US de uma pasta, de um CD ou de um ZIP, com 2D, MPR e 3D, sem instalar nada.</p>
-  <div id="msg">Carregando o Slyced…</div>
-  <small>Os exames abertos aqui não saem deste computador.</small>
-  <small>Versão experimental. Sem certificação como dispositivo médico: não utilize como única base para diagnóstico.</small>
-  <small><a href="../">Conheça o Slyced</a> · <a href="https://github.com/crie-studio/slyced/releases/latest">versão para Windows</a></small>
-  <noscript><p>O Slyced precisa de JavaScript e WebAssembly. Veja a <a href="../">página do projeto</a>.</p></noscript>
+  <h1 data-en="Slyced · DICOM viewer in the browser">Slyced · visualizador DICOM no navegador</h1>
+  <p data-en="Open CT, MR, X-ray and ultrasound studies from a folder, a CD or a ZIP, in 2D, MPR and 3D, without installing anything.">Abra exames de TC, RM, RX e US de uma pasta, de um CD ou de um ZIP, com 2D, MPR e 3D, sem instalar nada.</p>
+  <div id="msg" data-en="Loading Slyced…">Carregando o Slyced…</div>
+  <small data-en="Studies opened here never leave this computer.">Os exames abertos aqui não saem deste computador.</small>
+  <small data-en="Experimental version. Not certified as a medical device: do not use it as the sole basis for diagnosis.">Versão experimental. Sem certificação como dispositivo médico: não utilize como única base para diagnóstico.</small>
+  <small><a href="../" data-en="About Slyced" data-en-href="../en/">Conheça o Slyced</a> · <a href="https://github.com/crie-studio/slyced/releases/latest" data-en="Windows version">versão para Windows</a></small>
+  <noscript><p>O Slyced precisa de JavaScript e WebAssembly. Veja a <a href="../">página do projeto</a>.<br>
+    Slyced needs JavaScript and WebAssembly. See the <a href="../en/">project page</a>.</p></noscript>
 </div>
 <div id="leitura"></div>
 <script type="module">
@@ -70,13 +71,29 @@ const status = document.getElementById('status');
 const leitura = document.getElementById('leitura');
 const aviso = texto => { leitura.textContent = texto; leitura.style.display = texto ? 'block' : 'none'; };
 
+// Interface language: ?lang=pt|en in the address (links from the English page), else the
+// choice made in Configurações on an earlier visit, else "auto" (the browser's language:
+// Portuguese for pt-*, English for the others). The viewer reads the same choice.
+const IDIOMA = 'slyced.idioma';
+const lerSalvo = () => { try { return localStorage.getItem(IDIOMA); } catch { return null; } };
+const parametroIdioma = new URLSearchParams(location.search).get('lang');
+let escolhaIdioma = parametroIdioma || lerSalvo() || 'auto';
+const idiomaNavegador = navigator.language || (navigator.languages || [])[0] || '';
+const ingles = /^en/i.test(escolhaIdioma) || (!/^pt/i.test(escolhaIdioma) && idiomaNavegador !== '' && !/^pt/i.test(idiomaNavegador));
+const t = (pt, en) => ingles ? en : pt;
+if (ingles) {
+  document.documentElement.lang = 'en';
+  for (const el of status.querySelectorAll('[data-en]')) el.textContent = el.dataset.en;
+  for (const el of status.querySelectorAll('[data-en-href]')) el.href = el.dataset.enHref;
+}
+
 // Hands a batch of { path, file } to the viewer, which scans and opens it.
 async function entregar(itens) {
   if (!itens.length) return aviso('');
   const pasta = wasm.slyced_begin();
   let n = 0;
   for (const { path, file } of itens) {
-    aviso(`Lendo arquivos: ${++n} de ${itens.length}`);
+    aviso(t(`Lendo arquivos: ${++n} de ${itens.length}`, `Reading files: ${++n} of ${itens.length}`));
     wasm.slyced_add_file(pasta, path, new Uint8Array(await file.arrayBuffer()));
   }
   aviso('');
@@ -115,7 +132,7 @@ addEventListener('drop', async e => {
   e.stopPropagation();
   const entradas = [...e.dataTransfer.items].map(i => i.webkitGetAsEntry?.()).filter(Boolean);
   const itens = [];
-  aviso('Procurando arquivos…');
+  aviso(t('Procurando arquivos…', 'Looking for files…'));
   for (const entrada of entradas) await lerEntrada(entrada, itens);
   await entregar(itens);
 }, true);
@@ -126,7 +143,7 @@ async function abrirExemplo() {
   if (!parametros.has('exemplo')) return;
   const url = new URL(parametros.get('exemplo') || 'exemplo/fantoma.zip', location.href);
   if (url.origin !== location.origin) return;
-  aviso('Baixando o exame de exemplo…');
+  aviso(t('Baixando o exame de exemplo…', 'Downloading the sample study…'));
   const resposta = await fetch(url);
   if (!resposta.ok) return aviso('');
   await entregar([{ path: url.pathname.split('/').pop(), file: await resposta.blob() }]);
@@ -137,11 +154,23 @@ window.slyced = {
   download: baixar,
   failed: mensagem => { status.classList.add('erro'); document.getElementById('msg').textContent = mensagem; },
   started: () => { status.remove(); abrirExemplo(); },
+  language: () => escolhaIdioma,
+  browserLanguage: () => idiomaNavegador,
+  // A choice made in Configurações wins over ?lang= from now on.
+  rememberLanguage: codigo => {
+    escolhaIdioma = codigo;
+    try { localStorage.setItem(IDIOMA, codigo); } catch { /* private mode: lasts for this visit */ }
+    if (parametroIdioma !== null) {
+      const url = new URL(location.href);
+      url.searchParams.delete('lang');
+      history.replaceState(null, '', url);
+    }
+  },
 };
 try {
   await init();
 } catch (e) {
-  slyced.failed('Este navegador não conseguiu carregar o Slyced: ' + e);
+  slyced.failed(t('Este navegador não conseguiu carregar o Slyced: ', 'This browser could not load Slyced: ') + e);
 }
 </script>
 </body>

@@ -27,7 +27,7 @@ impl SlycedApp {
             return;
         }
         if self.library.studies.is_empty() {
-            self.toast(ToastKind::Info, "Abra um exame para usar a tela cheia de leitura.");
+            self.toast(ToastKind::Info, tr!("Abra um exame para usar a tela cheia de leitura.", "Open a study to use reading full screen."));
             return;
         }
         self.reading = true;
@@ -35,7 +35,13 @@ impl SlycedApp {
         self.reading_since = self.time;
         self.reading_drawer = false;
         ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(true));
-        self.toast(ToastKind::Info, "Tela cheia de leitura: mexa o mouse para ver os controles; Esc ou F11 sai.");
+        self.toast(
+            ToastKind::Info,
+            tr!(
+                "Tela cheia de leitura: mexa o mouse para ver os controles; Esc ou F11 sai.",
+                "Reading full screen: move the mouse to see the controls; Esc or F11 exits."
+            ),
+        );
     }
 
     pub(crate) fn leave_reading(&mut self, ctx: &egui::Context) {
@@ -132,7 +138,7 @@ impl SlycedApp {
         egui::Area::new(Id::unique("reading-exit")).order(egui::Order::Foreground).anchor(Align2::RIGHT_TOP, vec2(-14.0, 14.0)).show(ctx, |ui| {
             ui.multiply_opacity(alpha);
             Frame::new().fill(with_alpha(pal().bg_panel, 235)).stroke(Stroke::new(1.0, pal().border_strong)).corner_radius(18).inner_margin(Margin::same(2)).show(ui, |ui| {
-                if icon_button_sized(ui, icons::CORNERS_IN, "Sair da tela cheia (Esc ou F11)", false, 30.0).clicked() {
+                if icon_button_sized(ui, icons::CORNERS_IN, tr!("Sair da tela cheia (Esc ou F11)", "Exit full screen (Esc or F11)"), false, 30.0).clicked() {
                     let ctx = ui.ctx().clone();
                     self.leave_reading(&ctx);
                 }
@@ -159,12 +165,12 @@ impl SlycedApp {
                 .iter()
                 .find(|p| p.window.is_some() && p.window == window)
                 .or_else(|| CT_PRESETS.iter().find(|p| p.window.is_none() && default == window))
-                .map_or("Janela", |p| p.name);
-            let resp = text_button(ui, &format!("{name}  {}", icons::CARET_UP), "Predefinições de janela (teclas 1 … 0)");
+                .map_or(tr!("Janela", "Window"), |p| p.name.get());
+            let resp = text_button(ui, &format!("{name}  {}", icons::CARET_UP), tr!("Predefinições de janela (teclas 1 … 0)", "Window presets (keys 1 … 0)"));
             let mut pick = None;
             egui::Popup::menu(&resp).width(210.0).show(|ui| {
                 for (i, p) in CT_PRESETS.iter().enumerate() {
-                    if ui.add(egui::Button::new(p.name).shortcut_text(p.key).selected(p.name == name)).clicked() {
+                    if ui.add(egui::Button::new(p.name.get()).shortcut_text(p.key).selected(p.name.get() == name)).clicked() {
                         pick = Some(i);
                     }
                 }
@@ -190,7 +196,8 @@ impl SlycedApp {
         }
         let spaces = [(Workspace::Viewer, "2D"), (Workspace::Mpr, "MPR"), (Workspace::Volume, "3D"), (Workspace::Compare, "A|B")];
         let current = spaces.iter().find(|s| s.0 == self.workspace).map_or("2D", |s| s.1);
-        let resp = text_button(ui, &format!("{current}  {}", icons::CARET_UP), "Espaço de trabalho: 2D, MPR, 3D ou comparação");
+        let tip = tr!("Espaço de trabalho: 2D, MPR, 3D ou comparação", "Workspace: 2D, MPR, 3D or comparison");
+        let resp = text_button(ui, &format!("{current}  {}", icons::CARET_UP), tip);
         let mut switch = None;
         egui::Popup::menu(&resp).width(150.0).show(|ui| {
             for (ws, label) in spaces {
@@ -204,33 +211,33 @@ impl SlycedApp {
         }
         bar_separator(ui);
 
-        let resp = icon_button_sized(ui, icons::DOTS_THREE, "Mais", false, 32.0);
+        let resp = icon_button_sized(ui, icons::DOTS_THREE, tr!("Mais", "More"), false, 32.0);
         egui::Popup::menu(&resp).width(290.0).show(|ui| {
             let item = |ui: &mut Ui, icon: &str, text: &str, keys: &str| ui.add(egui::Button::new(format!("{icon}  {text}")).shortcut_text(keys)).clicked();
-            if item(ui, icons::ARROWS_VERTICAL, "Ir para corte ou posição…", "Ctrl+G") {
+            if item(ui, icons::ARROWS_VERTICAL, tr!("Ir para corte ou posição…", "Go to slice or position…"), "Ctrl+G") {
                 self.open_goto();
             }
-            if item(ui, icons::PLAY, "Cine", "Espaço")
+            if item(ui, icons::PLAY, "Cine", tr!("Espaço", "Space"))
                 && let Some(v) = self.active_view_mut() {
                     v.cine = !v.cine;
                 }
-            if item(ui, icons::CIRCLE_HALF, "Inverter", "I")
+            if item(ui, icons::CIRCLE_HALF, tr!("Inverter", "Invert"), "I")
                 && let Some(v) = self.active_view_mut() {
                     v.invert = !v.invert;
                 }
-            if item(ui, icons::ARROW_COUNTER_CLOCKWISE, "Restaurar visualização", "R")
+            if item(ui, icons::ARROW_COUNTER_CLOCKWISE, tr!("Restaurar visualização", "Reset view"), "R")
                 && let Some(v) = self.active_view_mut() {
                     v.reset_view();
                 }
-            if item(ui, icons::ARROWS_CLOCKWISE, "Restaurar tudo", "Shift+R") {
+            if item(ui, icons::ARROWS_CLOCKWISE, tr!("Restaurar tudo", "Reset all"), "Shift+R") {
                 self.reset_screen();
             }
-            if item(ui, icons::COPY, "Copiar imagem", "Ctrl+C") {
+            if item(ui, icons::COPY, tr!("Copiar imagem", "Copy image"), "Ctrl+C") {
                 let ctx = ui.ctx().clone();
                 self.export_view(&ctx, true);
             }
             ui.separator();
-            ui.label(egui::RichText::new("Informações sobre a imagem (Ctrl+I)").small().color(pal().text_faint));
+            ui.label(egui::RichText::new(tr!("Informações sobre a imagem (Ctrl+I)", "Image information (Ctrl+I)")).small().color(pal().text_faint));
             ui.horizontal(|ui| {
                 for level in InfoLevel::ALL {
                     if ui.selectable_label(self.settings.reading_info == level, level.label()).clicked() {
@@ -239,13 +246,14 @@ impl SlycedApp {
                 }
             });
             ui.separator();
-            if item(ui, icons::SIDEBAR_SIMPLE, "Lista de exames (ou encoste o mouse à esquerda)", "Tab") {
+            let drawer = tr!("Lista de exames (ou encoste o mouse à esquerda)", "Study list (or move the mouse to the left edge)");
+            if item(ui, icons::SIDEBAR_SIMPLE, drawer, "Tab") {
                 self.pin_drawer(true);
             }
-            if item(ui, icons::GEAR_SIX, "Configurações", "") {
+            if item(ui, icons::GEAR_SIX, tr!("Configurações", "Settings"), "") {
                 self.show_settings = true;
             }
-            if item(ui, icons::CORNERS_IN, "Sair da tela cheia", "Esc") {
+            if item(ui, icons::CORNERS_IN, tr!("Sair da tela cheia", "Exit full screen"), "Esc") {
                 let ctx = ui.ctx().clone();
                 self.leave_reading(&ctx);
             }
@@ -257,7 +265,7 @@ impl SlycedApp {
     pub(crate) fn cycle_info(&mut self) {
         if self.reading {
             self.settings.reading_info = self.settings.reading_info.next();
-            self.toast(ToastKind::Info, format!("Informações sobre a imagem: {}", self.settings.reading_info.label().to_lowercase()));
+            self.toast(ToastKind::Info, trf!("Informações sobre a imagem: {}", "Image information: {}", self.settings.reading_info.label().to_lowercase()));
         } else {
             self.settings.overlays = !self.settings.overlays;
         }

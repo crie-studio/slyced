@@ -87,18 +87,20 @@ impl SlycedApp {
                     vsep(ui);
 
                     let open_x = ui.cursor().left();
+                    let folder_tip = tr!("Abrir pasta com exames DICOM (Ctrl+O)", "Open folder with DICOM studies (Ctrl+O)");
                     if compact {
                         // Narrow bar: one icon each (the recent list is in the exams panel menu).
-                        if icon_button(ui, icons::FOLDER_OPEN, "Abrir pasta com exames DICOM (Ctrl+O)", false).clicked() {
+                        if icon_button(ui, icons::FOLDER_OPEN, folder_tip, false).clicked() {
                             self.open_folder_dialog();
                         }
-                        if icon_button(ui, icons::FILES, "Abrir arquivos DICOM, ZIP ou DICOMDIR (Ctrl+Shift+O)", false).clicked() {
+                        let files_tip = tr!("Abrir arquivos DICOM, ZIP ou DICOMDIR (Ctrl+Shift+O)", "Open DICOM files, ZIP or DICOMDIR (Ctrl+Shift+O)");
+                        if icon_button(ui, icons::FILES, files_tip, false).clicked() {
                             self.open_files_dialog();
                         }
                     } else {
                         // Wide bar: "Abrir" opens a folder; its arrow shows files and recent exams.
-                        let (main, arrow) = split_button(ui, icons::FOLDER_OPEN, "Abrir");
-                        if main.on_hover_text("Abrir pasta com exames DICOM (Ctrl+O)").clicked() {
+                        let (main, arrow) = split_button(ui, icons::FOLDER_OPEN, tr!("Abrir", "Open"));
+                        if main.on_hover_text(folder_tip).clicked() {
                             self.open_folder_dialog();
                         }
                         self.open_requested_menu(ui, "open", &arrow);
@@ -106,12 +108,12 @@ impl SlycedApp {
                     }
                     let row = bar.y_range().shrink(10.0);
                     self.tour_targets[0] = Rect::from_x_y_ranges(open_x..=ui.cursor().left() - 4.0, row);
-                    let pacs = top_button(ui, icons::NETWORK, "PACS", "Pesquisar e baixar exames do PACS");
+                    let pacs = top_button(ui, icons::NETWORK, "PACS", tr!("Pesquisar e baixar exames do PACS", "Search and download studies from the PACS"));
                     self.tour_targets[1] = pacs.rect;
                     if pacs.clicked() {
                         self.pacs.open = true;
                     }
-                    let protocols = top_button(ui, icons::CLIPBOARD_TEXT, "Protocolos", "Protocolos de leitura");
+                    let protocols = top_button(ui, icons::CLIPBOARD_TEXT, tr!("Protocolos", "Protocols"), tr!("Protocolos de leitura", "Reading protocols"));
                     egui::Popup::menu(&protocols).width(280.0).show(|ui| self.protocols_menu(ui));
                     vsep(ui);
 
@@ -123,60 +125,67 @@ impl SlycedApp {
                         self.tour_targets[2] = Rect::from_x_y_ranges(tools_x..=ui.cursor().left() - 4.0, row);
                         vsep(ui);
                         let inverted = self.active_view().is_some_and(|v| v.invert);
-                        let transform = icon_button(ui, icons::FLIP_HORIZONTAL, "Girar, espelhar e inverter", inverted);
+                        let transform = icon_button(ui, icons::FLIP_HORIZONTAL, tr!("Girar, espelhar e inverter", "Rotate, flip and invert"), inverted);
                         egui::Popup::menu(&transform).width(220.0).show(|ui| {
                             let Some(v) = self.active_view_mut() else { return };
-                            if ui.button(format!("{}  Girar 90° à direita", icons::ARROW_CLOCKWISE)).clicked() {
+                            if ui.button(trf!("{}  Girar 90° à direita", "{}  Rotate 90° right", icons::ARROW_CLOCKWISE)).clicked() {
                                 v.rot = (v.rot + 1) % 4;
                             }
-                            if ui.button(format!("{}  Girar 90° à esquerda", icons::ARROW_COUNTER_CLOCKWISE)).clicked() {
+                            if ui.button(trf!("{}  Girar 90° à esquerda", "{}  Rotate 90° left", icons::ARROW_COUNTER_CLOCKWISE)).clicked() {
                                 v.rot = (v.rot + 3) % 4;
                             }
-                            if ui.button(format!("{}  Espelhar horizontal", icons::FLIP_HORIZONTAL)).clicked() {
+                            if ui.button(trf!("{}  Espelhar horizontal", "{}  Flip horizontal", icons::FLIP_HORIZONTAL)).clicked() {
                                 v.flip_h = !v.flip_h;
                             }
-                            if ui.button(format!("{}  Espelhar vertical", icons::FLIP_VERTICAL)).clicked() {
+                            if ui.button(trf!("{}  Espelhar vertical", "{}  Flip vertical", icons::FLIP_VERTICAL)).clicked() {
                                 v.flip_v = !v.flip_v;
                             }
-                            if ui.button(format!("{}  Inverter cores (I)", icons::DROP_HALF)).clicked() {
+                            if ui.button(trf!("{}  Inverter cores (I)", "{}  Invert colors (I)", icons::DROP_HALF)).clicked() {
                                 v.invert = !v.invert;
                             }
                         });
                         let playing = self.active_view().is_some_and(|v| v.cine);
-                        let (icon, tip) = if playing { (icons::PAUSE, "Pausar cine (Espaço)") } else { (icons::PLAY, "Cine (Espaço)") };
+                        let (icon, tip) = if playing {
+                            (icons::PAUSE, tr!("Pausar cine (Espaço)", "Pause cine (Space)"))
+                        } else {
+                            (icons::PLAY, tr!("Cine (Espaço)", "Cine (Space)"))
+                        };
                         if self.workspace == Workspace::Viewer && icon_button(ui, icon, tip, playing).clicked()
                             && let Some(v) = self.active_view_mut() {
                                 v.cine = !v.cine;
                             }
                     } else {
                         ui.label(
-                            RichText::new("Esquerdo: girar · Direito: ajustar · Shift/meio: mover · Roda, Ctrl+arrastar ou +/−: zoom")
-                                .color(pal().text_faint)
-                                .size(12.0),
+                            RichText::new(tr!(
+                                "Esquerdo: girar · Direito: ajustar · Shift/meio: mover · Roda, Ctrl+arrastar ou +/−: zoom",
+                                "Left: rotate · Right: adjust · Shift/middle: pan · Wheel, Ctrl+drag or +/−: zoom"
+                            ))
+                            .color(pal().text_faint)
+                            .size(12.0),
                         );
                     }
                     let undo_x = ui.cursor().left();
                     ui.add_enabled_ui(self.history.can_undo(), |ui| {
-                        if icon_button(ui, icons::ARROW_U_UP_LEFT, "Desfazer (Ctrl+Z)", false).clicked() {
+                        if icon_button(ui, icons::ARROW_U_UP_LEFT, tr!("Desfazer (Ctrl+Z)", "Undo (Ctrl+Z)"), false).clicked() {
                             self.undo();
                         }
                     });
                     ui.add_enabled_ui(self.history.can_redo(), |ui| {
-                        if icon_button(ui, icons::ARROW_U_UP_RIGHT, "Refazer (Ctrl+Y)", false).clicked() {
+                        if icon_button(ui, icons::ARROW_U_UP_RIGHT, tr!("Refazer (Ctrl+Y)", "Redo (Ctrl+Y)"), false).clicked() {
                             self.redo();
                         }
                     });
-                    let reset_tip = "Restaurar: visualização, medidas, realces… (R, Shift+R)";
+                    let reset_tip = tr!("Restaurar: visualização, medidas, realces… (R, Shift+R)", "Reset: view, measurements, highlights… (R, Shift+R)");
                     let reset = if compact {
                         icon_button(ui, icons::ARROW_COUNTER_CLOCKWISE, reset_tip, false)
                     } else {
-                        ghost_button(ui, icons::ARROW_COUNTER_CLOCKWISE, &format!("Restaurar  {}", icons::CARET_DOWN)).on_hover_text(reset_tip)
+                        ghost_button(ui, icons::ARROW_COUNTER_CLOCKWISE, &trf!("Restaurar  {}", "Reset  {}", icons::CARET_DOWN)).on_hover_text(reset_tip)
                     };
                     count_badge(ui, reset.rect, self.screen_changes().len());
                     self.tour_targets[3] = Rect::from_x_y_ranges(undo_x..=reset.rect.right(), row);
                     self.open_requested_menu(ui, "reset", &reset);
                     egui::Popup::menu(&reset).width(340.0).show(|ui| self.reset_menu(ui));
-                    if icon_button(ui, icons::CAMERA, "Salvar imagem (PNG)", false).clicked() {
+                    if icon_button(ui, icons::CAMERA, tr!("Salvar imagem (PNG)", "Save image (PNG)"), false).clicked() {
                         let ctx = ui.ctx().clone();
                         self.export_active(&ctx);
                     }
@@ -184,15 +193,15 @@ impl SlycedApp {
                     let left_end = ui.min_rect().right();
                     let right_width = ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
                         ui.spacing_mut().item_spacing.x = 4.0;
-                        let gear = icon_button(ui, icons::GEAR_SIX, "Configurações", self.show_settings);
+                        let gear = icon_button(ui, icons::GEAR_SIX, tr!("Configurações", "Settings"), self.show_settings);
                         self.tour_targets[4] = gear.rect;
                         if gear.clicked() {
                             self.show_settings = !self.show_settings;
                         }
-                        if icon_button(ui, icons::QUESTION, "Atalhos (F1)", self.show_help).clicked() {
+                        if icon_button(ui, icons::QUESTION, tr!("Atalhos (F1)", "Shortcuts (F1)"), self.show_help).clicked() {
                             self.show_help = !self.show_help;
                         }
-                        if icon_button(ui, icons::SIDEBAR_SIMPLE, "Painel lateral", self.right_open).clicked() {
+                        if icon_button(ui, icons::SIDEBAR_SIMPLE, tr!("Painel lateral", "Side panel"), self.right_open).clicked() {
                             self.right_open = !self.right_open;
                         }
                         self.view_mode_buttons(ui);
@@ -208,7 +217,7 @@ impl SlycedApp {
                                     (Workspace::Viewer, icons::IMAGE, "2D"),
                                     (Workspace::Mpr, icons::SQUARES_FOUR, "MPR"),
                                     (Workspace::Volume, icons::CUBE, "3D"),
-                                    (Workspace::Compare, icons::COLUMNS, "Comparar"),
+                                    (Workspace::Compare, icons::COLUMNS, tr!("Comparar", "Compare")),
                                 ]
                             },
                         ) {
@@ -216,8 +225,9 @@ impl SlycedApp {
                         }
                         if self.workspace == Workspace::Viewer {
                             ui.add_space(6.0);
+                            let sync = tr!("Sincronizar navegação entre janelas do mesmo estudo", "Sync scrolling between viewports of the same study");
                             if self.layout.count() > 1
-                                && icon_button(ui, icons::LINK, "Sincronizar navegação entre janelas do mesmo estudo", self.sync_scroll).clicked()
+                                && icon_button(ui, icons::LINK, sync, self.sync_scroll).clicked()
                             {
                                 self.sync_scroll = !self.sync_scroll;
                             }
@@ -253,17 +263,17 @@ impl SlycedApp {
         let item = |ui: &mut Ui, icon: &str, text: &str, keys: &str| {
             ui.add(egui::Button::new(format!("{icon}  {text}")).shortcut_text(keys).min_size(vec2(280.0, 28.0))).clicked()
         };
-        if item(ui, icons::FOLDER_OPEN, "Pasta…", "Ctrl+O") {
+        if item(ui, icons::FOLDER_OPEN, tr!("Pasta…", "Folder…"), "Ctrl+O") {
             self.open_folder_dialog();
             ui.close();
         }
-        if item(ui, icons::FILES, "Arquivos ou ZIP…", "Ctrl+Shift+O") {
+        if item(ui, icons::FILES, tr!("Arquivos ou ZIP…", "Files or ZIP…"), "Ctrl+Shift+O") {
             self.open_files_dialog();
             ui.close();
         }
         if !self.settings.recent.is_empty() {
             ui.separator();
-            ui.label(RichText::new("Recentes").small().color(pal().text_faint));
+            ui.label(RichText::new(tr!("Recentes", "Recent")).small().color(pal().text_faint));
             for r in self.settings.recent.clone() {
                 if recent_button(ui, &r).clicked() {
                     self.open_paths(vec![r], true);
@@ -283,7 +293,7 @@ impl SlycedApp {
             Workspace::Compare => reading.push(Tool::Landmark),
             Workspace::Volume => {}
         }
-        [("Navegar", "nav", nav), ("Medir", "measure", Tool::MEASURE.to_vec()), ("Leitura", "reading", reading)]
+        [(tr!("Navegar", "Navigate"), "nav", nav), (tr!("Medir", "Measure"), "measure", Tool::MEASURE.to_vec()), (tr!("Leitura", "Reading"), "reading", reading)]
     }
 
     /// Navigation tools one by one, then Medir and Leitura: the main part picks the group's last tool,
@@ -305,7 +315,8 @@ impl SlycedApp {
             }
             let shown = if tools.contains(&self.group_tool[g]) { self.group_tool[g] } else { tools[0] };
             let (main, arrow) = tool_split(ui, ("group", g), shown.icon(), (!compact).then_some(name), tools.contains(&self.tool));
-            if main.on_hover_text(format!("{name}: {} ({}) — a seta mostra as outras ferramentas", shown.name(), shown.key())).clicked() {
+            let tip = trf!("{name}: {} ({}) — a seta mostra as outras ferramentas", "{name}: {} ({}) — the arrow shows the other tools", shown.name(), shown.key());
+            if main.on_hover_text(tip).clicked() {
                 self.tool = shown;
             }
             self.open_requested_menu(ui, key, &arrow);
@@ -320,8 +331,12 @@ impl SlycedApp {
                 }
                 if g == 1 {
                     ui.separator();
-                    let button = egui::Button::new(format!("{}  Volume por 3 diâmetros", icons::SPHERE)).min_size(vec2(300.0, 28.0));
-                    if ui.add(button).on_hover_text("Elipsoide: meça largura, profundidade e altura; mostra o volume em mL e a densidade média").clicked() {
+                    let button = egui::Button::new(trf!("{}  Volume por 3 diâmetros", "{}  Volume from 3 diameters", icons::SPHERE)).min_size(vec2(300.0, 28.0));
+                    let tip = tr!(
+                        "Elipsoide: meça largura, profundidade e altura; mostra o volume em mL e a densidade média",
+                        "Ellipsoid: measure width, depth and height; shows the volume in mL and the mean density"
+                    );
+                    if ui.add(button).on_hover_text(tip).clicked() {
                         self.open_ellipsoid();
                         ui.close();
                     }
@@ -357,7 +372,7 @@ impl SlycedApp {
                         let (found, parsed) = (scan.found.load(Ordering::Relaxed), scan.parsed.load(Ordering::Relaxed));
                         let (rect, _) = ui.allocate_exact_size(vec2(14.0, 14.0), Sense::hover());
                         spinner(ui.painter(), rect.center(), 5.0, self.time, pal().accent);
-                        ui.label(small(&format!("Lendo arquivos… {parsed} / {found}"), pal().text_dim));
+                        ui.label(small(&trf!("Lendo arquivos… {parsed} / {found}", "Reading files… {parsed} / {found}"), pal().text_dim));
                     } else {
                         // Pixel readout in a fixed slot, then how to use the active tool.
                         let start = ui.cursor().left();
@@ -380,19 +395,20 @@ impl SlycedApp {
                         super::credit::author_badge(ui, 20.0);
                         let version = ui
                             .add(egui::Label::new(small(&format!("v{}", crate::config::APP_VERSION), pal().text_faint)).sense(Sense::click()))
-                            .on_hover_text("Sobre o Slyced");
+                            .on_hover_text(tr!("Sobre o Slyced", "About Slyced"));
                         if version.clicked() {
                             self.show_about = true;
                         }
                         ui.label(small(&format!("{}  {}", icons::CPU, self.adapter), pal().text_faint));
                         self.downloads_indicator(ui);
                         let mem = self.memory_used() as f64 / (1024.0 * 1024.0 * 1024.0);
-                        ui.label(small(&format!("{}  {:.2} GB", icons::HARD_DRIVES, mem), pal().text_faint));
+                        ui.label(small(&format!("{}  {} GB", icons::HARD_DRIVES, crate::i18n::num(mem, 2)), pal().text_faint));
                         if let Some(scp) = &self.scp {
                             ui.label(small(&format!("● SCP {}:{}", scp.ae_title, scp.port), SUCCESS));
                         }
                         if self.paths.portable {
-                            ui.label(small("modo portátil", pal().text_faint)).on_hover_text(format!("Dados em {}", self.paths.root.display()));
+                            let tip = trf!("Dados em {}", "Data in {}", self.paths.root.display());
+                            ui.label(small(tr!("modo portátil", "portable mode"), pal().text_faint)).on_hover_text(tip);
                         }
                     });
                 });
@@ -415,23 +431,23 @@ impl SlycedApp {
         let mut action: Option<BrowserAction> = None;
         let mut timeline_action = None;
         ui.horizontal(|ui| {
-            ui.label(RichText::new("Exames").font(font_bold(15.0)).color(pal().text));
+            ui.label(RichText::new(tr!("Exames", "Studies")).font(font_bold(15.0)).color(pal().text));
             if !self.library.studies.is_empty() {
                 badge(ui, &self.library.studies.len().to_string(), pal().text_dim);
             }
             ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                let menu = icon_button_sized(ui, icons::DOTS_THREE, "Mais opções", false, 28.0);
+                let menu = icon_button_sized(ui, icons::DOTS_THREE, tr!("Mais opções", "More options"), false, 28.0);
                 self.open_requested_menu(ui, "exams", &menu);
                 egui::Popup::menu(&menu).width(250.0).show(|ui| {
-                    if ui.button(format!("{}  Expandir todos", icons::CARET_DOWN)).clicked() {
+                    if ui.button(trf!("{}  Expandir todos", "{}  Expand all", icons::CARET_DOWN)).clicked() {
                         action = Some(BrowserAction::ExpandAll);
                     }
-                    if ui.button(format!("{}  Recolher todos", icons::CARET_RIGHT)).clicked() {
+                    if ui.button(trf!("{}  Recolher todos", "{}  Collapse all", icons::CARET_RIGHT)).clicked() {
                         action = Some(BrowserAction::CollapseAll);
                     }
                     if !self.settings.recent.is_empty() {
                         ui.separator();
-                        ui.label(RichText::new("Abertos recentemente").small().color(pal().text_faint));
+                        ui.label(RichText::new(tr!("Abertos recentemente", "Recently opened")).small().color(pal().text_faint));
                         for r in &self.settings.recent {
                             if recent_button(ui, r).clicked() {
                                 action = Some(BrowserAction::OpenPath(r.clone()));
@@ -439,24 +455,28 @@ impl SlycedApp {
                         }
                     }
                     ui.separator();
-                    if ui.button(format!("{}  Fechar todos os exames", icons::X_CIRCLE)).clicked() {
+                    if ui.button(trf!("{}  Fechar todos os exames", "{}  Close all studies", icons::X_CIRCLE)).clicked() {
                         action = Some(BrowserAction::CloseAll);
                     }
                 });
-                let (icon, tip) = if self.browser_grid { (icons::LIST_BULLETS, "Mostrar séries em lista") } else { (icons::SQUARES_FOUR, "Mostrar séries em grade") };
+                let (icon, tip) = if self.browser_grid {
+                    (icons::LIST_BULLETS, tr!("Mostrar séries em lista", "Show series as a list"))
+                } else {
+                    (icons::SQUARES_FOUR, tr!("Mostrar séries em grade", "Show series as a grid"))
+                };
                 if icon_button_sized(ui, icon, tip, false, 28.0).clicked() {
                     self.browser_grid = !self.browser_grid;
                 }
-                if icon_button_sized(ui, icons::FILES, "Abrir arquivo (Ctrl+Shift+O)", false, 28.0).clicked() {
+                if icon_button_sized(ui, icons::FILES, tr!("Abrir arquivo (Ctrl+Shift+O)", "Open file (Ctrl+Shift+O)"), false, 28.0).clicked() {
                     self.open_files_dialog();
                 }
-                if icon_button_sized(ui, icons::FOLDER_OPEN, "Abrir pasta (Ctrl+O)", false, 28.0).clicked() {
+                if icon_button_sized(ui, icons::FOLDER_OPEN, tr!("Abrir pasta (Ctrl+O)", "Open folder (Ctrl+O)"), false, 28.0).clicked() {
                     self.open_folder_dialog();
                 }
             });
         });
         ui.add_space(6.0);
-        search_box(ui, &mut self.search, "Buscar paciente, ID, descrição…");
+        search_box(ui, &mut self.search, tr!("Buscar paciente, ID, descrição…", "Search patient, ID, description…"));
         ui.add_space(8.0);
 
         let q = self.search.trim().to_lowercase();
@@ -493,24 +513,24 @@ impl SlycedApp {
                 ui.add_space(30.0);
                 ui.vertical_centered(|ui| {
                     ui.label(RichText::new(icons::FOLDER_OPEN).size(30.0).color(pal().text_faint));
-                    ui.label(RichText::new("Nenhum exame aberto").color(pal().text_dim));
+                    ui.label(RichText::new(tr!("Nenhum exame aberto", "No studies open")).color(pal().text_dim));
                     ui.add_space(8.0);
-                    if ghost_button(ui, icons::FOLDER_OPEN, "Abrir pasta").clicked() {
+                    if ghost_button(ui, icons::FOLDER_OPEN, tr!("Abrir pasta", "Open folder")).clicked() {
                         self.open_folder_dialog();
                     }
                     ui.add_space(4.0);
-                    if ghost_button(ui, icons::FILES, "Abrir arquivo").clicked() {
+                    if ghost_button(ui, icons::FILES, tr!("Abrir arquivo", "Open file")).clicked() {
                         self.open_files_dialog();
                     }
                     ui.add_space(4.0);
-                    if ghost_button(ui, icons::NETWORK, "Buscar no PACS").clicked() {
+                    if ghost_button(ui, icons::NETWORK, tr!("Buscar no PACS", "Search PACS")).clicked() {
                         self.pacs.open = true;
                     }
                 });
             } else if groups.is_empty() {
                 ui.add_space(20.0);
                 ui.vertical_centered(|ui| {
-                    ui.label(RichText::new(format!("Nada encontrado para \"{}\"", self.search.trim())).color(pal().text_faint));
+                    ui.label(RichText::new(trf!("Nada encontrado para \"{}\"", "Nothing found for \"{}\"", self.search.trim())).color(pal().text_faint));
                 });
             }
             for (gi, (_, studies)) in groups.iter().enumerate() {
@@ -530,7 +550,7 @@ impl SlycedApp {
                     let expanded = self.expanded.contains(&uid);
                     let is_active = active_study.as_deref() == Some(uid.as_str());
                     // Prior exams of the same patient are labelled to ease comparison.
-                    let order = (k > 0).then_some("anterior");
+                    let order = (k > 0).then_some(tr!("anterior", "prior"));
                     let line_h = if k == 0 && timeline.is_some() { 26.0 } else { 0.0 };
                     let (resp, close, line_rect) = study_card(ui, st, (k == 0).then_some(studies.len()), expanded, is_active, order, line_h);
                     if let (0, Some((items, pending, can_compare))) = (k, &timeline)
@@ -543,10 +563,11 @@ impl SlycedApp {
                         action = Some(BrowserAction::Toggle(uid.clone()));
                     }
                     resp.context_menu(|ui| {
-                        if active_study.as_deref().is_some_and(|a| a != uid) && ui.button(format!("{}  Comparar com o exame aberto", icons::COLUMNS)).clicked() {
+                        let compare = trf!("{}  Comparar com o exame aberto", "{}  Compare with the open study", icons::COLUMNS);
+                        if active_study.as_deref().is_some_and(|a| a != uid) && ui.button(compare).clicked() {
                             action = Some(BrowserAction::Compare(uid.clone()));
                         }
-                        if ui.button(format!("{}  Fechar exame", icons::X)).clicked() {
+                        if ui.button(trf!("{}  Fechar exame", "{}  Close study", icons::X)).clicked() {
                             action = Some(BrowserAction::Close(uid.clone()));
                         }
                     });
@@ -564,20 +585,20 @@ impl SlycedApp {
                             *action = Some(BrowserAction::Open(s.uid.clone(), target_for_click));
                         }
                         resp.context_menu(|ui| {
-                            if ui.button(format!("{}  Abrir no visualizador 2D", icons::IMAGE)).clicked() {
+                            if ui.button(trf!("{}  Abrir no visualizador 2D", "{}  Open in 2D viewer", icons::IMAGE)).clicked() {
                                 *action = Some(BrowserAction::Open(s.uid.clone(), Target::View(self.active.min(5))));
                             }
-                            if ui.button(format!("{}  Abrir em MPR", icons::SQUARES_FOUR)).clicked() {
+                            if ui.button(trf!("{}  Abrir em MPR", "{}  Open in MPR", icons::SQUARES_FOUR)).clicked() {
                                 *action = Some(BrowserAction::Open(s.uid.clone(), Target::Mpr));
                             }
-                            if ui.button(format!("{}  Abrir em 3D", icons::CUBE)).clicked() {
+                            if ui.button(trf!("{}  Abrir em 3D", "{}  Open in 3D", icons::CUBE)).clicked() {
                                 *action = Some(BrowserAction::Open(s.uid.clone(), Target::Volume));
                             }
                             ui.separator();
-                            if ui.button(format!("{}  Comparar como exame A", icons::COLUMNS)).clicked() {
+                            if ui.button(trf!("{}  Comparar como exame A", "{}  Compare as study A", icons::COLUMNS)).clicked() {
                                 *action = Some(BrowserAction::Open(s.uid.clone(), Target::Compare(0)));
                             }
-                            if ui.button(format!("{}  Comparar como exame B", icons::COLUMNS)).clicked() {
+                            if ui.button(trf!("{}  Comparar como exame B", "{}  Compare as study B", icons::COLUMNS)).clicked() {
                                 *action = Some(BrowserAction::Open(s.uid.clone(), Target::Compare(1)));
                             }
                         });
@@ -623,7 +644,7 @@ impl SlycedApp {
             Some(BrowserAction::Close(uid)) => {
                 let name = self.library.studies.iter().find(|s| s.header.uid == uid).map(|s| format_date(&s.header.date)).unwrap_or_default();
                 self.close_study(&uid);
-                self.toast_action(ToastKind::Info, format!("Exame de {name} fechado."), ToastAction::ReopenClosed);
+                self.toast_action(ToastKind::Info, trf!("Exame de {name} fechado.", "Study from {name} closed."), ToastAction::ReopenClosed);
             }
             Some(BrowserAction::CloseAll) => self.confirm_close_all = true,
             Some(BrowserAction::ExpandAll) => self.expanded = self.library.studies.iter().map(|s| s.header.uid.clone()).collect(),
@@ -689,7 +710,7 @@ impl SlycedApp {
                 egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
                     let Some(series) = self.active_series() else {
                         ui.add_space(20.0);
-                        ui.label(RichText::new("Selecione uma série para ver os controles.").color(pal().text_faint));
+                        ui.label(RichText::new(tr!("Selecione uma série para ver os controles.", "Select a series to see the controls.")).color(pal().text_faint));
                         return;
                     };
                     // Header
@@ -728,12 +749,12 @@ impl SlycedApp {
     }
 
     fn inspector_mpr(&mut self, ui: &mut Ui) {
-        caption(ui, "Reconstrução MPR");
+        caption(ui, tr!("Reconstrução MPR", "MPR reconstruction"));
         card(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label("Espessura (slab)");
+                ui.label(tr!("Espessura (slab)", "Slab thickness"));
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                    ui.label(RichText::new(if self.mpr.slab_mm > 0.0 { format!("{:.0} mm", self.mpr.slab_mm) } else { "fina".into() }).color(pal().text_dim));
+                    ui.label(RichText::new(if self.mpr.slab_mm > 0.0 { format!("{:.0} mm", self.mpr.slab_mm) } else { tr!("fina", "thin").into() }).color(pal().text_dim));
                 });
             });
             full_slider(ui, &mut self.mpr.slab_mm, 0.0..=60.0);
@@ -741,20 +762,27 @@ impl SlycedApp {
             ui.add_space(4.0);
             let mut mode = self.mpr.slab_mode;
             ui.add_enabled_ui(self.mpr.slab_mm > 0.0, |ui| {
-                if segmented(ui, &mut mode, &[(SlabMode::Mip, "", "MIP"), (SlabMode::MinIp, "", "MinIP"), (SlabMode::Avg, "", "Média")]) {
+                if segmented(ui, &mut mode, &[(SlabMode::Mip, "", "MIP"), (SlabMode::MinIp, "", "MinIP"), (SlabMode::Avg, "", tr!("Média", "Average"))]) {
                     self.mpr.slab_mode = mode;
                 }
             });
             ui.add_space(6.0);
-            ui.checkbox(&mut self.mpr.crosshair, "Mostrar linhas de referência");
+            ui.checkbox(&mut self.mpr.crosshair, tr!("Mostrar linhas de referência", "Show reference lines"));
             if self.mpr.is_oblique() {
-                if ui.button(format!("{}  Restaurar planos ortogonais", icons::ARROW_COUNTER_CLOCKWISE)).clicked() {
+                if ui.button(trf!("{}  Restaurar planos ortogonais", "{}  Reset orthogonal planes", icons::ARROW_COUNTER_CLOCKWISE)).clicked() {
                     self.mpr.reset_axes();
                 }
             } else {
-                ui.label(RichText::new("Com a mira (C), arraste as alças coloridas para inclinar os planos.").size(11.5).color(pal().text_faint));
+                ui.label(
+                    RichText::new(tr!(
+                        "Com a mira (C), arraste as alças coloridas para inclinar os planos.",
+                        "With the crosshair (C), drag the colored handles to tilt the planes."
+                    ))
+                    .size(11.5)
+                    .color(pal().text_faint),
+                );
             }
-            if ui.button(format!("{}  Centralizar mira", icons::CROSSHAIR)).clicked()
+            if ui.button(trf!("{}  Centralizar mira", "{}  Center crosshair", icons::CROSSHAIR)).clicked()
                 && let Some(v) = self.mpr_views[0].content.series().and_then(|s| s.volume.clone()) {
                     self.mpr.point = v.center();
                 }
@@ -765,7 +793,7 @@ impl SlycedApp {
         let mpr = self.workspace == Workspace::Mpr;
         let ct = series.info.modality == "CT";
         let rgb = series.is_rgb();
-        caption(ui, "Janela");
+        caption(ui, tr!("Janela", "Window"));
         let mut apply: Option<Window> = None;
         let mut preset_click = None;
         card(ui, |ui| {
@@ -776,7 +804,8 @@ impl SlycedApp {
                     for (i, p) in CT_PRESETS.iter().enumerate() {
                         let w = p.window.unwrap_or(series.default_window);
                         let sel = (w.center - cur.center).abs() < 0.5 && (w.width - cur.width).abs() < 0.5;
-                        let resp = chip(ui, p.name, sel, 78.0).on_hover_text(format!("Tecla {} · W {:.0} L {:.0}", p.key, w.width, w.center));
+                        let tip = trf!("Tecla {} · W {:.0} L {:.0}", "Key {} · W {:.0} L {:.0}", p.key, w.width, w.center);
+                        let resp = chip(ui, p.name.get(), sel, 78.0).on_hover_text(tip);
                         if resp.clicked() {
                             preset_click = Some(i);
                         }
@@ -795,7 +824,7 @@ impl SlycedApp {
                 ui.label(RichText::new("L").color(pal().text_faint));
                 ui.add(egui::DragValue::new(&mut w.center).speed(2.0).max_decimals(0));
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                    if ui.small_button("Auto").on_hover_text("Janela padrão da série").clicked() {
+                    if ui.small_button("Auto").on_hover_text(tr!("Janela padrão da série", "Series default window")).clicked() {
                         w = series.default_window;
                     }
                 });
@@ -815,16 +844,16 @@ impl SlycedApp {
             }
         }
 
-        caption(ui, "Exibição");
+        caption(ui, tr!("Exibição", "Display"));
         card(ui, |ui| {
             let smooth = &mut self.settings.smooth;
-            ui.checkbox(smooth, "Interpolação suave");
-            ui.checkbox(&mut self.settings.overlays, "Informações sobre a imagem");
+            ui.checkbox(smooth, tr!("Interpolação suave", "Smooth interpolation"));
+            ui.checkbox(&mut self.settings.overlays, tr!("Informações sobre a imagem", "Image information"));
             let Some(v) = self.active_view_mut() else { return };
-            ui.checkbox(&mut v.invert, "Inverter");
+            ui.checkbox(&mut v.invert, tr!("Inverter", "Invert"));
             if !rgb {
                 ui.horizontal(|ui| {
-                    ui.label("Cores");
+                    ui.label(tr!("Cores", "Colors"));
                     egui::ComboBox::from_id_salt("cmap").selected_text(v.colormap.label()).show_ui(ui, |ui| {
                         for c in Colormap::ALL {
                             ui.selectable_value(&mut v.colormap, c, c.label());
@@ -834,19 +863,19 @@ impl SlycedApp {
             }
             ui.add_space(4.0);
             ui.horizontal(|ui| {
-                if icon_button_sized(ui, icons::ARROW_COUNTER_CLOCKWISE, "Girar à esquerda", false, 30.0).clicked() {
+                if icon_button_sized(ui, icons::ARROW_COUNTER_CLOCKWISE, tr!("Girar à esquerda", "Rotate left"), false, 30.0).clicked() {
                     v.rot = (v.rot + 3) % 4;
                 }
-                if icon_button_sized(ui, icons::ARROW_CLOCKWISE, "Girar à direita", false, 30.0).clicked() {
+                if icon_button_sized(ui, icons::ARROW_CLOCKWISE, tr!("Girar à direita", "Rotate right"), false, 30.0).clicked() {
                     v.rot = (v.rot + 1) % 4;
                 }
-                if icon_button_sized(ui, icons::FLIP_HORIZONTAL, "Espelhar horizontal", v.flip_h, 30.0).clicked() {
+                if icon_button_sized(ui, icons::FLIP_HORIZONTAL, tr!("Espelhar horizontal", "Flip horizontal"), v.flip_h, 30.0).clicked() {
                     v.flip_h = !v.flip_h;
                 }
-                if icon_button_sized(ui, icons::FLIP_VERTICAL, "Espelhar vertical", v.flip_v, 30.0).clicked() {
+                if icon_button_sized(ui, icons::FLIP_VERTICAL, tr!("Espelhar vertical", "Flip vertical"), v.flip_v, 30.0).clicked() {
                     v.flip_v = !v.flip_v;
                 }
-                if icon_button_sized(ui, icons::CORNERS_OUT, "Ajustar à janela", false, 30.0).clicked() {
+                if icon_button_sized(ui, icons::CORNERS_OUT, tr!("Ajustar à janela", "Fit to viewport"), false, 30.0).clicked() {
                     v.zoom = None;
                     v.pan = egui::Vec2::ZERO;
                 }
@@ -854,10 +883,10 @@ impl SlycedApp {
             ui.horizontal(|ui| {
                 ui.label(RichText::new("Zoom").color(pal().text_dim));
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                    if icon_button_sized(ui, icons::MAGNIFYING_GLASS_PLUS, "Aproximar (+)", false, 30.0).clicked() {
+                    if icon_button_sized(ui, icons::MAGNIFYING_GLASS_PLUS, tr!("Aproximar (+)", "Zoom in (+)"), false, 30.0).clicked() {
                         v.zoom_by(1.25);
                     }
-                    if icon_button_sized(ui, icons::MAGNIFYING_GLASS_MINUS, "Afastar (−)", false, 30.0).clicked() {
+                    if icon_button_sized(ui, icons::MAGNIFYING_GLASS_MINUS, tr!("Afastar (−)", "Zoom out (−)"), false, 30.0).clicked() {
                         v.zoom_by(1.0 / 1.25);
                     }
                 });
@@ -869,12 +898,12 @@ impl SlycedApp {
             card(ui, |ui| {
                 let Some(v) = self.active_view_mut() else { return };
                 ui.horizontal(|ui| {
-                    let (icon, text) = if v.cine { (icons::PAUSE, "Pausar") } else { (icons::PLAY, "Reproduzir") };
+                    let (icon, text) = if v.cine { (icons::PAUSE, tr!("Pausar", "Pause")) } else { (icons::PLAY, tr!("Reproduzir", "Play")) };
                     if ui.button(format!("{icon}  {text}")).clicked() {
                         v.cine = !v.cine;
                     }
                     ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                        ui.label(RichText::new(format!("{:.0} qps", v.cine_fps)).color(pal().text_dim));
+                        ui.label(RichText::new(trf!("{:.0} qps", "{:.0} fps", v.cine_fps)).color(pal().text_dim));
                     });
                 });
                 full_slider(ui, &mut v.cine_fps, 1.0..=60.0);
@@ -883,27 +912,27 @@ impl SlycedApp {
 
         let view_key = self.active_view().map(|v| v.measurements.len()).unwrap_or(0);
         if view_key > 0 {
-            caption(ui, "Medições");
+            caption(ui, tr!("Medições", "Measurements"));
             card(ui, |ui| {
                 let Some(v) = self.active_view_mut() else { return };
                 let mut remove = None;
                 for (i, m) in v.measurements.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
                         let (icon, name) = match m.kind {
-                            MeasureKind::Length => (icons::RULER, "Distância"),
-                            MeasureKind::Angle => (icons::ANGLE, "Ângulo"),
+                            MeasureKind::Length => (icons::RULER, tr!("Distância", "Distance")),
+                            MeasureKind::Angle => (icons::ANGLE, tr!("Ângulo", "Angle")),
                             MeasureKind::Ellipse => (icons::CIRCLE, "ROI"),
-                            MeasureKind::Probe => (icons::TARGET, "Ponto"),
-                            MeasureKind::Arrow => (icons::ARROW_UP_RIGHT, "Seta"),
+                            MeasureKind::Probe => (icons::TARGET, tr!("Ponto", "Point")),
+                            MeasureKind::Arrow => (icons::ARROW_UP_RIGHT, tr!("Seta", "Arrow")),
                         };
                         ui.label(RichText::new(icon).color(MEASURE));
                         if m.kind == MeasureKind::Arrow {
-                            ui.add(egui::TextEdit::singleline(&mut m.text).hint_text("texto").desired_width(ui.available_width() - 40.0));
+                            ui.add(egui::TextEdit::singleline(&mut m.text).hint_text(tr!("texto", "text")).desired_width(ui.available_width() - 40.0));
                         } else {
-                            ui.label(format!("{name} · imagem {}", (m.key & 0xFFFF_FFFF) + 1));
+                            ui.label(trf!("{name} · imagem {}", "{name} · image {}", (m.key & 0xFFFF_FFFF) + 1));
                         }
                         ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                            if icon_button_sized(ui, icons::X, "Remover", false, 22.0).clicked() {
+                            if icon_button_sized(ui, icons::X, tr!("Remover", "Remove"), false, 22.0).clicked() {
                                 remove = Some(i);
                             }
                         });
@@ -912,7 +941,7 @@ impl SlycedApp {
                 if let Some(i) = remove {
                     v.measurements.remove(i);
                 }
-                if ui.button(format!("{}  Limpar todas", icons::TRASH)).clicked() {
+                if ui.button(trf!("{}  Limpar todas", "{}  Clear all", icons::TRASH)).clicked() {
                     v.measurements.clear();
                 }
             });
@@ -922,7 +951,7 @@ impl SlycedApp {
     fn inspector_3d(&mut self, ui: &mut Ui) {
         let Some(series) = self.active_series() else { return };
         let previews = self.vr_previews(ui.ctx(), &series);
-        caption(ui, "Renderização");
+        caption(ui, tr!("Renderização", "Rendering"));
         let quality = &mut self.settings.vr_quality;
         let lighting = &mut self.settings.vr_lighting;
         let v = match self.workspace {
@@ -935,13 +964,13 @@ impl SlycedApp {
             if segmented(
                 ui,
                 &mut mode,
-                &[(RenderMode::Composite, "", "VR"), (RenderMode::Mip, "", "MIP"), (RenderMode::MinIp, "", "MinIP"), (RenderMode::Iso, "", "Superfície")],
+                &[(RenderMode::Composite, "", "VR"), (RenderMode::Mip, "", "MIP"), (RenderMode::MinIp, "", "MinIP"), (RenderMode::Iso, "", tr!("Superfície", "Surface"))],
             ) {
                 v3.mode = mode;
             }
             if matches!(v3.mode, RenderMode::Composite | RenderMode::Iso) {
                 ui.add_space(8.0);
-                ui.label(RichText::new("Iluminação").size(12.0).color(pal().text_dim));
+                ui.label(RichText::new(tr!("Iluminação", "Lighting")).size(12.0).color(pal().text_dim));
                 let options: Vec<(crate::config::Lighting, &str, &str)> = crate::config::Lighting::ALL.iter().map(|l| (*l, "", l.label())).collect();
                 segmented(ui, lighting, &options);
                 ui.label(RichText::new(lighting.help()).size(11.5).color(pal().text_faint));
@@ -949,7 +978,7 @@ impl SlycedApp {
         });
 
         if v3.mode == RenderMode::Composite {
-            caption(ui, "Predefinições");
+            caption(ui, tr!("Predefinições", "Presets"));
             let ct = series.info.modality == "CT";
             egui::Grid::new("vr-presets").num_columns(2).spacing(vec2(6.0, 6.0)).show(ui, |ui| {
                 let mut col = 0;
@@ -958,8 +987,8 @@ impl SlycedApp {
                         continue;
                     }
                     let card = match previews.get(i).cloned().flatten() {
-                        Some(tex) => super::previews::preset_preview_card(ui, p.name, &tex, v3.preset == i),
-                        None => preset_card(ui, p.name, p.swatch, v3.preset == i),
+                        Some(tex) => super::previews::preset_preview_card(ui, p.name.get(), &tex, v3.preset == i),
+                        None => preset_card(ui, p.name.get(), p.swatch, v3.preset == i),
                     };
                     if card.clicked() {
                         v3.preset = i;
@@ -974,19 +1003,19 @@ impl SlycedApp {
             });
         }
 
-        caption(ui, "Ajustes");
+        caption(ui, tr!("Ajustes", "Adjustments"));
         card(ui, |ui| {
             match v3.mode {
                 RenderMode::Composite => {
-                    labeled_slider(ui, "Opacidade", &mut v3.opacity, 0.05..=4.0, "×");
-                    labeled_slider(ui, "Deslocamento", &mut v3.adjust.shift, -1000.0..=1000.0, "");
-                    labeled_slider(ui, "Largura", &mut v3.adjust.width, 0.2..=3.0, "×");
-                    ui.checkbox(&mut v3.shading, "Iluminação");
+                    labeled_slider(ui, tr!("Opacidade", "Opacity"), &mut v3.opacity, 0.05..=4.0, "×");
+                    labeled_slider(ui, tr!("Deslocamento", "Shift"), &mut v3.adjust.shift, -1000.0..=1000.0, "");
+                    labeled_slider(ui, tr!("Largura", "Width"), &mut v3.adjust.width, 0.2..=3.0, "×");
+                    ui.checkbox(&mut v3.shading, tr!("Iluminação", "Lighting"));
                 }
                 RenderMode::Iso => {
                     let mut iso = v3.iso.unwrap_or(if series.info.modality == "CT" { 250.0 } else { series.default_window.center });
                     let (lo, hi) = series.volume.as_ref().map(|v| v.real_range()).unwrap_or((-1000.0, 3000.0));
-                    labeled_slider(ui, "Limiar", &mut iso, lo..=hi, "");
+                    labeled_slider(ui, tr!("Limiar", "Threshold"), &mut iso, lo..=hi, "");
                     v3.iso = Some(iso);
                 }
                 _ => {
@@ -1000,23 +1029,27 @@ impl SlycedApp {
                     v3.mip_window = Some(w);
                 }
             }
-            labeled_slider(ui, "Qualidade", quality, 0.5..=2.5, "×");
+            labeled_slider(ui, tr!("Qualidade", "Quality"), quality, 0.5..=2.5, "×");
         });
 
-        caption(ui, "Recorte");
+        caption(ui, tr!("Recorte", "Crop"));
         card(ui, |ui| {
-            let names = [("D", "E", "Direita–Esquerda"), ("A", "P", "Anterior–Posterior"), ("I", "S", "Inferior–Superior")];
+            let names = [
+                (tr!("D", "R"), tr!("E", "L"), tr!("Direita–Esquerda", "Right–Left")),
+                ("A", "P", "Anterior–Posterior"),
+                ("I", "S", "Inferior–Superior"),
+            ];
             for (axis, (a, b, title)) in names.iter().enumerate() {
                 ui.label(RichText::new(*title).size(12.0).color(pal().text_dim));
                 range_slider(ui, egui::Id::unique(("crop", axis)), &mut v3.crop[axis], a, b);
                 ui.add_space(4.0);
             }
-            if ui.button(format!("{}  Remover recorte", icons::CROP)).clicked() {
+            if ui.button(trf!("{}  Remover recorte", "{}  Remove crop", icons::CROP)).clicked() {
                 v3.crop = [[0.0, 1.0]; 3];
             }
         });
 
-        caption(ui, "Orientação");
+        caption(ui, tr!("Orientação", "Orientation"));
         card(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
                 for p in ViewPreset::ALL {
@@ -1029,7 +1062,7 @@ impl SlycedApp {
                 if ui.button(format!("{}  90°", icons::ARROW_CLOCKWISE)).clicked() {
                     v3.camera.roll(-std::f32::consts::FRAC_PI_2);
                 }
-                if ui.button(format!("{}  Reiniciar", icons::ARROW_COUNTER_CLOCKWISE)).clicked() {
+                if ui.button(trf!("{}  Reiniciar", "{}  Reset", icons::ARROW_COUNTER_CLOCKWISE)).clicked() {
                     let d = crate::ui::viewport::View3D::default();
                     v3.camera = d.camera;
                 }
@@ -1037,10 +1070,10 @@ impl SlycedApp {
             ui.horizontal(|ui| {
                 ui.label(RichText::new("Zoom").color(pal().text_dim));
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                    if icon_button_sized(ui, icons::MAGNIFYING_GLASS_PLUS, "Aproximar (+)", false, 30.0).clicked() {
+                    if icon_button_sized(ui, icons::MAGNIFYING_GLASS_PLUS, tr!("Aproximar (+)", "Zoom in (+)"), false, 30.0).clicked() {
                         v3.camera.zoom(1.0 / 1.25);
                     }
-                    if icon_button_sized(ui, icons::MAGNIFYING_GLASS_MINUS, "Afastar (−)", false, 30.0).clicked() {
+                    if icon_button_sized(ui, icons::MAGNIFYING_GLASS_MINUS, tr!("Afastar (−)", "Zoom out (−)"), false, 30.0).clicked() {
                         v3.camera.zoom(1.25);
                     }
                 });
@@ -1049,33 +1082,33 @@ impl SlycedApp {
     }
 
     fn inspector_series(&mut self, ui: &mut Ui, series: &crate::dicom::series::LoadedSeries) {
-        caption(ui, "Série");
+        caption(ui, tr!("Série", "Series"));
         let mut show_tags = false;
         card(ui, |ui| {
             let first = series.images.first();
-            kv(ui, "Modalidade", &series.info.modality);
-            kv(ui, "Imagens", &series.len().to_string());
+            kv(ui, tr!("Modalidade", "Modality"), &series.info.modality);
+            kv(ui, tr!("Imagens", "Images"), &series.len().to_string());
             if let Some(f) = first {
-                kv(ui, "Matriz", &format!("{} × {}", f.width, f.height));
+                kv(ui, tr!("Matriz", "Matrix"), &format!("{} × {}", f.width, f.height));
                 if f.spacing_known {
-                    kv(ui, "Pixel", &format!("{:.3} × {:.3} mm", f.spacing.0, f.spacing.1));
+                    kv(ui, "Pixel", &crate::i18n::dec(format!("{:.3} × {:.3} mm", f.spacing.0, f.spacing.1)));
                 }
                 if let Some(t) = f.thickness {
-                    kv(ui, "Espessura", &format!("{t:.2} mm"));
+                    kv(ui, tr!("Espessura", "Thickness"), &crate::i18n::dec(format!("{t:.2} mm")));
                 }
             }
             if let Some(v) = &series.volume {
-                kv(ui, "Volume", &format!("{}×{}×{} · {:.2} mm", v.dims[0], v.dims[1], v.dims[2], v.spacing.z));
+                kv(ui, "Volume", &crate::i18n::dec(format!("{}×{}×{} · {:.2} mm", v.dims[0], v.dims[1], v.dims[2], v.spacing.z)));
             } else {
-                kv(ui, "Volume", "não disponível");
+                kv(ui, "Volume", tr!("não disponível", "not available"));
             }
-            kv(ui, "Data", &format_date(&series.study.date));
+            kv(ui, tr!("Data", "Date"), &format_date(&series.study.date));
             for w in &series.warnings {
                 ui.add_space(4.0);
                 ui.label(RichText::new(format!("{}  {w}", icons::WARNING)).color(WARNING).size(12.0));
             }
             ui.add_space(6.0);
-            if ui.button(format!("{}  Tags DICOM", icons::TAG)).clicked() {
+            if ui.button(trf!("{}  Tags DICOM", "{}  DICOM tags", icons::TAG)).clicked() {
                 show_tags = true;
             }
         });
@@ -1120,9 +1153,14 @@ impl SlycedApp {
         // name and version beside it, what the program does and the drag hint.
         let logo_side = if left.width() < 210.0 { 52.0 } else { 64.0 };
         let name = p.layout_no_wrap("Slyced".into(), font_bold(28.0), pal().text);
-        let version = p.layout_no_wrap(format!("versão {}", crate::config::APP_VERSION), font(13.5), pal().text_faint);
-        let about = p.layout("Visualizador DICOM portátil\n2D · MPR · 3D · PACS".into(), font(13.0), pal().text_dim, left.width());
-        let hint = p.layout("Ou arraste pastas, arquivos ou um CD/DVD com DICOMDIR para esta janela.".into(), font(12.0), pal().text_faint, left.width());
+        let version = p.layout_no_wrap(trf!("versão {}", "version {}", crate::config::APP_VERSION), font(13.5), pal().text_faint);
+        let about = tr!("Visualizador DICOM portátil\n2D · MPR · 3D · PACS", "Portable DICOM viewer\n2D · MPR · 3D · PACS");
+        let about = p.layout(about.into(), font(13.0), pal().text_dim, left.width());
+        let hint = tr!(
+            "Ou arraste pastas, arquivos ou um CD/DVD com DICOMDIR para esta janela.",
+            "Or drag folders, files or a CD/DVD with DICOMDIR into this window."
+        );
+        let hint = p.layout(hint.into(), font(12.0), pal().text_faint, left.width());
         let (gap_about, gap_hint) = (24.0, 18.0);
         let block_h = logo_side + gap_about + about.size().y + gap_hint + hint.size().y;
         let logo_rect = Rect::from_min_size(pos2(left.left(), left.center().y - block_h * 0.5), vec2(logo_side, logo_side));
@@ -1142,20 +1180,31 @@ impl SlycedApp {
         let right = Rect::from_min_max(pos2(right.left(), right.top() + ((inner_h - right_h) * 0.5).max(0.0)), right.max);
         let drawn = ui.scope_builder(egui::UiBuilder::new().max_rect(right), |ui| {
             ui.spacing_mut().item_spacing.y = 8.0;
-            ui.label(RichText::new("ABRIR").font(font_bold(10.5)).color(pal().text_faint).extra_letter_spacing(0.8));
+            // "ABRIR" with the language chip on the same line, at the right.
+            let mut language = None;
+            ui.horizontal(|ui| {
+                ui.label(RichText::new(tr!("ABRIR", "OPEN")).font(font_bold(10.5)).color(pal().text_faint).extra_letter_spacing(0.8));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| language = super::dialogs::language_chip(ui));
+            });
+            if let Some(language) = language {
+                self.set_language(language);
+            }
             ui.add_space(-2.0);
-            if open_choice(ui, icons::FOLDER_OPEN, "Pasta", "Exame numa pasta, pen drive ou CD/DVD", "Ctrl+O").clicked() {
+            let detail = tr!("Exame numa pasta, pen drive ou CD/DVD", "Study in a folder, USB drive or CD/DVD");
+            if open_choice(ui, icons::FOLDER_OPEN, tr!("Pasta", "Folder"), detail, "Ctrl+O").clicked() {
                 self.open_folder_dialog();
             }
-            if open_choice(ui, icons::FILES, "Arquivos", "Arquivos DICOM soltos ou um ZIP", "Ctrl+Shift+O").clicked() {
+            let detail = tr!("Arquivos DICOM soltos ou um ZIP", "Loose DICOM files or a ZIP");
+            if open_choice(ui, icons::FILES, tr!("Arquivos", "Files"), detail, "Ctrl+Shift+O").clicked() {
                 self.open_files_dialog();
             }
-            if open_choice(ui, icons::NETWORK, "PACS", "Buscar e baixar exames do servidor", "").clicked() {
+            let detail = tr!("Buscar e baixar exames do servidor", "Search and download studies from the server");
+            if open_choice(ui, icons::NETWORK, "PACS", detail, "").clicked() {
                 self.pacs.open = true;
             }
             if !recent.is_empty() {
                 ui.add_space(6.0);
-                ui.label(RichText::new("RECENTES").font(font_bold(10.5)).color(pal().text_faint).extra_letter_spacing(0.8));
+                ui.label(RichText::new(tr!("RECENTES", "RECENT")).font(font_bold(10.5)).color(pal().text_faint).extra_letter_spacing(0.8));
                 ui.spacing_mut().item_spacing.y = 2.0;
                 for r in recent {
                     // Folder name and its parent: full paths are too long to read here.
@@ -1193,23 +1242,23 @@ impl SlycedApp {
         let failed = t.iter().filter(|t| t.error.is_some()).count();
         let text = if !active.is_empty() {
             let frac = active.iter().map(|t| t.fraction()).sum::<f32>() / active.len() as f32;
-            format!("{}  {} baixando · {:.0}%", icons::DOWNLOAD_SIMPLE, active.len(), frac * 100.0)
+            trf!("{}  {} baixando · {:.0}%", "{}  {} downloading · {:.0}%", icons::DOWNLOAD_SIMPLE, active.len(), frac * 100.0)
         } else if failed > 0 {
-            format!("{}  {failed} download(s) com erro", icons::WARNING_CIRCLE)
+            trf!("{}  {failed} download(s) com erro", "{}  {failed} download(s) failed", icons::WARNING_CIRCLE)
         } else {
-            format!("{}  downloads concluídos", icons::CHECK_CIRCLE)
+            trf!("{}  downloads concluídos", "{}  downloads complete", icons::CHECK_CIRCLE)
         };
         let color = if failed > 0 { DANGER } else if !active.is_empty() { pal().accent } else { SUCCESS };
-        let resp = ui.add(egui::Label::new(RichText::new(text).size(11.5).color(color)).sense(Sense::click())).on_hover_text("Downloads do PACS");
+        let resp = ui.add(egui::Label::new(RichText::new(text).size(11.5).color(color)).sense(Sense::click())).on_hover_text(tr!("Downloads do PACS", "PACS downloads"));
         self.open_requested_menu(ui, "downloads", &resp);
         egui::Popup::menu(&resp).width(460.0).show(|ui| {
             ui.horizontal(|ui| {
-                ui.label(RichText::new("Downloads do PACS").font(font_bold(13.0)).color(pal().text));
+                ui.label(RichText::new(tr!("Downloads do PACS", "PACS downloads")).font(font_bold(13.0)).color(pal().text));
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                    if self.pacs.transfers.iter().any(|t| t.done) && ui.small_button("Limpar concluídos").clicked() {
+                    if self.pacs.transfers.iter().any(|t| t.done) && ui.small_button(tr!("Limpar concluídos", "Clear completed")).clicked() {
                         self.pacs.transfers.retain(|t| !t.done);
                     }
-                    if ui.small_button(format!("{}  Janela PACS", icons::NETWORK)).clicked() {
+                    if ui.small_button(trf!("{}  Janela PACS", "{}  PACS window", icons::NETWORK)).clicked() {
                         self.pacs.open = true;
                         ui.close();
                     }
@@ -1225,19 +1274,23 @@ impl SlycedApp {
         if !self.confirm_clear_store {
             return;
         }
-        let what = self.store_usage.map(|u| u.describe()).unwrap_or_else(|| "os exames".into());
+        let what = self.store_usage.map(|u| u.describe()).unwrap_or_else(|| tr!("os exames", "The studies").into());
         let mut decision = None;
         egui::Modal::new(egui::Id::unique("confirm-clear-store")).show(ctx, |ui| {
             ui.set_width(380.0);
-            ui.label(RichText::new("Apagar os exames baixados do PACS?").font(font_bold(15.0)).color(pal().text));
+            ui.label(RichText::new(tr!("Apagar os exames baixados do PACS?", "Delete the studies downloaded from PACS?")).font(font_bold(15.0)).color(pal().text));
             ui.add_space(4.0);
-            ui.label(RichText::new(format!("{what} serão apagados deste computador. Os exames abertos agora ficam; os demais podem ser baixados de novo do PACS.")).size(12.5).color(pal().text_dim));
+            let text = trf!(
+                "{what} serão apagados deste computador. Os exames abertos agora ficam; os demais podem ser baixados de novo do PACS.",
+                "{what} will be deleted from this computer. Studies open now are kept; the others can be downloaded again from PACS."
+            );
+            ui.label(RichText::new(text).size(12.5).color(pal().text_dim));
             ui.add_space(12.0);
             ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                if ui.add(egui::Button::new(RichText::new("Apagar").color(Color32::WHITE)).fill(DANGER)).clicked() {
+                if ui.add(egui::Button::new(RichText::new(tr!("Apagar", "Delete")).color(Color32::WHITE)).fill(DANGER)).clicked() {
                     decision = Some(true);
                 }
-                if ui.button("Cancelar").clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                if ui.button(tr!("Cancelar", "Cancel")).clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
                     decision = Some(false);
                 }
             });
@@ -1259,16 +1312,25 @@ impl SlycedApp {
         let mut decision = None;
         egui::Modal::new(egui::Id::unique("confirm-close-all")).show(ctx, |ui| {
             ui.set_width(360.0);
-            ui.label(RichText::new(if n == 1 { "Fechar o exame aberto?".to_string() } else { format!("Fechar os {n} exames abertos?") }).font(font_bold(15.0)).color(pal().text));
+            let title = if n == 1 {
+                tr!("Fechar o exame aberto?", "Close the open study?").to_string()
+            } else {
+                trf!("Fechar os {n} exames abertos?", "Close the {n} open studies?")
+            };
+            ui.label(RichText::new(title).font(font_bold(15.0)).color(pal().text));
             ui.add_space(4.0);
-            ui.label(RichText::new("As medidas que não foram salvas como achado se perdem. Logo depois dá para desfazer.").size(12.5).color(pal().text_dim));
+            let text = tr!(
+                "As medidas que não foram salvas como achado se perdem. Logo depois dá para desfazer.",
+                "Measurements not saved as findings will be lost. You can undo right after."
+            );
+            ui.label(RichText::new(text).size(12.5).color(pal().text_dim));
             ui.add_space(12.0);
             ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                let close = egui::Button::new(RichText::new("Fechar").color(Color32::WHITE)).fill(DANGER);
+                let close = egui::Button::new(RichText::new(tr!("Fechar", "Close")).color(Color32::WHITE)).fill(DANGER);
                 if ui.add(close).clicked() {
                     decision = Some(true);
                 }
-                if ui.button("Cancelar").clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                if ui.button(tr!("Cancelar", "Cancel")).clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
                     decision = Some(false);
                 }
             });
@@ -1288,7 +1350,8 @@ impl SlycedApp {
             self.close_study(&uid);
         }
         if n > 0 {
-            self.toast_action(ToastKind::Info, if n == 1 { "Exame fechado.".to_string() } else { format!("{n} exames fechados.") }, ToastAction::ReopenClosed);
+            let text = if n == 1 { tr!("Exame fechado.", "Study closed.").to_string() } else { trf!("{n} exames fechados.", "{n} studies closed.") };
+            self.toast_action(ToastKind::Info, text, ToastAction::ReopenClosed);
         }
     }
 
@@ -1323,7 +1386,7 @@ impl SlycedApp {
                             ui.add(egui::Label::new(if slim { text.size(12.5) } else { text }).wrap());
                             if let Some(action) = t.action {
                                 ui.add_space(8.0);
-                                let undo = egui::Button::new(RichText::new("Desfazer").font(font_bold(13.0)).color(pal().accent)).frame(false);
+                                let undo = egui::Button::new(RichText::new(tr!("Desfazer", "Undo")).font(font_bold(13.0)).color(pal().accent)).frame(false);
                                 if ui.add(undo).clicked() {
                                     clicked = Some(action);
                                 }
@@ -1354,7 +1417,7 @@ impl SlycedApp {
         let r = screen.shrink(24.0);
         p.rect_stroke(r, CornerRadius::same(16), Stroke::new(2.0, pal().accent), StrokeKind::Inside);
         p.text(r.center() - vec2(0.0, 18.0), Align2::CENTER_CENTER, icons::DOWNLOAD_SIMPLE, font(40.0), pal().accent);
-        p.text(r.center() + vec2(0.0, 24.0), Align2::CENTER_CENTER, "Solte para abrir os exames", font_bold(18.0), pal().text);
+        p.text(r.center() + vec2(0.0, 24.0), Align2::CENTER_CENTER, tr!("Solte para abrir os exames", "Drop to open the studies"), font_bold(18.0), pal().text);
     }
 }
 
@@ -1496,7 +1559,7 @@ fn study_card(
     let mut cy = rect.top() + pad + line * 0.5;
 
     let name = format_person_name(&h.patient_name);
-    let name = if name.is_empty() { "Paciente sem nome".to_string() } else { name };
+    let name = if name.is_empty() { tr!("Paciente sem nome", "Unnamed patient").to_string() } else { name };
     let mut who: Vec<String> = Vec::new();
     if !h.sex.trim().is_empty() {
         who.push(h.sex.trim().to_string());
@@ -1504,7 +1567,7 @@ fn study_card(
     if !h.age.trim().is_empty() {
         who.push(crate::dicom::model::format_age(&h.age));
     } else if !h.birth_date.trim().is_empty() {
-        who.push(format!("nasc. {}", format_date(&h.birth_date)));
+        who.push(trf!("nasc. {}", "DOB {}", format_date(&h.birth_date)));
     }
     if patient.is_some() {
         patient_avatar(p, pos2(left + 9.0, cy), 10.0, h, &name);
@@ -1530,7 +1593,7 @@ fn study_card(
     let date = p.layout_no_wrap(format_date(&h.date), font_bold(12.5), pal().text);
     let date_w = date.size().x;
     p.galley(pos2(x, cy - date.size().y * 0.5), date, pal().text);
-    let desc = if h.description.trim().is_empty() { "Exame sem descrição" } else { h.description.trim() };
+    let desc = if h.description.trim().is_empty() { tr!("Exame sem descrição", "No description") } else { h.description.trim() };
     let rest = match order {
         Some(o) => format!("· {o} · {desc}"),
         None => format!("· {desc}"),
@@ -1547,14 +1610,14 @@ fn study_card(
         p.circle_filled(xr.center(), 9.0, if hot { DANGER } else { pal().bg_hover });
         p.text(xr.center(), Align2::CENTER_CENTER, icons::X, font(11.0), if hot { pal().strong } else { pal().text_dim });
     }
-    let clicked = close.on_hover_text("Fechar exame").clicked();
+    let clicked = close.on_hover_text(tr!("Fechar exame", "Close study")).clicked();
 
     let mut ids = who;
     if !h.patient_id.trim().is_empty() {
         ids.push(format!("ID {}", h.patient_id.trim()));
     }
     if let Some(n) = patient.filter(|n| *n > 1) {
-        ids.push(format!("{n} exames"));
+        ids.push(trf!("{n} exames", "{n} studies"));
     }
     let mut tip = vec![name];
     if !ids.is_empty() {
@@ -1564,11 +1627,12 @@ fn study_card(
     let when = if rel.is_empty() { format_date(&h.date) } else { format!("{} ({rel})", format_date(&h.date)) };
     tip.push(format!("{when} · {desc}"));
     let images: usize = st.series.iter().map(|s| s.image_count()).sum();
-    tip.push(format!("{} · {}", plural(st.series.len(), "série", "séries"), plural(images, "imagem", "imagens")));
+    let series = plural(st.series.len(), tr!("série", "series"), tr!("séries", "series"));
+    tip.push(format!("{series} · {}", plural(images, tr!("imagem", "image"), tr!("imagens", "images"))));
     if !h.institution.trim().is_empty() {
         tip.push(h.institution.trim().to_string());
     }
-    tip.push("Clique para mostrar ou esconder as séries.".into());
+    tip.push(tr!("Clique para mostrar ou esconder as séries.", "Click to show or hide the series.").into());
     (resp.on_hover_text(tip.join("\n")), clicked, timeline_rect)
 }
 
@@ -1630,15 +1694,18 @@ fn series_row(
     let title = fit_text(p, format!("{} · {}", s.number, s.title()), font_bold(12.5), color, right - 8.0 - x);
     p.galley(pos2(x, cy - title.size().y * 0.5), title, color);
 
-    let mut details = vec![s.modality.clone(), plural(n, "imagem", "imagens")];
+    let mut details = vec![s.modality.clone(), plural(n, tr!("imagem", "image"), tr!("imagens", "images"))];
     if let Some(t) = s.instances.iter().find_map(|i| i.slice_thickness) {
-        details.push(format!("{} mm", format!("{t:.2}").trim_end_matches('0').trim_end_matches('.').replace('.', ",")));
+        details.push(format!("{} mm", crate::i18n::num_trim(t, 2)));
     }
-    let mut tip = format!("Série {} · {}\n{}", s.number, s.title(), details.join(" · "));
+    let mut tip = trf!("Série {} · {}\n{}", "Series {} · {}\n{}", s.number, s.title(), details.join(" · "));
     if !places.is_empty() {
-        tip.push_str(&format!("\nAberta em: {}", places.join(", ")));
+        tip.push_str(&trf!("\nAberta em: {}", "\nOpen in: {}", places.join(", ")));
     }
-    tip.push_str("\nClique para abrir na janela ativa ou arraste para outra janela.\nBotão direito: abrir em MPR, 3D ou comparação.");
+    tip.push_str(tr!(
+        "\nClique para abrir na janela ativa ou arraste para outra janela.\nBotão direito: abrir em MPR, 3D ou comparação.",
+        "\nClick to open in the active viewport or drag to another viewport.\nRight-click: open in MPR, 3D or comparison."
+    ));
     resp.on_hover_text(tip)
 }
 
@@ -1698,7 +1765,13 @@ fn series_card(
     if shown {
         p.rect_stroke(rect, CornerRadius::same(9), Stroke::new(1.5, pal().accent), StrokeKind::Inside);
     }
-    resp.on_hover_text(format!("Série {} · {}\n{} imagem(ns)\nArraste para uma janela ou clique para abrir", s.number, s.title(), s.image_count()))
+    resp.on_hover_text(trf!(
+        "Série {} · {}\n{} imagem(ns)\nArraste para uma janela ou clique para abrir",
+        "Series {} · {}\n{} image(s)\nDrag to a viewport or click to open",
+        s.number,
+        s.title(),
+        s.image_count()
+    ))
 }
 
 pub(crate) fn chip(ui: &mut Ui, text: &str, selected: bool, width: f32) -> egui::Response {
@@ -1736,7 +1809,7 @@ pub(crate) fn labeled_slider(ui: &mut Ui, label: &str, value: &mut f32, range: s
     ui.horizontal(|ui| {
         ui.label(RichText::new(label).size(12.5));
         ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-            ui.label(RichText::new(format!("{:.2}{suffix}", value)).size(12.0).color(pal().text_dim));
+            ui.label(RichText::new(format!("{}{suffix}", crate::i18n::num(*value as f64, 2))).size(12.0).color(pal().text_dim));
         });
     });
     full_slider(ui, value, range);

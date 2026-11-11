@@ -24,7 +24,7 @@ pub fn os_description() -> String {
     let arch = if cfg!(target_arch = "aarch64") {
         "ARM64"
     } else if cfg!(target_arch = "x86") {
-        "x86 (32 bits)"
+        tr!("x86 (32 bits)", "x86 (32-bit)")
     } else {
         "x64"
     };
@@ -35,7 +35,7 @@ pub fn os_description() -> String {
         // Windows 11 still reports "Windows 10" in ProductName.
         let product = if build >= 22000 { product.replace("Windows 10", "Windows 11") } else { product };
         let display = reg_string("DisplayVersion").or_else(|| reg_string("ReleaseId")).unwrap_or_default();
-        format!("{product} {display} (build {build}) · executável {arch}")
+        trf!("{product} {display} (build {build}) · executável {arch}", "{product} {display} (build {build}) · {arch} executable")
     }
     #[cfg(not(windows))]
     {

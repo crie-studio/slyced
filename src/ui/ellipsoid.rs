@@ -9,11 +9,12 @@ use super::viewport::{MeasureKind, Tool, Viewport};
 use super::widgets::*;
 use crate::app::{SlycedApp, ToastKind};
 use crate::dicom::series::LoadedSeries;
+use crate::i18n::{num, Tr};
 use egui::{Align, RichText, Ui};
 use glam::DVec3;
 use std::sync::Arc;
 
-const NAMES: [&str; 3] = ["D1 · largura", "D2 · profundidade", "D3 · altura"];
+const NAMES: [Tr; 3] = [Tr("D1 · largura", "D1 · width"), Tr("D2 · profundidade", "D2 · depth"), Tr("D3 · altura", "D3 · height")];
 
 /// One measured diameter: length (mm) and its end points in patient space.
 #[derive(Clone, Copy)]
@@ -42,13 +43,13 @@ impl EllipsoidCalc {
     }
 
     pub fn summary(&self) -> String {
-        let cm = |i: usize| self.d[i].map(|d| format!("{:.1}", d.mm / 10.0)).unwrap_or_else(|| "—".into());
-        let mut s = format!("Volume (elipsoide): {} × {} × {} cm", cm(0), cm(1), cm(2));
+        let cm = |i: usize| self.d[i].map(|d| num(d.mm as f64 / 10.0, 1)).unwrap_or_else(|| "—".into());
+        let mut s = trf!("Volume (elipsoide): {} × {} × {} cm", "Volume (ellipsoid): {} × {} × {} cm", cm(0), cm(1), cm(2));
         if let Some(v) = self.volume_ml() {
-            s += &format!(" = {v:.1} mL");
+            s += &format!(" = {} mL", num(v, 1));
         }
         if let Some(m) = self.mean {
-            s += &format!("; densidade média {m:.0} HU");
+            s += &trf!("; densidade média {m:.0} HU", "; mean density {m:.0} HU");
         }
         s
     }
@@ -85,7 +86,7 @@ impl SlycedApp {
         self.ellipsoid.counts = self.all_views_mut().map(|v| (v.id, v.measurements.len())).collect();
         self.ellipsoid.measuring = Some(slot);
         self.tool = Tool::Length;
-        self.toast(ToastKind::Info, format!("Desenhe {} na imagem.", NAMES[slot]));
+        self.toast(ToastKind::Info, trf!("Desenhe {} na imagem.", "Draw {} on the image.", NAMES[slot]));
     }
 
     /// Takes the distance just drawn for the diameter being measured, then asks for the next one.
@@ -121,7 +122,7 @@ impl SlycedApp {
             None => {
                 self.update_ellipsoid_mean();
                 if let Some(ml) = self.ellipsoid.volume_ml() {
-                    self.toast(ToastKind::Success, format!("Volume: {ml:.1} mL"));
+                    self.toast(ToastKind::Success, format!("Volume: {} mL", num(ml, 1)));
                 }
             }
         }
@@ -141,9 +142,9 @@ impl SlycedApp {
             return;
         }
         ui.horizontal(|ui| {
-            caption(ui, "Volume por 3 diâmetros");
+            caption(ui, tr!("Volume por 3 diâmetros", "Volume from 3 diameters"));
             ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                if icon_button_sized(ui, icons::X, "Fechar", false, 22.0).clicked() {
+                if icon_button_sized(ui, icons::X, tr!("Fechar", "Close"), false, 22.0).clicked() {
                     self.ellipsoid.open = false;
                     self.ellipsoid.measuring = None;
                 }
@@ -152,22 +153,34 @@ impl SlycedApp {
         let mut measure = None;
         card(ui, |ui| {
             ui.label(
-                RichText::new("Meça os três maiores diâmetros perpendiculares: largura e profundidade no axial, altura no coronal ou sagital. Os diâmetros são pedidos um depois do outro.")
-                    .size(11.5)
-                    .color(pal().text_faint),
+                RichText::new(tr!(
+                    "Meça os três maiores diâmetros perpendiculares: largura e profundidade no axial, altura no coronal ou sagital. Os diâmetros são pedidos um depois do outro.",
+                    "Measure the three largest perpendicular diameters: width and depth on the axial, height on the coronal or sagittal. The diameters are requested one after another."
+                ))
+                .size(11.5)
+                .color(pal().text_faint),
             );
             ui.add_space(4.0);
             for (i, name) in NAMES.iter().enumerate() {
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(*name).size(12.0).color(pal().text_dim));
+                    ui.label(RichText::new(name.get()).size(12.0).color(pal().text_dim));
                     ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
                         let waiting = self.ellipsoid.measuring == Some(i);
-                        if icon_button_sized(ui, icons::RULER, if waiting { "Desenhe a distância na imagem" } else { "Medir na imagem" }, waiting, 24.0).clicked() {
+                        let tip =
+                            if waiting { tr!("Desenhe a distância na imagem", "Draw the distance on the image") } else { tr!("Medir na imagem", "Measure on the image") };
+                        if icon_button_sized(ui, icons::RULER, tip, waiting, 24.0).clicked() {
                             measure = Some(i);
                         }
                         ui.label(RichText::new("cm").size(11.5).color(pal().text_faint));
                         let mut cm = self.ellipsoid.d[i].map(|d| d.mm / 10.0).unwrap_or(0.0);
-                        let r = ui.add(egui::DragValue::new(&mut cm).speed(0.1).range(0.0..=80.0).max_decimals(1).custom_formatter(|v, _| if v <= 0.0 { "—".into() } else { format!("{v:.1}") }));
+                        let r = ui.add(
+                            egui::DragValue::new(&mut cm)
+                                .speed(0.1)
+                                .range(0.0..=80.0)
+                                .max_decimals(1)
+                                .custom_formatter(|v, _| if v <= 0.0 { "—".into() } else { num(v, 1) })
+                                .custom_parser(crate::i18n::parse_num),
+                        );
                         if r.changed() {
                             // A typed value has no position: no mean density.
                             self.ellipsoid.d[i] = (cm > 0.0).then_some(Diameter { mm: cm * 10.0, ends: None });
@@ -177,7 +190,7 @@ impl SlycedApp {
                 });
             }
             ui.add_space(6.0);
-            let vol = self.ellipsoid.volume_ml().map(|v| format!("{v:.1} mL")).unwrap_or_else(|| "—".into());
+            let vol = self.ellipsoid.volume_ml().map(|v| format!("{} mL", num(v, 1))).unwrap_or_else(|| "—".into());
             ui.horizontal(|ui| {
                 ui.label(RichText::new("Volume").size(12.5).color(pal().text));
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
@@ -185,15 +198,15 @@ impl SlycedApp {
                 });
             });
             if let Some(m) = self.ellipsoid.mean {
-                kv(ui, "Densidade média", &format!("{m:.0} HU"));
+                kv(ui, tr!("Densidade média", "Mean density"), &format!("{m:.0} HU"));
             }
-            ui.label(RichText::new("Elipsoide: π/6 × D1 × D2 × D3.").size(11.0).color(pal().text_faint));
+            ui.label(RichText::new(tr!("Elipsoide: π/6 × D1 × D2 × D3.", "Ellipsoid: π/6 × D1 × D2 × D3.")).size(11.0).color(pal().text_faint));
             ui.horizontal(|ui| {
-                if ui.button(format!("{}  Copiar", icons::COPY)).clicked() {
+                if ui.button(trf!("{}  Copiar", "{}  Copy", icons::COPY)).clicked() {
                     ui.ctx().copy_text(self.ellipsoid.summary());
-                    self.toast(ToastKind::Success, "Volume copiado.");
+                    self.toast(ToastKind::Success, tr!("Volume copiado.", "Volume copied."));
                 }
-                if ui.button(format!("{}  Nova medida", icons::ARROWS_CLOCKWISE)).clicked() {
+                if ui.button(trf!("{}  Nova medida", "{}  New measurement", icons::ARROWS_CLOCKWISE)).clicked() {
                     self.ellipsoid.d = [None; 3];
                     self.ellipsoid.mean = None;
                     measure = Some(0);
@@ -224,6 +237,6 @@ mod tests {
         assert!((z.length() - 10.0).abs() < 1e-9);
         let calc = EllipsoidCalc { d: [40.0, 30.0, 20.0].map(|mm| Some(Diameter { mm, ends: None })), ..Default::default() };
         assert!((calc.volume_ml().unwrap() - 12.566).abs() < 0.01);
-        assert!(calc.summary().contains("12.6 mL"));
+        assert!(calc.summary().contains("12,6 mL"));
     }
 }

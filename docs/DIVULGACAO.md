@@ -55,7 +55,7 @@ Em <https://alternativeto.net>, **Suggest new application**:
   code in the browser via WebAssembly. Free, open source, no telemetry, and nothing leaves your computer.
 - **Primeiro comentário (maker):** I'm a doctor in Brazil and wanted a viewer that opens the CD a patient brings,
   on whatever PC the on-call room has, without installers or licenses. Slyced is written in Rust (dicom-rs, egui,
-  wgpu). The UI is in Portuguese for now. Feedback very welcome, especially on DICOM files that don't open.
+  wgpu). The UI is in English and Portuguese. Feedback very welcome, especially on DICOM files that don't open.
 
   *(Ajuste a primeira frase se não quiser se apresentar como médico.)*
 
@@ -65,7 +65,7 @@ Em <https://alternativeto.net>, **Suggest new application**:
 - **URL:** <https://crie-studio.github.io/slyced/en/>
 - **Texto (opcional):** Opens CT/MRI studies from a CD, folder, ZIP or PACS with MPR and GPU volume rendering.
   One .exe for Windows 7–11, and the same code compiled to WebAssembly (WebGPU/WebGL2). Nothing leaves your
-  machine. UI in Portuguese for now.
+  machine. UI in English and Portuguese.
 
 ## 6. Reddit
 
@@ -84,15 +84,15 @@ Em <https://alternativeto.net>, **Suggest new application**:
     in an in-memory filesystem; openjp2 needed a tiny malloc/calloc/realloc/free/strcpy shim.
   - A fallback ladder for broken GPU drivers: DX12/Vulkan, WARP, then OpenGL.
 
-  Live demo with a synthetic phantom: <https://crie-studio.github.io/slyced/app/?exemplo> · Code:
-  <https://github.com/crie-studio/slyced> (MIT/Apache). The UI is in Portuguese; happy to answer questions.
+  Live demo with a synthetic phantom: <https://crie-studio.github.io/slyced/app/?exemplo&lang=en> · Code:
+  <https://github.com/crie-studio/slyced> (MIT/Apache). The UI is in English and Portuguese; happy to answer questions.
 
 **r/radiology** (leia as regras do subreddit antes; autopromoção pode exigir flair)
 
 - **Título:** Free portable DICOM viewer for Windows 7–11 (and browser) — looking for feedback
 - **Texto:** I made Slyced, a free, open-source viewer that opens CDs, folders, ZIPs and PACS (C-FIND/C-GET/C-MOVE,
   DICOMweb), with MPR, CPR, 3D and comparison with prior studies. No installer, no telemetry, nothing uploaded.
-  It is not a certified medical device. The UI is in Portuguese for now. If you have a study that doesn't open or
+  It is not a certified medical device. The UI is in English and Portuguese. If you have a study that doesn't open or
   looks wrong, I'd love to know (without patient data, please). <https://crie-studio.github.io/slyced/en/>
 
 ## 7. Vídeo curto (Reels, Shorts, TikTok)

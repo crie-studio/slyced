@@ -63,7 +63,11 @@ fn base_url(node: &PacsNode) -> Result<&str> {
     let b = node.base_url.trim().trim_end_matches('/');
     let lower = b.to_ascii_lowercase();
     if !(lower.starts_with("http://") || lower.starts_with("https://")) || b.len() < 9 {
-        bail!("URL DICOMweb inválida: \"{}\". Use, por exemplo, http://servidor:8042/dicom-web", node.base_url.trim());
+        bail!(trf!(
+            "URL DICOMweb inválida: \"{}\". Use, por exemplo, http://servidor:8042/dicom-web",
+            "Invalid DICOMweb URL: \"{}\". Use, for example, http://server:8042/dicom-web",
+            node.base_url.trim()
+        ));
     }
     Ok(b)
 }
@@ -111,14 +115,22 @@ fn net_error(e: ureq::Error, url: &str) -> anyhow::Error {
     // Windows reports failed name resolution as WSAHOST_NOT_FOUND / WSANO_DATA.
     let unresolved = matches!(&e, E::HostNotFound) || matches!(&e, E::Io(io) if matches!(io.raw_os_error(), Some(11001 | 11004)));
     match e {
-        _ if unresolved => anyhow!("Servidor DICOMweb não encontrado ({url}). Confira o endereço."),
-        E::ConnectionFailed => anyhow!("Não foi possível conectar em {url}. Confira o endereço, a porta e o firewall."),
-        E::Timeout(_) => anyhow!("Tempo esgotado aguardando o servidor DICOMweb ({url})."),
+        _ if unresolved => anyhow!(trf!(
+            "Servidor DICOMweb não encontrado ({url}). Confira o endereço.",
+            "DICOMweb server not found ({url}). Check the address."
+        )),
+        E::ConnectionFailed => anyhow!(trf!(
+            "Não foi possível conectar em {url}. Confira o endereço, a porta e o firewall.",
+            "Could not connect to {url}. Check the address, the port and the firewall."
+        )),
+        E::Timeout(_) => anyhow!(trf!("Tempo esgotado aguardando o servidor DICOMweb ({url}).", "Timed out waiting for the DICOMweb server ({url}).")),
         E::Io(io) if io.kind() == std::io::ErrorKind::ConnectionRefused => {
-            anyhow!("Conexão recusada em {url}. O serviço DICOMweb está ativo?")
+            anyhow!(trf!("Conexão recusada em {url}. O serviço DICOMweb está ativo?", "Connection refused at {url}. Is the DICOMweb service running?"))
         }
-        E::Tls(_) | E::NativeTls(_) | E::Der(_) => anyhow!("Falha na conexão segura (HTTPS) com {url}: {e}"),
-        other => anyhow!("Erro de comunicação com {url}: {other}"),
+        E::Tls(_) | E::NativeTls(_) | E::Der(_) => {
+            anyhow!(trf!("Falha na conexão segura (HTTPS) com {url}: {e}", "Secure connection (HTTPS) to {url} failed: {e}"))
+        }
+        other => anyhow!(trf!("Erro de comunicação com {url}: {other}", "Communication error with {url}: {other}")),
     }
 }
 
@@ -126,9 +138,15 @@ fn check_status(resp: &Response<Body>, what: &str) -> Result<()> {
     let st = resp.status().as_u16();
     match st {
         200..=299 => Ok(()),
-        401 | 403 => bail!("Acesso negado pelo servidor DICOMweb (HTTP {st}). Confira usuário e senha ou o token."),
-        404 => bail!("{what}: não encontrado (HTTP 404). Confira a URL base (ex.: http://servidor:8042/dicom-web)."),
-        _ => bail!("{what}: o servidor DICOMweb respondeu HTTP {st}."),
+        401 | 403 => bail!(trf!(
+            "Acesso negado pelo servidor DICOMweb (HTTP {st}). Confira usuário e senha ou o token.",
+            "Access denied by the DICOMweb server (HTTP {st}). Check the username and password or the token."
+        )),
+        404 => bail!(trf!(
+            "{what}: não encontrado (HTTP 404). Confira a URL base (ex.: http://servidor:8042/dicom-web).",
+            "{what}: not found (HTTP 404). Check the base URL (e.g. http://server:8042/dicom-web)."
+        )),
+        _ => bail!(trf!("{what}: o servidor DICOMweb respondeu HTTP {st}.", "{what}: the DICOMweb server answered HTTP {st}.")),
     }
 }
 
@@ -142,7 +160,7 @@ fn qido(node: &PacsNode, path: &str, query: &[(&str, &str)], fields: &[Tag]) -> 
     if resp.status().as_u16() == 204 {
         return Ok(Vec::new());
     }
-    check_status(&resp, "Pesquisa QIDO-RS")?;
+    check_status(&resp, tr!("Pesquisa QIDO-RS", "QIDO-RS query"))?;
     let bytes = resp.body_mut().with_config().limit(MAX_JSON).read_to_vec().map_err(|e| net_error(e, &url))?;
     parse_qido(&bytes)
 }
@@ -151,9 +169,9 @@ pub(crate) fn parse_qido(bytes: &[u8]) -> Result<Vec<Value>> {
     if bytes.iter().all(u8::is_ascii_whitespace) {
         return Ok(Vec::new());
     }
-    match serde_json::from_slice(bytes).context("resposta QIDO-RS não é um JSON válido")? {
+    match serde_json::from_slice(bytes).context(tr!("resposta QIDO-RS não é um JSON válido", "QIDO-RS response is not valid JSON"))? {
         Value::Array(list) => Ok(list),
-        _ => bail!("resposta QIDO-RS inesperada (esperada uma lista JSON)"),
+        _ => bail!(tr!("resposta QIDO-RS inesperada (esperada uma lista JSON)", "unexpected QIDO-RS response (expected a JSON list)")),
     }
 }
 
@@ -298,19 +316,23 @@ pub fn retrieve(
         log::info!("WADO-RS: servidor recusou transfer-syntax=* (HTTP {}), repetindo sem", resp.status().as_u16());
         resp = get(node, &url, ACCEPT_DICOM, &[])?;
     }
-    check_status(&resp, if series_uid.is_some() { "Download da série" } else { "Download do estudo" })?;
+    check_status(&resp, if series_uid.is_some() { tr!("Download da série", "Series download") } else { tr!("Download do estudo", "Study download") })?;
     let content_type = resp.headers().get("content-type").and_then(|v| v.to_str().ok()).unwrap_or_default().to_string();
-    let boundary = multipart_boundary(&content_type)
-        .ok_or_else(|| anyhow!("Resposta WADO-RS inesperada (Content-Type: \"{content_type}\"); esperado multipart/related."))?;
+    let boundary = multipart_boundary(&content_type).ok_or_else(|| {
+        anyhow!(trf!(
+            "Resposta WADO-RS inesperada (Content-Type: \"{content_type}\"); esperado multipart/related.",
+            "Unexpected WADO-RS response (Content-Type: \"{content_type}\"); expected multipart/related."
+        ))
+    })?;
 
     std::fs::create_dir_all(store_root)?;
     let mut parts = Multipart::new(resp.into_body().into_reader(), &boundary);
     let mut files = Vec::new();
     loop {
         if cancel.load(Ordering::Relaxed) {
-            bail!("Transferência cancelada.");
+            bail!(tr!("Transferência cancelada.", "Transfer canceled."));
         }
-        let Some(headers) = parts.next_part().context("download interrompido")? else { break };
+        let Some(headers) = parts.next_part().context(tr!("download interrompido", "download interrupted"))? else { break };
         let part_type = header(&headers, "content-type").unwrap_or_default().to_ascii_lowercase();
         if !(part_type.is_empty() || part_type.starts_with("application/dicom")) {
             log::warn!("WADO-RS: parte ignorada ({part_type})");
@@ -324,7 +346,7 @@ pub fn retrieve(
                     progress.completed += 1;
                 }
                 Err(e) if cancel.load(Ordering::Relaxed) => return Err(e),
-                Err(e) if e.downcast_ref::<std::io::Error>().is_some() => return Err(e.context("download interrompido")),
+                Err(e) if e.downcast_ref::<std::io::Error>().is_some() => return Err(e.context(tr!("download interrompido", "download interrupted"))),
                 Err(e) => {
                     log::warn!("WADO-RS: instância descartada: {e:#}");
                     progress.failed += 1;
@@ -335,7 +357,11 @@ pub fn retrieve(
         on_progress(progress);
     }
     if files.is_empty() && progress.failed > 0 {
-        bail!("Nenhuma instância válida recebida ({} parte(s) rejeitada(s)).", progress.failed);
+        bail!(trf!(
+            "Nenhuma instância válida recebida ({} parte(s) rejeitada(s)).",
+            "No valid instance received ({} part(s) rejected).",
+            progress.failed
+        ));
     }
     Ok((files, progress))
 }
@@ -356,7 +382,7 @@ fn save_part<R: Read>(parts: &mut Multipart<R>, root: &Path, cancel: &AtomicBool
             let obj = OpenFileOptions::new()
                 .read_until(tags::SERIES_NUMBER)
                 .open_file(&tmp)
-                .map_err(|e| anyhow!("parte recebida não é um arquivo DICOM: {e}"))?;
+                .map_err(|e| anyhow!(trf!("parte recebida não é um arquivo DICOM: {e}", "received part is not a DICOM file: {e}")))?;
             let mut sop = text(&obj, tags::SOP_INSTANCE_UID);
             if sop.is_empty() {
                 sop = obj.meta().media_storage_sop_instance_uid().trim_end_matches('\0').to_string();
@@ -470,7 +496,7 @@ impl<R: Read> Multipart<R> {
     }
 
     fn truncated() -> std::io::Error {
-        std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "resposta multipart incompleta")
+        std::io::Error::new(std::io::ErrorKind::UnexpectedEof, tr!("resposta multipart incompleta", "incomplete multipart response"))
     }
 
     /// Advances to the next part and returns its headers, or `None` after the
@@ -508,7 +534,7 @@ impl<R: Read> Multipart<R> {
                 break;
             }
             if a.len() > 1024 {
-                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "delimitador multipart inválido"));
+                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, tr!("delimitador multipart inválido", "invalid multipart delimiter")));
             }
             if !self.fill()? {
                 return Err(Self::truncated());
@@ -531,7 +557,7 @@ impl<R: Read> Multipart<R> {
                     .collect();
             }
             if a.len() > MAX_PART_HEADERS {
-                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "cabeçalhos multipart muito grandes"));
+                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, tr!("cabeçalhos multipart muito grandes", "multipart headers too large")));
             }
             if !self.fill()? {
                 return Err(Self::truncated());
@@ -549,7 +575,7 @@ impl<R: Read> Multipart<R> {
         let mut total = 0u64;
         loop {
             if cancel.load(Ordering::Relaxed) {
-                bail!("Transferência cancelada.");
+                bail!(tr!("Transferência cancelada.", "Transfer canceled."));
             }
             if let Some(i) = self.finder.find(self.avail()) {
                 out.write_all(&self.buf[self.start..self.start + i])?;

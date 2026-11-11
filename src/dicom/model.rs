@@ -1,5 +1,6 @@
 //! Patient / study / series / instance index built from scanned headers.
 
+use crate::i18n::{Lang, Tr};
 use glam::DVec3;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -43,7 +44,7 @@ impl SeriesInfo {
 
     pub fn title(&self) -> String {
         if self.description.trim().is_empty() {
-            format!("Série {}", self.number)
+            trf!("Série {}", "Series {}", self.number)
         } else {
             self.description.trim().to_string()
         }
@@ -202,11 +203,12 @@ pub fn format_person_name(raw: &str) -> String {
     }
 }
 
-/// `AAAAMMDD` -> `DD/MM/AAAA`.
+/// `AAAAMMDD` -> `DD/MM/AAAA` ("12 Mar 2024" in English).
 pub fn format_date(raw: &str) -> String {
     let d = raw.trim();
     if d.len() >= 8 && d[..8].bytes().all(|b| b.is_ascii_digit()) {
-        format!("{}/{}/{}", &d[6..8], &d[4..6], &d[0..4])
+        let n = |r: std::ops::Range<usize>| d[r].parse::<u32>().unwrap_or(0);
+        crate::i18n::date(n(0..4), n(4..6), n(6..8))
     } else {
         d.to_string()
     }
@@ -246,44 +248,47 @@ fn days_between(raw: &str, today: i64) -> Option<i64> {
     Some(today - days_from_civil(y, m, day))
 }
 
-/// "hoje", "ontem", "há 3 dias", "há 2 meses", "há 1 ano"…
+/// "hoje", "ontem", "há 3 dias", "há 2 meses", "há 1 ano"… ("today", "3 days ago"… in English).
 pub fn relative_date(raw: &str) -> String {
     let today = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map(|d| d.as_secs() as i64 / 86_400).unwrap_or(0);
-    relative_to(raw, today)
+    relative_to(crate::i18n::current(), raw, today)
 }
 
-fn relative_to(raw: &str, today: i64) -> String {
+fn relative_to(lang: Lang, raw: &str, today: i64) -> String {
+    let ago = |n: i64, one: Tr, many: Tr| {
+        let unit = if n == 1 { one } else { many }.in_lang(lang);
+        let (before, after) = (Tr("há ", "").in_lang(lang), Tr("", " ago").in_lang(lang));
+        format!("{before}{n} {unit}{after}")
+    };
     match days_between(raw, today) {
         None => String::new(),
         Some(n) if n < 0 => String::new(),
-        Some(0) => "hoje".into(),
-        Some(1) => "ontem".into(),
-        Some(n @ 2..=44) => format!("há {n} dias"),
-        Some(n @ 45..=364) => match (n as f64 / 30.44).round() as i64 {
-            1 => "há 1 mês".into(),
-            m => format!("há {m} meses"),
-        },
-        Some(n) => match n / 365 {
-            1 => "há 1 ano".into(),
-            y => format!("há {y} anos"),
-        },
+        Some(0) => Tr("hoje", "today").in_lang(lang).into(),
+        Some(1) => Tr("ontem", "yesterday").in_lang(lang).into(),
+        Some(n @ 2..=44) => ago(n, Tr("dia", "day"), Tr("dias", "days")),
+        Some(n @ 45..=364) => ago((n as f64 / 30.44).round() as i64, Tr("mês", "month"), Tr("meses", "months")),
+        Some(n) => ago(n / 365, Tr("ano", "year"), Tr("anos", "years")),
     }
 }
 
-/// DICOM age string (`046Y`, `018M`…) -> "46 anos", "18 meses".
+/// DICOM age string (`046Y`, `018M`…) -> "46 anos", "18 meses" ("46 years", "18 months").
 pub fn format_age(raw: &str) -> String {
+    age_in(crate::i18n::current(), raw)
+}
+
+fn age_in(lang: Lang, raw: &str) -> String {
     let t = raw.trim();
     let n: u32 = match t.trim_end_matches(char::is_alphabetic).parse() {
         Ok(n) => n,
         Err(_) => return t.to_string(),
     };
     let (one, many) = match t.chars().last() {
-        Some('M') => ("mês", "meses"),
-        Some('W') => ("semana", "semanas"),
-        Some('D') => ("dia", "dias"),
-        _ => ("ano", "anos"),
+        Some('M') => (Tr("mês", "month"), Tr("meses", "months")),
+        Some('W') => (Tr("semana", "week"), Tr("semanas", "weeks")),
+        Some('D') => (Tr("dia", "day"), Tr("dias", "days")),
+        _ => (Tr("ano", "year"), Tr("anos", "years")),
     };
-    format!("{n} {}", if n == 1 { one } else { many })
+    format!("{n} {}", if n == 1 { one } else { many }.in_lang(lang))
 }
 
 #[cfg(test)]
@@ -294,15 +299,23 @@ mod tests {
     fn relative_dates_and_ages() {
         let today = days_from_civil(2026, 11, 1);
         assert_eq!(days_from_civil(1970, 1, 1), 0);
-        assert_eq!(relative_to("20261101", today), "hoje");
-        assert_eq!(relative_to("20261031", today), "ontem");
-        assert_eq!(relative_to("20261020", today), "há 12 dias");
-        assert_eq!(relative_to("20250310", today), "há 1 ano");
-        assert_eq!(relative_to("20260601", today), "há 5 meses");
-        assert_eq!(relative_to("", today), "");
-        assert_eq!(format_age("046Y"), "46 anos");
-        assert_eq!(format_age("001M"), "1 mês");
+        let pt = |raw| relative_to(Lang::Pt, raw, today);
+        assert_eq!(pt("20261101"), "hoje");
+        assert_eq!(pt("20261031"), "ontem");
+        assert_eq!(pt("20261020"), "há 12 dias");
+        assert_eq!(pt("20250310"), "há 1 ano");
+        assert_eq!(pt("20260601"), "há 5 meses");
+        assert_eq!(pt(""), "");
+        assert_eq!(age_in(Lang::Pt, "046Y"), "46 anos");
+        assert_eq!(age_in(Lang::Pt, "001M"), "1 mês");
+        let en = |raw| relative_to(Lang::English, raw, today);
+        assert_eq!(en("20261101"), "today");
+        assert_eq!(en("20261020"), "12 days ago");
+        assert_eq!(en("20250310"), "1 year ago");
+        assert_eq!(age_in(Lang::English, "046Y"), "46 years");
+        assert_eq!(age_in(Lang::English, "001M"), "1 month");
     }
+
 
     #[test]
     fn formatting() {
